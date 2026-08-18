@@ -1,0 +1,51 @@
+[
+  {
+    "id": 1,
+    "title": "Convocazione Ass Soci aprile 2026",
+    "description": "Convocazione assemblea dei soci aprile 2026.",
+    "category": "Avvisi",
+    "filename": "ass_soci_aprile.pdf"
+  },
+  {
+    "id": 2,
+    "title": "Regolamento interno",
+    "description": "Regolamento interno dell'ASD Cinofila La Luna Nuova.",
+    "category": "Documenti ufficiali",
+    "filename": "Regolamento-2026.pdf"
+  },
+  {
+    "id": 3,
+    "title": "Informativa privacy",
+    "description": "Informativa sul trattamento dei dati personali ai sensi del GDPR.",
+    "category": "Documenti ufficiali",
+    "filename": "2-Privacy.pdf"
+  },
+  {
+    "id": 4,
+    "title": "Verbale nomina responsabile safeguarding",
+    "description": "Verbale nomina responsabile safeguarding.",
+    "category": "Documenti ufficiali",
+    "filename": "Verbale-Nomina-Responsabile-Safeguarding.pdf"
+  },
+  {
+    "id": 5,
+    "title": "Modello Organizzativo e di Controllo dell'attività sportiva - Safeguarding 2024",
+    "description": "Modello Organizzativo e di Controllo dell'attività sportiva - Safeguarding 2024.",
+    "category": "Documenti ufficiali",
+    "filename": "Modello-Organizzativo-e-di-Controllo-safeguarding.pdf"
+  },
+  {
+    "id": 6,
+    "title": "Codice di Condotta a tutela dei minori e per la prevenzione - Safeguarding 2024",
+    "description": "Codice di Condotta a tutela dei minori e per la prevenzione - Safeguarding 2024.",
+    "category": "Documenti ufficiali",
+    "filename": "Codice-di-Condotta-safeguarding.pdf"
+  },
+  {
+    "id": 7,
+    "title": "Safeguarding - Modulo di Segnalazione",
+    "description": "Safeguarding - Modulo di Segnalazione.",
+    "category": "Documenti ufficiali",
+    "filename": "4-Safeguarding-Modulo-di-Segnalazione.pdf"
+  }
+]

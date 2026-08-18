@@ -1,1 +1,28 @@
-/* You can add global styles to this file, and also import other style files */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 16px;
+  color: #222;
+  background-color: #fff;
+}
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+a {
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}

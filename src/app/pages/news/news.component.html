@@ -1,0 +1,79 @@
+<div class="news">
+  <h2>News</h2>
+  <p class="subtitle">Le ultime news dalla nostra associazione!</p>
+
+  <div class="news-grid" *ngIf="!selectedNews">
+    <div class="news-card" *ngFor="let item of newsList" (click)="open(item)">
+      <div class="news-thumbnail" *ngIf="item.media && item.media.length > 0">
+        <img *ngIf="item.media[0].type === 'image'" [src]="getMediaPath(item.media[0].filename)" [alt]="item.title" />
+        <div *ngIf="item.media[0].type === 'video'" class="video-thumb">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
+            <circle cx="12" cy="12" r="10" fill="rgba(0,0,0,0.4)"/>
+            <polygon points="10,8 16,12 10,16" fill="white"/>
+          </svg>
+        </div>
+      </div>
+      <div class="news-card-body">
+        <div class="news-meta">
+          <div class="news-date">{{ formatDate(item.date) }}</div>
+          <span class="location-tag" *ngIf="item.location">{{ item.location }}</span>
+        </div>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.summary }}</p>
+        <span class="read-more">Leggi tutto →</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="news-detail" *ngIf="selectedNews">
+    <button class="back-btn" (click)="close()">← Torna alle news</button>
+    <div class="news-date">{{ formatDate(selectedNews.date) }}</div>
+    <h3>{{ selectedNews.title }}</h3>
+    <p class="news-content">{{ selectedNews.content }}</p>
+
+    <div class="documents" *ngIf="selectedNews.documents && selectedNews.documents.length > 0">
+        <h4>Documenti</h4>
+        <div class="documents-list">
+            <div class="document-item" *ngFor="let doc of selectedNews.documents" (click)="downloadFile(doc.filename)">
+            <div class="document-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="12" y2="18"/>
+                <line x1="15" y1="15" x2="12" y2="18"/>
+                </svg>
+            </div>
+            <span class="document-title">{{ doc.title }}</span>
+            <span class="document-arrow">↓</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="gallery" *ngIf="selectedNews.media && selectedNews.media.length > 0">
+      <h4>Galleria</h4>
+      <div class="gallery-grid">
+        <div class="gallery-item" *ngFor="let media of selectedNews.media" (click)="openLightbox(media)">
+          <img *ngIf="media.type === 'image'" [src]="getMediaPath(media.filename)" [alt]="selectedNews.title" />
+          <div *ngIf="media.type === 'video'" class="video-thumb">
+            <video [src]="getMediaPath(media.filename)" preload="metadata"></video>
+            <div class="play-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
+                <circle cx="12" cy="12" r="10" fill="rgba(0,0,0,0.5)"/>
+                <polygon points="10,8 16,12 10,16" fill="white"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="lightbox" *ngIf="lightboxMedia" (click)="closeLightbox()">
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <button class="lightbox-close" (click)="closeLightbox()">✕</button>
+      <img *ngIf="lightboxMedia.type === 'image'" [src]="getMediaPath(lightboxMedia.filename)" />
+      <video *ngIf="lightboxMedia.type === 'video'" [src]="getMediaPath(lightboxMedia.filename)" controls autoplay></video>
+    </div>
+  </div>
+</div>

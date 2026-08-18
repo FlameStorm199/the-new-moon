@@ -1,0 +1,92 @@
+.download {
+  h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 3rem;
+    font-size: 1.1rem;
+  }
+
+  .category-section {
+    margin-bottom: 2.5rem;
+
+    h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #3b6fd4;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #e0e0e0;
+    }
+  }
+
+  .download-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .download-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    text-decoration: none;
+    color: #222;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+      border-color: #3b6fd4;
+
+      .download-icon {
+        color: #3b6fd4;
+      }
+
+      .download-arrow {
+        color: #3b6fd4;
+      }
+    }
+
+    .download-icon {
+      color: #aaa;
+      flex-shrink: 0;
+      transition: color 0.2s ease;
+    }
+
+    .download-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex: 1;
+
+      .download-title {
+        font-weight: 700;
+        font-size: 1rem;
+      }
+
+      .download-desc {
+        font-size: 0.875rem;
+        color: #666;
+      }
+    }
+
+    .download-arrow {
+      font-size: 1.2rem;
+      color: #ccc;
+      flex-shrink: 0;
+      transition: color 0.2s ease;
+    }
+  }
+}

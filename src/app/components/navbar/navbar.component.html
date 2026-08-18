@@ -1,0 +1,38 @@
+<header>
+  <div class="nav-wrapper">
+    <img src="assets/images/logo_LLN.bmp" alt="Logo La Luna Nuova" class="logo" />
+    <div class="nav-right">
+      <nav>
+        <div class="nav-links">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home page</a>
+          <a routerLink="/about" routerLinkActive="active">Chi siamo</a>
+          <a routerLink="/locations" routerLinkActive="active">Le nostre sedi</a>
+          <a routerLink="/activities" routerLinkActive="active">Le nostre attività</a>
+          <a routerLink="/news" routerLinkActive="active">News</a>
+          <a routerLink="/download" routerLinkActive="active">Bacheca</a>
+        </div>
+      </nav>
+      <div class="paw-divider">
+        <span>🐾</span>
+      </div>
+    </div>
+    <div class="social-buttons">
+      <div class="fb-wrapper">
+        <button class="fb-btn" aria-label="Facebook" (click)="toggleFbDropdown($event)">
+          <i class="fa-brands fa-facebook-f"></i>
+        </button>
+        <div class="fb-dropdown" *ngIf="fbDropdownOpen">
+          <a [href]="facebookGeneralUrl" target="_blank" (click)="closeFbDropdown()">
+            <i class="fa-brands fa-facebook-f"></i> La Luna Nuova
+          </a>
+          <a [href]="facebookPonzanoUrl" target="_blank" (click)="closeFbDropdown()">
+            <i class="fa-brands fa-facebook-f"></i> Sede di Ponzano
+          </a>
+        </div>
+      </div>
+      <a [href]="instagramUrl" target="_blank" class="ig-btn" aria-label="Instagram">
+        <i class="fa-brands fa-instagram"></i>
+      </a>
+    </div>
+  </div>
+</header>

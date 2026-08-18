@@ -1,0 +1,25 @@
+footer {
+  border-top: 1px solid #e0e0e0;
+  padding: 2rem;
+  margin-top: 3rem;
+  font-size: 0.875rem;
+  color: #444;
+
+  .footer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+
+    a {
+      color: #222;
+      text-decoration: underline;
+      font-style: italic;
+    }
+  }
+
+  .footer-copyright {
+    color: #888;
+    font-size: 0.8rem;
+  }
+}

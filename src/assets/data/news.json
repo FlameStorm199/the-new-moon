@@ -1,0 +1,181 @@
+[
+  {
+    "id": 1,
+    "title": "Classe reattivi al parco urbano",
+    "date": "2026-04-04",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Bellissima classe dedicata ai cani \"reattivi\" verso altri cani.",
+    "content": "Bellissima classe dedicata ai cani \"reattivi\" verso altri cani. Un'esperienza dall'esito sorprendente! Complimenti a tutti!",
+    "media": [
+        { "type": "image", "filename": "news_img1.jpg" },
+        { "type": "image", "filename": "news_img2.jpg" },
+        { "type": "image", "filename": "news_img3.jpg" },
+        { "type": "image", "filename": "news_img4.jpg" },
+        { "type": "image", "filename": "news_img5.jpg" },
+        { "type": "image", "filename": "news_img6.jpg" },
+        { "type": "image", "filename": "news_img7.jpg" }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Classe timidi - 4 aprile",
+    "date": "2026-04-04",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Ottima classe \"timidi\", che fanno enormi progressi.",
+    "content": "Ottima classe \"timidi\", che fanno enormi progressi.",
+    "media": [
+        { "type": "image", "filename": "news_img8.jpg" },
+        { "type": "image", "filename": "news_img9.jpg" }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Classe timidi - 8 marzo",
+    "date": "2026-03-08",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Solo alcune foto dell'ultima bellissima classe dedicata ai cani \"timidi\".",
+    "content": "Solo alcune foto dell'ultima bellissima classe dedicata ai cani \"timidi\". Enormi ed evidenti progressi! Complimenti a tutti!",
+    "media": [
+        { "type": "image", "filename": "news_img10.jpg" },
+        { "type": "image", "filename": "news_img11.jpg" },
+        { "type": "image", "filename": "news_img12.jpg" },
+        { "type": "image", "filename": "news_img13.jpg" },
+        { "type": "image", "filename": "news_img14.jpg" },
+        { "type": "image", "filename": "news_img15.jpg" },
+        { "type": "image", "filename": "news_img16.jpg" }
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Lezione pratica al Becher",
+    "date": "2026-03-06",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Oggi lezione pratica in un locale con l’obbiettivo di ottenere la calma di Joe.",
+    "content": "Oggi lezione pratica in un locale con l’obbiettivo di ottenere la calma di Joe. Obbiettivo raggiunto! Complimenti alla sua conduttrice Chiara",
+    "media": [
+        { "type": "image", "filename": "news_img17.jpg" },
+        { "type": "image", "filename": "news_img18.jpg" }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Classe timidi - 22 febbraio",
+    "date": "2026-02-22",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Classe dedicata ai cani \"timidi\", che con i loro tempi si sono aperti...",
+    "content": "Classe dedicata ai cani \"timidi\", che con i loro tempi si sono aperti e ci hanno regalato l’emozione di vederli affrontare anche questa nuova sfida al fianco dei loro magnifici conduttori. Complimenti a tutti!",
+    "media": [
+        { "type": "image", "filename": "news_img19.jpg" },
+        { "type": "image", "filename": "news_img20.jpg" },
+        { "type": "image", "filename": "news_img21.jpg" },
+        { "type": "image", "filename": "news_img22.jpg" },
+        { "type": "image", "filename": "news_img23.jpg" }
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Aperitivo a 4 zampe",
+    "date": "2026-02-08",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "E ci si esercita anche a prendere l’aperitivo con i nostri cani!",
+    "content": "E ci si esercita anche a prendere l’aperitivo con i nostri cani!",
+    "media": [
+        { "type": "image", "filename": "news_img24.jpg" },
+        { "type": "image", "filename": "news_img25.jpg" },
+        { "type": "image", "filename": "news_img26.jpg" }
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Lezione di gruppo - 8 febbraio",
+    "date": "2026-02-08",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Lezione di gruppo. Allievi super!",
+    "content": "Lezione di gruppo. Allievi super!",
+    "media": [
+        { "type": "image", "filename": "news_img27.jpg" },
+        { "type": "image", "filename": "news_img28.jpg" },
+        { "type": "image", "filename": "news_img29.jpg" },
+        { "type": "image", "filename": "news_img30.jpg" },
+        { "type": "image", "filename": "news_img31.jpg" },
+        { "type": "image", "filename": "news_img32.jpg" },
+        { "type": "image", "filename": "news_img33.jpg" },
+        { "type": "image", "filename": "news_img34.jpg" },
+        { "type": "image", "filename": "news_img35.jpg" },
+        { "type": "image", "filename": "news_img36.jpg" },
+        { "type": "image", "filename": "news_img37.jpg" },
+        { "type": "image", "filename": "news_img38.jpg" },
+        { "type": "image", "filename": "news_img39.jpg" },
+        { "type": "image", "filename": "news_img40.jpg" },
+        { "type": "image", "filename": "news_img41.jpg" }
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Passeggiata di gruppo - 8 febbraio",
+    "date": "2026-02-08",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Super passeggiata con aperitivo finale!",
+    "content": "Super passeggiata con aperitivo finale!",
+    "media": [
+        { "type": "image", "filename": "news_img42.jpg" },
+        { "type": "image", "filename": "news_img43.jpg" },
+        { "type": "image", "filename": "news_img44.jpg" },
+        { "type": "image", "filename": "news_img45.jpg" },
+        { "type": "image", "filename": "news_img46.jpg" },
+        { "type": "image", "filename": "news_img47.jpg" },
+        { "type": "image", "filename": "news_img48.jpg" },
+        { "type": "image", "filename": "news_img49.jpg" },
+        { "type": "image", "filename": "news_img50.jpg" },
+        { "type": "image", "filename": "news_img51.jpg" },
+        { "type": "image", "filename": "news_img52.jpg" }
+    ]
+  },
+  {
+    "id": 9,
+    "title": "Lavoriamo sugli incroci!",
+    "date": "2026-01-11",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Sessione di lavoro di gruppo oggi! Complimenti a tutti!",
+    "content": "Sessione di lavoro di gruppo oggi! Complimenti a tutti!",
+    "media": [
+        { "type": "image", "filename": "news_img53.jpg" },
+        { "type": "image", "filename": "news_img54.jpg" },
+        { "type": "image", "filename": "news_img55.jpg" },
+        { "type": "image", "filename": "news_img56.jpg" },
+        { "type": "image", "filename": "news_img57.jpg" },
+        { "type": "image", "filename": "news_img58.jpg" },
+        { "type": "image", "filename": "news_img59.jpg" },
+        { "type": "image", "filename": "news_img60.jpg" }
+    ]
+  },
+  {
+    "id": 10,
+    "title": "Corso contro esche avvelenate",
+    "date": "2026-01-11",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "A Ponzano, al terzo incontro contro le esche avvelenate, siamo pronti per allenarci in strada!",
+    "content": "A Ponzano, al terzo incontro contro le esche avvelenate, siamo pronti per allenarci in strada! Tra le esche: formaggio, yogurt, fazzoletti, würstel, fegatini, pancetta, … \nIn foto solo alcuni dei tanti partecipanti, tutti bravissimi",
+    "media": [
+        { "type": "image", "filename": "news_img61.jpg" },
+        { "type": "image", "filename": "news_img62.jpg" },
+        { "type": "image", "filename": "news_img63.jpg" },
+        { "type": "image", "filename": "news_img64.jpg" },
+        { "type": "image", "filename": "news_img65.jpg" }
+    ]
+  },
+  {
+    "id": 11,
+    "title": "Passeggiata didattica - 7 gennaio",
+    "date": "2026-01-07",
+    "location": "Sede di Ponzano Veneto",
+    "summary": "Passeggiata didattica! \nIn foto alcuni dei cani: Perla, Minù, Bijou, Wonder e Saba.",
+    "content": "Passeggiata didattica! \nIn foto alcuni dei cani: Perla, Minù, Bijou, Wonder e Saba.",
+    "media": [
+        { "type": "image", "filename": "news_img66.jpg" },
+        { "type": "image", "filename": "news_img67.jpg" },
+        { "type": "image", "filename": "news_img68.jpg" },
+        { "type": "image", "filename": "news_img69.jpg" }
+    ]
+  }
+]

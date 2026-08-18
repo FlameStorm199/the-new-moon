@@ -1,0 +1,17 @@
+<div class="cookie-banner" *ngIf="visible">
+  <div class="cookie-content">
+    <div class="cookie-text">
+      <strong>Informativa sui cookie</strong>
+      <p>
+        Questo sito utilizza cookie tecnici necessari al funzionamento e cookie di terze parti derivanti
+        dall'utilizzo di mappe Google. Non utilizziamo cookie di profilazione o pubblicitari.
+        Per maggiori informazioni consulta la nostra
+        <a href="assets/docs/2-Privacy.pdf" target="_blank">informativa sulla privacy</a>.
+      </p>
+    </div>
+    <div class="cookie-actions">
+      <button class="btn-reject" (click)="reject()">Rifiuta</button>
+      <button class="btn-accept" (click)="accept()">Accetta</button>
+    </div>
+  </div>
+</div>
