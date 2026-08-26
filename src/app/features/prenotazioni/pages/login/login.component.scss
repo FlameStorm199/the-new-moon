@@ -1,0 +1,27 @@
+.auth-page {
+  max-width: 24rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  input {
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .error {
+    color: #b00020;
+    margin: 0;
+  }
+}

@@ -13,5 +13,10 @@ export const routes: Routes = [
   { path: 'activities', component: ActivitiesComponent },
   { path: 'news', component: NewsComponent },
   { path: 'download', component: DownloadComponent },
+  {
+    path: 'prenotazioni',
+    loadChildren: () =>
+      import('./features/prenotazioni/prenotazioni.routes').then((m) => m.PRENOTAZIONI_ROUTES),
+  },
   { path: '**', redirectTo: '' }
 ];

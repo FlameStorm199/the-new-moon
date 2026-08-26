@@ -1,0 +1,11 @@
+<section class="area-personale">
+  <h1>Area personale</h1>
+
+  @if (session(); as s) {
+    <p>Accesso effettuato come <strong>{{ s.user.email }}</strong>.</p>
+  }
+
+  <p class="placeholder">Le prenotazioni saranno disponibili qui a breve.</p>
+
+  <button type="button" (click)="logout()">Esci</button>
+</section>

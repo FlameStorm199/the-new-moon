@@ -40,3 +40,7 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+handoff_progetto.md
+schema_fase1.sql
+/database/
