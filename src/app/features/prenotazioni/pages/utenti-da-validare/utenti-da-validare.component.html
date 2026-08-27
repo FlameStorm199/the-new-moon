@@ -1,0 +1,33 @@
+<section class="staff-page">
+  <h1>Utenti da validare</h1>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <p>Caricamento…</p>
+  } @else if (users().length === 0) {
+    <p>Nessun utente in attesa di validazione.</p>
+  } @else {
+    <ul class="pending-list">
+      @for (user of users(); track user.id) {
+        <li>
+          <div class="info">
+            <strong>{{ user.name }} {{ user.surname }}</strong>
+            <span>{{ user.email }}</span>
+            <span>{{ user.phone }}</span>
+            <span>Cane: {{ user.dog_name }}</span>
+          </div>
+          <button
+            type="button"
+            [disabled]="validatingId() === user.id"
+            (click)="validate(user.id)"
+          >
+            {{ validatingId() === user.id ? 'Validazione…' : 'Valida' }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</section>

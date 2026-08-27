@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '../../core/auth/auth.guard';
+import { staffGuard } from '../../core/auth/staff.guard';
 
 export const PRENOTAZIONI_ROUTES: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'login' },
@@ -18,6 +19,14 @@ export const PRENOTAZIONI_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/area-personale/area-personale.component').then(
         (m) => m.AreaPersonaleComponent
+      ),
+  },
+  {
+    path: 'utenti-da-validare',
+    canActivate: [staffGuard],
+    loadComponent: () =>
+      import('./pages/utenti-da-validare/utenti-da-validare.component').then(
+        (m) => m.UtentiDaValidareComponent
       ),
   },
 ];
