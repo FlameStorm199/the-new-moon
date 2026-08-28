@@ -7,18 +7,19 @@
       <p class="pending">Il tuo account è in attesa di validazione da parte dello staff.</p>
     } @else {
       <p><a routerLink="/prenotazioni/prenota">Prenota una lezione</a></p>
+      <p><a routerLink="/prenotazioni/le-mie-lezioni">Le mie lezioni</a></p>
     }
     @if (isStaff) {
       <p><a routerLink="/prenotazioni/utenti-da-validare">Utenti da validare</a></p>
+      <p><a routerLink="/prenotazioni/gestione-lezioni">Gestione lezioni</a></p>
       <p><a routerLink="/prenotazioni/gestione-slot">Gestione slot</a></p>
+      <p><a routerLink="/prenotazioni/fasce-orarie">Fasce orarie</a></p>
     }
   } @else if (loadingProfile()) {
     <p>Caricamento profilo…</p>
   } @else {
     <p class="pending">Non è stato possibile caricare il profilo.</p>
   }
-
-  <p class="placeholder">Le prenotazioni saranno disponibili qui a breve.</p>
 
   <button type="button" (click)="logout()">Esci</button>
 </section>

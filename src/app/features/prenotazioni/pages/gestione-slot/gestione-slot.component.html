@@ -1,9 +1,57 @@
 <section class="staff-page">
   <h1>Gestione slot</h1>
 
+  <p class="hint">
+    Gli slot dei prossimi giorni sono generati automaticamente dalle
+    <a routerLink="/prenotazioni/fasce-orarie">fasce orarie</a>: modificarle
+    ricalcola subito questa lista. Qui sotto puoi chiudere un periodo, spegnere
+    un singolo slot o aggiungerne uno fuori fascia.
+  </p>
+
   @if (errorMessage()) {
     <p class="error">{{ errorMessage() }}</p>
   }
+
+  <form class="bulk" [formGroup]="bulkForm" novalidate>
+    <h2>Chiudi o riapri un periodo</h2>
+
+    <div class="row">
+      <label>
+        Dal
+        <input type="date" formControlName="dateFrom" />
+      </label>
+
+      <label>
+        Al (facoltativo)
+        <input type="date" formControlName="dateTo" />
+      </label>
+    </div>
+
+    <label>
+      Cosa
+      <select formControlName="scope">
+        <option value="giornata">Tutta la giornata</option>
+        <option value="mattina">Solo mattina</option>
+        <option value="pomeriggio">Solo pomeriggio</option>
+      </select>
+    </label>
+
+    @if (bulkError()) {
+      <p class="error">{{ bulkError() }}</p>
+    }
+    @if (bulkMessage()) {
+      <p class="success">{{ bulkMessage() }}</p>
+    }
+
+    <div class="row">
+      <button type="button" [disabled]="bulkRunning()" (click)="applyBulk(false)">
+        {{ bulkRunning() ? 'Attendi…' : 'Tieni libero' }}
+      </button>
+      <button type="button" [disabled]="bulkRunning()" (click)="applyBulk(true)">
+        Riapri
+      </button>
+    </div>
+  </form>
 
   <form class="new-slot" [formGroup]="form" (ngSubmit)="submitNewSlot()" novalidate>
     <h2>Aggiungi slot</h2>
@@ -40,7 +88,17 @@
     </button>
   </form>
 
-  <h2>Prossimi 7 giorni</h2>
+  <div class="list-header">
+    <h2>Slot generati</h2>
+    <label>
+      Mostra
+      <select [value]="horizonDays()" (change)="changeHorizon($any($event.target).value)">
+        <option value="7">7 giorni</option>
+        <option value="14">14 giorni</option>
+        <option value="30">30 giorni</option>
+      </select>
+    </label>
+  </div>
 
   @if (loading()) {
     <p>Caricamento…</p>
@@ -59,6 +117,9 @@
               </span>
               @if (slot.occupied) {
                 <span class="badge">occupato</span>
+              }
+              @if (slot.source === 'manual') {
+                <span class="badge manual">manuale</span>
               }
               <button
                 type="button"

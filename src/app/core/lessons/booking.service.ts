@@ -16,4 +16,26 @@ export class BookingService {
       throw error;
     }
   }
+
+  /**
+   * Prenotazione fatta dallo staff per conto di un cliente. Il bypass del
+   * limite settimanale viene comunque riverificato dalla RPC in base al ruolo
+   * di chi chiama: passarlo da qui non basta a ottenerlo.
+   */
+  async bookLessonForCustomer(
+    slotId: number,
+    customerId: number,
+    bypassWeeklyLimit = false,
+    description?: string
+  ): Promise<void> {
+    const { error } = await this.supabase.rpc('book_lesson', {
+      p_slot_id: slotId,
+      p_customer_id: customerId,
+      p_bypass_weekly_limit: bypassWeeklyLimit,
+      p_description: description?.trim() || null,
+    });
+    if (error) {
+      throw error;
+    }
+  }
 }

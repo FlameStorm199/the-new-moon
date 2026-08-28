@@ -13,7 +13,10 @@
       <p class="error">{{ errorMessage() }}</p>
     }
     @if (successMessage()) {
-      <p class="success">{{ successMessage() }}</p>
+      <p class="success">
+        {{ successMessage() }}
+        <a routerLink="/prenotazioni/le-mie-lezioni">Vedi le mie lezioni</a>
+      </p>
     }
 
     @if (loadingSlots()) {

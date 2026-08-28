@@ -11,6 +11,24 @@ export interface SlotRow {
   time_to: string;
   active: boolean;
   occupied: boolean;
+  /** 'rule' = generato dalle fasce orarie, 'manual' = aggiunto a mano dallo staff. */
+  source: SlotSource;
+}
+
+export type SlotSource = 'rule' | 'manual';
+
+export interface BulkSlotInput {
+  dateFrom: string;
+  /** Se omessa, l'operazione riguarda il solo giorno `dateFrom`. */
+  dateTo?: string;
+  /** null/omesso = intera giornata. */
+  partOfDay?: PartOfDay | null;
+  active: boolean;
+}
+
+export interface BulkSlotResult {
+  updated: number;
+  occupiedSkipped: number;
 }
 
 export interface NewSlotInput {
@@ -33,7 +51,7 @@ export class SlotsService {
 
     const { data, error } = await this.supabase
       .from('v_slots_status')
-      .select('id, date, part_of_day, time_from, time_to, active, occupied')
+      .select('id, date, part_of_day, time_from, time_to, active, occupied, source')
       .gte('date', from)
       .lte('date', to)
       .order('date', { ascending: true })
@@ -54,7 +72,7 @@ export class SlotsService {
 
     const { data, error } = await this.supabase
       .from('v_slots_status')
-      .select('id, date, part_of_day, time_from, time_to, active, occupied')
+      .select('id, date, part_of_day, time_from, time_to, active, occupied, source')
       .gte('date', from)
       .lte('date', to)
       .eq('active', true)
@@ -75,12 +93,41 @@ export class SlotsService {
     }
   }
 
+  /**
+   * Attiva/disattiva in blocco gli slot di un intervallo ("tieni libera la
+   * giornata / la mattina / il pomeriggio"). Gli slot già prenotati non
+   * vengono toccati: la RPC li conta e li riporta in `occupiedSkipped`, così
+   * lo staff sa che su quelle date restano lezioni da gestire a mano.
+   */
+  async setActiveBulk(input: BulkSlotInput): Promise<BulkSlotResult> {
+    const { data, error } = await this.supabase.rpc('set_slots_active_bulk', {
+      p_date_from: input.dateFrom,
+      p_date_to: input.dateTo ?? input.dateFrom,
+      p_part_of_day: input.partOfDay ?? null,
+      p_active: input.active,
+    });
+    if (error) {
+      throw error;
+    }
+    const result = (data ?? {}) as Record<string, number>;
+    return {
+      updated: result['updated'] ?? 0,
+      occupiedSkipped: result['occupied_skipped'] ?? 0,
+    };
+  }
+
+  /**
+   * Slot aggiunto a mano dallo staff: nasce con source='manual' perché il
+   * ricalcolo automatico (trigger sulle fasce orarie) non lo cancelli, non
+   * corrispondendo per definizione a nessuna fascia.
+   */
   async createSlot(input: NewSlotInput): Promise<void> {
     const { error } = await this.supabase.from('slots').insert({
       date: input.date,
       part_of_day: input.partOfDay,
       time_from: input.timeFrom,
       time_to: input.timeTo,
+      source: 'manual',
     });
     if (error) {
       throw error;

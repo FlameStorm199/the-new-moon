@@ -1,0 +1,74 @@
+<section class="lezioni-page">
+  <h1>Le mie lezioni</h1>
+
+  @if (loading()) {
+    <p>Caricamento…</p>
+  } @else if (!canUsePlatform) {
+    <p class="pending">
+      Il tuo account è in attesa di validazione da parte dello staff.
+    </p>
+  } @else {
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+    @if (infoMessage()) {
+      <p class="success">{{ infoMessage() }}</p>
+    }
+
+    <h2>Prossime</h2>
+    @if (upcoming().length === 0) {
+      <p class="empty">
+        Nessuna lezione in programma.
+        <a routerLink="/prenotazioni/prenota">Prenotane una</a>.
+      </p>
+    } @else {
+      <ul class="lessons">
+        @for (lesson of upcoming(); track lesson.id) {
+          <li>
+            <div class="when">
+              <strong>{{ lesson.date }}</strong>
+              {{ lesson.time_from.slice(0, 5) }} - {{ lesson.time_to.slice(0, 5) }}
+            </div>
+            @if (lesson.description) {
+              <p class="description">{{ lesson.description }}</p>
+            }
+            @if (canCancel(lesson)) {
+              <button
+                type="button"
+                class="danger"
+                [disabled]="cancellingId() === lesson.id"
+                (click)="cancel(lesson)"
+              >
+                {{ cancellingId() === lesson.id ? 'Cancellazione…' : 'Cancella' }}
+              </button>
+            } @else {
+              <span class="note">
+                Non più cancellabile online (servono almeno
+                {{ cancelMinHours() }} ore di anticipo): contatta il centro.
+              </span>
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    <h2>Storico</h2>
+    @if (history().length === 0) {
+      <p class="empty">Nessuna lezione passata.</p>
+    } @else {
+      <ul class="lessons history">
+        @for (lesson of history(); track lesson.id) {
+          <li>
+            <div class="when">
+              <strong>{{ lesson.date }}</strong>
+              {{ lesson.time_from.slice(0, 5) }} - {{ lesson.time_to.slice(0, 5) }}
+            </div>
+            <span class="badge" [class.cancelled]="lesson.status === 'cancelled'">
+              {{ statusLabels[lesson.status] }}
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

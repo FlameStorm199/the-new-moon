@@ -38,9 +38,33 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       ),
   },
   {
+    path: 'fasce-orarie',
+    canActivate: [staffGuard],
+    loadComponent: () =>
+      import('./pages/fasce-orarie/fasce-orarie.component').then(
+        (m) => m.FasceOrarieComponent
+      ),
+  },
+  {
+    path: 'gestione-lezioni',
+    canActivate: [staffGuard],
+    loadComponent: () =>
+      import('./pages/gestione-lezioni/gestione-lezioni.component').then(
+        (m) => m.GestioneLezioniComponent
+      ),
+  },
+  {
     path: 'prenota',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./pages/prenota/prenota.component').then((m) => m.PrenotaComponent),
+  },
+  {
+    path: 'le-mie-lezioni',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/le-mie-lezioni/le-mie-lezioni.component').then(
+        (m) => m.LeMieLezioniComponent
+      ),
   },
 ];

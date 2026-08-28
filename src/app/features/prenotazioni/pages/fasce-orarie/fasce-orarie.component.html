@@ -1,0 +1,101 @@
+<section class="staff-page">
+  <h1>Fasce orarie</h1>
+
+  <p class="hint">
+    Sono gli orari di apertura settimanali da cui vengono generati gli slot. Ogni
+    modifica ricalcola immediatamente gli slot futuri: quelli già prenotati
+    restano al loro posto anche se finiscono fuori fascia. Vedi il risultato in
+    <a routerLink="/prenotazioni/gestione-slot">Gestione slot</a>.
+  </p>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+  @if (infoMessage()) {
+    <p class="success">{{ infoMessage() }}</p>
+  }
+
+  <form class="new-rule" [formGroup]="form" (ngSubmit)="submitNewRule()" novalidate>
+    <h2>Aggiungi fascia</h2>
+
+    <label>
+      Giorno
+      <select formControlName="weekday">
+        @for (day of weekdayOrder; track day) {
+          <option [value]="day">{{ weekdayLabels[day] }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Parte della giornata
+      <select formControlName="partOfDay">
+        <option value="mattina">Mattina</option>
+        <option value="pomeriggio">Pomeriggio</option>
+      </select>
+    </label>
+
+    <label>
+      Dalle
+      <input type="time" formControlName="timeFrom" />
+    </label>
+
+    <label>
+      Alle
+      <input type="time" formControlName="timeTo" />
+    </label>
+
+    <button type="submit" [disabled]="creating()">
+      {{ creating() ? 'Creazione…' : 'Aggiungi' }}
+    </button>
+  </form>
+
+  @if (loading()) {
+    <p>Caricamento…</p>
+  } @else {
+    @for (group of groupedByWeekday(); track group.weekday) {
+      <div class="day-group">
+        <h3>{{ group.label }}</h3>
+
+        @if (group.rules.length === 0) {
+          <p class="empty">Nessuna fascia: giorno chiuso.</p>
+        } @else {
+          <ul>
+            @for (rule of group.rules; track rule.id) {
+              <li [class.inactive]="!rule.active">
+                <span class="part">{{ rule.part_of_day }}</span>
+
+                <input type="time" #from [value]="rule.time_from.slice(0, 5)" />
+                <span class="sep">→</span>
+                <input type="time" #to [value]="rule.time_to.slice(0, 5)" />
+
+                <button
+                  type="button"
+                  [disabled]="savingId() === rule.id"
+                  (click)="saveHours(rule, from.value, to.value)"
+                >
+                  Salva
+                </button>
+                <button
+                  type="button"
+                  [disabled]="savingId() === rule.id"
+                  (click)="toggleActive(rule)"
+                >
+                  {{ rule.active ? 'Disattiva' : 'Attiva' }}
+                </button>
+                <button
+                  type="button"
+                  class="danger"
+                  [disabled]="savingId() === rule.id"
+                  (click)="remove(rule)"
+                >
+                  Elimina
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+  }
+</section>

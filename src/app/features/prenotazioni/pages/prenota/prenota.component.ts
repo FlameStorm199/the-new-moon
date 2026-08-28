@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { BookingService } from '../../../../core/lessons/booking.service';
 import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
@@ -12,7 +13,7 @@ interface DayGroup {
 @Component({
   selector: 'app-prenota',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './prenota.component.html',
   styleUrl: './prenota.component.scss',
 })
