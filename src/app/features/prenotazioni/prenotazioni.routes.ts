@@ -29,4 +29,18 @@ export const PRENOTAZIONI_ROUTES: Routes = [
         (m) => m.UtentiDaValidareComponent
       ),
   },
+  {
+    path: 'gestione-slot',
+    canActivate: [staffGuard],
+    loadComponent: () =>
+      import('./pages/gestione-slot/gestione-slot.component').then(
+        (m) => m.GestioneSlotComponent
+      ),
+  },
+  {
+    path: 'prenota',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/prenota/prenota.component').then((m) => m.PrenotaComponent),
+  },
 ];

@@ -1,0 +1,48 @@
+<section class="prenota-page">
+  <h1>Prenota una lezione</h1>
+
+  @if (loadingProfile()) {
+    <p>Caricamento…</p>
+  } @else if (!canBook) {
+    <p class="pending">
+      Il tuo account è in attesa di validazione da parte dello staff: potrai prenotare non
+      appena verrà confermato.
+    </p>
+  } @else {
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+    @if (successMessage()) {
+      <p class="success">{{ successMessage() }}</p>
+    }
+
+    @if (loadingSlots()) {
+      <p>Caricamento slot disponibili…</p>
+    } @else if (groupedByDate().length === 0) {
+      <p>Nessuno slot disponibile nei prossimi giorni.</p>
+    } @else {
+      @for (group of groupedByDate(); track group.date) {
+        <div class="day-group">
+          <h3>{{ group.date }}</h3>
+          <ul>
+            @for (slot of group.slots; track slot.id) {
+              <li>
+                <span class="time">
+                  {{ slot.time_from.slice(0, 5) }} - {{ slot.time_to.slice(0, 5) }}
+                  ({{ slot.part_of_day }})
+                </span>
+                <button
+                  type="button"
+                  [disabled]="bookingId() === slot.id"
+                  (click)="book(slot)"
+                >
+                  {{ bookingId() === slot.id ? 'Prenotazione…' : 'Prenota' }}
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
+  }
+</section>

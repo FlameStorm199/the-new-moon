@@ -5,9 +5,12 @@
     <p>Ciao <strong>{{ p.name }} {{ p.surname }}</strong>.</p>
     @if (!p.validated) {
       <p class="pending">Il tuo account è in attesa di validazione da parte dello staff.</p>
+    } @else {
+      <p><a routerLink="/prenotazioni/prenota">Prenota una lezione</a></p>
     }
     @if (isStaff) {
       <p><a routerLink="/prenotazioni/utenti-da-validare">Utenti da validare</a></p>
+      <p><a routerLink="/prenotazioni/gestione-slot">Gestione slot</a></p>
     }
   } @else if (loadingProfile()) {
     <p>Caricamento profilo…</p>

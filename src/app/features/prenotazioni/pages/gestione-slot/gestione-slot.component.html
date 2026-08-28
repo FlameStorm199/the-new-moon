@@ -1,0 +1,76 @@
+<section class="staff-page">
+  <h1>Gestione slot</h1>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  <form class="new-slot" [formGroup]="form" (ngSubmit)="submitNewSlot()" novalidate>
+    <h2>Aggiungi slot</h2>
+
+    <label>
+      Data
+      <input type="date" formControlName="date" />
+    </label>
+
+    <label>
+      Fascia
+      <select formControlName="partOfDay">
+        <option value="mattina">Mattina</option>
+        <option value="pomeriggio">Pomeriggio</option>
+      </select>
+    </label>
+
+    <label>
+      Dalle
+      <input type="time" formControlName="timeFrom" />
+    </label>
+
+    <label>
+      Alle
+      <input type="time" formControlName="timeTo" />
+    </label>
+
+    @if (createError()) {
+      <p class="error">{{ createError() }}</p>
+    }
+
+    <button type="submit" [disabled]="creating()">
+      {{ creating() ? 'Creazione…' : 'Aggiungi' }}
+    </button>
+  </form>
+
+  <h2>Prossimi 7 giorni</h2>
+
+  @if (loading()) {
+    <p>Caricamento…</p>
+  } @else if (groupedByDate().length === 0) {
+    <p>Nessuno slot generato nei prossimi giorni.</p>
+  } @else {
+    @for (group of groupedByDate(); track group.date) {
+      <div class="day-group">
+        <h3>{{ group.date }}</h3>
+        <ul>
+          @for (slot of group.slots; track slot.id) {
+            <li [class.inactive]="!slot.active">
+              <span class="time">
+                {{ slot.time_from.slice(0, 5) }} - {{ slot.time_to.slice(0, 5) }}
+                ({{ slot.part_of_day }})
+              </span>
+              @if (slot.occupied) {
+                <span class="badge">occupato</span>
+              }
+              <button
+                type="button"
+                [disabled]="savingId() === slot.id"
+                (click)="toggleActive(slot)"
+              >
+                {{ slot.active ? 'Disattiva' : 'Riattiva' }}
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  }
+</section>
