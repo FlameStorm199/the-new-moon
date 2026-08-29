@@ -2,9 +2,11 @@
   <h1>Fasce orarie</h1>
 
   <p class="hint">
-    Sono gli orari di apertura settimanali da cui vengono generati gli slot. Ogni
-    modifica ricalcola immediatamente gli slot futuri: quelli già prenotati
-    restano al loro posto anche se finiscono fuori fascia. Vedi il risultato in
+    Sono gli orari di apertura settimanali da cui vengono generati gli slot.
+    Puoi modificare gli orari o attivare/disattivare una fascia; le fasce
+    stesse (una per giorno, mattina e pomeriggio) sono fisse. Ogni modifica
+    ricalcola immediatamente gli slot futuri: quelli già prenotati restano al
+    loro posto anche se finiscono fuori fascia. Vedi il risultato in
     <a routerLink="/prenotazioni/gestione-slot">Gestione slot</a>.
   </p>
 
@@ -14,41 +16,6 @@
   @if (infoMessage()) {
     <p class="success">{{ infoMessage() }}</p>
   }
-
-  <form class="new-rule" [formGroup]="form" (ngSubmit)="submitNewRule()" novalidate>
-    <h2>Aggiungi fascia</h2>
-
-    <label>
-      Giorno
-      <select formControlName="weekday">
-        @for (day of weekdayOrder; track day) {
-          <option [value]="day">{{ weekdayLabels[day] }}</option>
-        }
-      </select>
-    </label>
-
-    <label>
-      Parte della giornata
-      <select formControlName="partOfDay">
-        <option value="mattina">Mattina</option>
-        <option value="pomeriggio">Pomeriggio</option>
-      </select>
-    </label>
-
-    <label>
-      Dalle
-      <input type="time" formControlName="timeFrom" />
-    </label>
-
-    <label>
-      Alle
-      <input type="time" formControlName="timeTo" />
-    </label>
-
-    <button type="submit" [disabled]="creating()">
-      {{ creating() ? 'Creazione…' : 'Aggiungi' }}
-    </button>
-  </form>
 
   @if (loading()) {
     <p>Caricamento…</p>
@@ -82,14 +49,6 @@
                   (click)="toggleActive(rule)"
                 >
                   {{ rule.active ? 'Disattiva' : 'Attiva' }}
-                </button>
-                <button
-                  type="button"
-                  class="danger"
-                  [disabled]="savingId() === rule.id"
-                  (click)="remove(rule)"
-                >
-                  Elimina
                 </button>
               </li>
             }

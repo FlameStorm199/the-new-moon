@@ -1,8 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { PartOfDay } from '../../../../core/slots/slots.service';
 import {
   TimeSlotRuleRow,
   TimeSlotRulesService,
@@ -30,7 +28,7 @@ const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 @Component({
   selector: 'app-fasce-orarie',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, RouterLink],
   templateUrl: './fasce-orarie.component.html',
   styleUrl: './fasce-orarie.component.scss',
 })
@@ -53,16 +51,6 @@ export class FasceOrarieComponent implements OnInit {
       rules: this.rules().filter((r) => r.weekday === weekday),
     }))
   );
-
-  readonly form = new FormGroup({
-    // Stringa, non numero: <option [value]="day"> produce sempre valori string
-    // e con un default numerico la select resterebbe senza selezione iniziale.
-    weekday: new FormControl('1', { nonNullable: true, validators: [Validators.required] }),
-    partOfDay: new FormControl<PartOfDay>('mattina', { nonNullable: true }),
-    timeFrom: new FormControl('09:00', { nonNullable: true, validators: [Validators.required] }),
-    timeTo: new FormControl('12:00', { nonNullable: true, validators: [Validators.required] }),
-  });
-  readonly creating = signal(false);
 
   ngOnInit(): void {
     void this.load();
@@ -94,36 +82,6 @@ export class FasceOrarieComponent implements OnInit {
       return;
     }
     await this.run(rule.id, () => this.rulesService.updateHours(rule.id, timeFrom, timeTo));
-  }
-
-  async remove(rule: TimeSlotRuleRow): Promise<void> {
-    const label = `${this.weekdayLabels[rule.weekday]} ${rule.time_from.slice(0, 5)}-${rule.time_to.slice(0, 5)}`;
-    if (!confirm(`Eliminare la fascia ${label}? Gli slot liberi che ne derivano verranno rimossi.`)) {
-      return;
-    }
-    await this.run(rule.id, () => this.rulesService.softDelete(rule.id));
-  }
-
-  async submitNewRule(): Promise<void> {
-    if (this.form.invalid || this.creating()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const value = this.form.getRawValue();
-    if (value.timeTo <= value.timeFrom) {
-      this.errorMessage.set('L’orario di fine deve essere successivo a quello di inizio.');
-      return;
-    }
-    this.creating.set(true);
-    await this.run(null, () =>
-      this.rulesService.create({
-        weekday: Number(value.weekday),
-        partOfDay: value.partOfDay,
-        timeFrom: value.timeFrom,
-        timeTo: value.timeTo,
-      })
-    );
-    this.creating.set(false);
   }
 
   /**

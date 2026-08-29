@@ -11,17 +11,13 @@ export interface TimeSlotRuleRow {
   active: boolean;
 }
 
-export interface NewTimeSlotRuleInput {
-  weekday: number;
-  partOfDay: PartOfDay;
-  timeFrom: string;
-  timeTo: string;
-}
-
 /**
- * Fasce orarie di apertura. Ogni scrittura fa scattare lato DB il ricalcolo
- * immediato degli slot futuri (trigger trg_tsr_recalc_slots), quindi dopo
- * ogni chiamata la lista degli slot va considerata cambiata.
+ * Fasce orarie di apertura: un insieme fisso di righe (una per giorno della
+ * settimana × mattina/pomeriggio), seedate una volta e mai create/eliminate
+ * dall'app — solo modificabili negli orari o attivabili/disattivabili. Ogni
+ * scrittura fa scattare lato DB il ricalcolo immediato degli slot futuri
+ * (trigger trg_tsr_recalc_slots), quindi dopo ogni chiamata la lista degli
+ * slot va considerata cambiata.
  */
 @Injectable({ providedIn: 'root' })
 export class TimeSlotRulesService {
@@ -41,18 +37,6 @@ export class TimeSlotRulesService {
     return data ?? [];
   }
 
-  async create(input: NewTimeSlotRuleInput): Promise<void> {
-    const { error } = await this.supabase.from('time_slot_rules').insert({
-      weekday: input.weekday,
-      part_of_day: input.partOfDay,
-      time_from: input.timeFrom,
-      time_to: input.timeTo,
-    });
-    if (error) {
-      throw error;
-    }
-  }
-
   async updateHours(id: number, timeFrom: string, timeTo: string): Promise<void> {
     const { error } = await this.supabase
       .from('time_slot_rules')
@@ -67,21 +51,6 @@ export class TimeSlotRulesService {
     const { error } = await this.supabase
       .from('time_slot_rules')
       .update({ active })
-      .eq('id', id);
-    if (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Soft delete: niente policy DELETE su time_slot_rules, la cancellazione
-   * passa dalla UPDATE di deleted_at (che è anche ciò che fa scattare il
-   * ricalcolo degli slot).
-   */
-  async softDelete(id: number): Promise<void> {
-    const { error } = await this.supabase
-      .from('time_slot_rules')
-      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
     if (error) {
       throw error;

@@ -19,6 +19,19 @@ export interface UserProfile {
   validated: boolean;
 }
 
+// user_types (schema_fase1.sql sez. 2): 5 righe fisse, seedate una sola
+// volta, mai previsto che cambino in Fase 1. Risolvere il codice così invece
+// che con un embed PostgREST ("user_types(code)") evita di dipendere dalla
+// cache di relazione di PostgREST — che in prova è tornata null anche con
+// type_id e user_types.id verificati corretti lato DB.
+const USER_TYPE_CODES: Record<number, string> = {
+  1: 'customer',
+  2: 'future_customer',
+  3: 'assistant',
+  4: 'trainer',
+  5: 'admin',
+};
+
 @Injectable({ providedIn: 'root' })
 export class UserProfileService {
   private readonly supabase = inject(SupabaseService).client;
@@ -32,16 +45,24 @@ export class UserProfileService {
 
     const { data, error } = await this.supabase
       .from('users')
-      .select('id, name, surname, email, phone, dog_name, validated, user_types(code)')
+      .select('id, type_id, name, surname, email, phone, dog_name, validated')
       .eq('auth_user_id', authData.user.id)
       .single();
 
     if (error || !data) {
+      // getMyProfile() ritorna sempre e solo null|profilo alla UI (niente
+      // gestione errori sparsa nei componenti): l'errore vero finisce qui,
+      // non deve sparire nel nulla o diagnosticare "non è stato possibile
+      // caricare il profilo" richiede di indovinare alla cieca.
+      if (error) {
+        console.error('getMyProfile: query users fallita', error);
+      } else {
+        console.error(
+          `getMyProfile: nessuna riga public.users per auth_user_id=${authData.user.id}`
+        );
+      }
       return null;
     }
-
-    const userType = data['user_types'] as { code: string } | { code: string }[] | null;
-    const typeCode = Array.isArray(userType) ? userType[0]?.code : userType?.code;
 
     return {
       id: data['id'],
@@ -51,7 +72,7 @@ export class UserProfileService {
       phone: data['phone'],
       dogName: data['dog_name'],
       validated: data['validated'],
-      typeCode: typeCode ?? '',
+      typeCode: USER_TYPE_CODES[data['type_id']] ?? '',
     };
   }
 
