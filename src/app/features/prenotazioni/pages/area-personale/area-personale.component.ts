@@ -24,6 +24,10 @@ export class AreaPersonaleComponent implements OnInit {
     return type === 'trainer' || type === 'admin';
   }
 
+  get isAdmin(): boolean {
+    return this.profile()?.typeCode === 'admin';
+  }
+
   async ngOnInit(): Promise<void> {
     this.profile.set(await this.profileService.getMyProfile());
     this.loadingProfile.set(false);

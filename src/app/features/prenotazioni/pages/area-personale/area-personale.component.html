@@ -15,6 +15,9 @@
       <p><a routerLink="/prenotazioni/gestione-slot">Gestione slot</a></p>
       <p><a routerLink="/prenotazioni/fasce-orarie">Fasce orarie</a></p>
     }
+    @if (isAdmin) {
+      <p><a routerLink="/prenotazioni/gestione-utenti">Gestione utenti</a></p>
+    }
   } @else if (loadingProfile()) {
     <p>Caricamento profilo…</p>
   } @else {

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { adminGuard } from '../../core/auth/admin.guard';
 import { authGuard } from '../../core/auth/auth.guard';
 import { staffGuard } from '../../core/auth/staff.guard';
 
@@ -43,6 +44,14 @@ export const PRENOTAZIONI_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/fasce-orarie/fasce-orarie.component').then(
         (m) => m.FasceOrarieComponent
+      ),
+  },
+  {
+    path: 'gestione-utenti',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./pages/gestione-utenti/gestione-utenti.component').then(
+        (m) => m.GestioneUtentiComponent
       ),
   },
   {

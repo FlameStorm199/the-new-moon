@@ -1,0 +1,89 @@
+<section class="staff-page">
+  <h1>Gestione utenti</h1>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+  @if (infoMessage()) {
+    <p class="success">{{ infoMessage() }}</p>
+  }
+
+  <h2>Crea nuovo utente</h2>
+  <form [formGroup]="form" (ngSubmit)="submitCreate()" class="create-form">
+    <label>
+      Ruolo
+      <select formControlName="type_code">
+        <option value="customer">Cliente</option>
+        <option value="future_customer">Futuro cliente</option>
+        <option value="assistant">Assistente</option>
+        <option value="trainer">Educatore</option>
+        <option value="admin">Amministratore</option>
+      </select>
+    </label>
+    <label>
+      Nome
+      <input type="text" formControlName="name" />
+    </label>
+    <label>
+      Cognome
+      <input type="text" formControlName="surname" />
+    </label>
+    <label>
+      Email
+      <input type="email" formControlName="email" />
+    </label>
+    <label>
+      Telefono @if (requiresPhoneAndDog()) { (obbligatorio) }
+      <input type="tel" formControlName="phone" />
+    </label>
+    <label>
+      Nome del cane @if (requiresPhoneAndDog()) { (obbligatorio) }
+      <input type="text" formControlName="dog_name" />
+    </label>
+
+    <button type="submit" [disabled]="creating()">
+      {{ creating() ? 'Creazione…' : 'Crea utente' }}
+    </button>
+  </form>
+
+  <p class="hint">
+    Alla creazione parte subito un'email con il link per impostare la password: l'utente non ne
+    riceve una da te.
+  </p>
+
+  <h2>Utenti esistenti</h2>
+  @if (loading()) {
+    <p>Caricamento…</p>
+  } @else {
+    <ul class="user-list">
+      @for (row of users(); track row.id) {
+        <li>
+          <div class="info">
+            <strong>{{ row.name }} {{ row.surname }}</strong>
+            <span class="role">{{ typeLabels[row.typeCode] }}</span>
+            <span>{{ row.email }}</span>
+            @if (!row.validated) {
+              <span class="pending">non validato</span>
+            }
+          </div>
+          <div class="actions">
+            <button
+              type="button"
+              [disabled]="actingOnId() === row.id"
+              (click)="resendInvite(row)"
+            >
+              Invita
+            </button>
+            <button
+              type="button"
+              [disabled]="actingOnId() === row.id"
+              (click)="forceReset(row)"
+            >
+              Reset password
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+</section>
