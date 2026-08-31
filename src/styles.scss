@@ -26,3 +26,191 @@ img {
   max-width: 100%;
   height: auto;
 }
+
+// =========================================================================
+// Tema "Prenotazioni" — estende l'identità visiva già in uso nel resto del
+// sito (blu #3b6fd4, card con bordo sottile e radius 12px, vedi
+// pages/home e components/navbar) alle pagine dell'area prenotazioni, che
+// finora erano HTML senza stile. Agganciato alle classi radice già usate da
+// ogni pagina (.auth-page, .area-personale, .prenota-page, .lezioni-page,
+// .staff-page): zero modifiche ai template per l'impatto principale.
+//
+// Prefisso "html body" sui selettori composti: le stesse proprietà (colore
+// di .error/.success, padding di alcuni input) sono già dichiarate anche
+// nello SCSS di ogni componente. A parità di specificità la regola che vince
+// dipende dall'ordine di inserimento nel <head> in fase di bootstrap, non
+// garantito — alzare deliberatamente la specificità qui evita di scoprirlo
+// per tentativi pagina per pagina.
+:root {
+  --pn-accent: #3b6fd4;
+  --pn-accent-dark: #2d5ab0;
+  --pn-accent-soft: rgba(59, 111, 212, 0.08);
+  --pn-text: #222;
+  --pn-text-muted: #555;
+  --pn-border: #e0e0e0;
+  --pn-radius-lg: 12px;
+  --pn-radius-md: 8px;
+  --pn-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+  --pn-success: #1b7a3d;
+  --pn-success-bg: #eaf7ef;
+  --pn-danger: #b00020;
+  --pn-danger-bg: #fdecea;
+  --pn-warning: #b06a00;
+  --pn-warning-bg: #fff4e0;
+}
+
+html body {
+  .auth-page,
+  .area-personale,
+  .prenota-page,
+  .lezioni-page,
+  .staff-page {
+    background: #fff;
+    border: 1px solid var(--pn-border);
+    border-radius: var(--pn-radius-lg);
+    box-shadow: var(--pn-shadow);
+    margin: 2rem auto;
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--pn-text);
+      padding-bottom: 0.6rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 3px solid var(--pn-accent);
+      display: inline-block;
+    }
+
+    h2,
+    h3 {
+      font-weight: 700;
+      color: var(--pn-text);
+    }
+
+    a {
+      color: var(--pn-accent);
+      font-weight: 600;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--pn-text-muted);
+    }
+
+    input,
+    select,
+    textarea {
+      border: 1px solid var(--pn-border);
+      border-radius: var(--pn-radius-md);
+      padding: 0.55rem 0.7rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--pn-text);
+      background: #fff;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+      &:focus {
+        outline: none;
+        border-color: var(--pn-accent);
+        box-shadow: 0 0 0 3px var(--pn-accent-soft);
+      }
+    }
+
+    button {
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: var(--pn-radius-md);
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.15s ease;
+
+      &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+    }
+
+    // Azione principale di un form (submit): piena, come .hero-btn della home.
+    button[type='submit'] {
+      background: var(--pn-accent);
+      color: #fff;
+      border: none;
+      padding: 0.65rem 1.5rem;
+
+      &:hover:not(:disabled) {
+        background: var(--pn-accent-dark);
+      }
+    }
+
+    // Azioni secondarie/inline su una riga (toggle, salva, invita...):
+    // outline, per non appesantire quando più bottoni convivono insieme.
+    button[type='button'] {
+      background: #fff;
+      color: var(--pn-accent);
+      border: 1px solid var(--pn-accent);
+      padding: 0.4rem 0.9rem;
+
+      &:hover:not(:disabled) {
+        background: var(--pn-accent-soft);
+      }
+    }
+
+    p.error,
+    p.success,
+    p.pending {
+      padding: 0.6rem 0.9rem;
+      border-radius: 0 var(--pn-radius-md) var(--pn-radius-md) 0;
+      font-size: 0.9rem;
+    }
+
+    p.error {
+      color: var(--pn-danger);
+      background: var(--pn-danger-bg);
+      border-left: 3px solid var(--pn-danger);
+    }
+
+    p.success {
+      color: var(--pn-success);
+      background: var(--pn-success-bg);
+      border-left: 3px solid var(--pn-success);
+    }
+
+    // p.pending indica un'attesa (validazione, invito), non un errore: tono
+    // ambra invece che rosso, per non far leggere come un fallimento
+    // qualcosa che è solo "non ancora". (Il .pending "badge" inline dentro
+    // le righe utente in gestione-utenti resta uno span, non tocca questa
+    // regola: qui serve solo per i messaggi a tutta riga.)
+    p.pending {
+      color: var(--pn-warning);
+      background: var(--pn-warning-bg);
+      border-left: 3px solid var(--pn-warning);
+    }
+
+    // Badge inline (es. "non validato" nell'elenco di gestione-utenti):
+    // stesso tono ambra del messaggio p.pending sopra, ma come pillola
+    // piccola dentro una riga, non a tutta larghezza.
+    span.pending {
+      display: inline-block;
+      color: var(--pn-warning);
+      background: var(--pn-warning-bg);
+      border-radius: 999px;
+      padding: 0.1rem 0.55rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    // Righe-elenco (fasce, slot, lezioni, utenti...): già bordate e
+    // arrotondate in ogni pagina — qui solo un'ombra leggera e statica per
+    // farle leggere come card, senza hover-lift: la riga in sé non è un
+    // link cliccabile (le azioni vere sono i bottoni dentro), un'animazione
+    // da "clicca qui" sull'intera riga sarebbe fuorviante.
+    li {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+  }
+}

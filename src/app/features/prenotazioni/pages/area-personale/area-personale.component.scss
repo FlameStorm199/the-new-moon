@@ -1,13 +1,54 @@
 .area-personale {
-  max-width: 24rem;
+  max-width: 34rem;
   margin: 0 auto;
   padding: 1.5rem 1rem;
+
+  .greeting {
+    color: #555;
+    margin-bottom: 1rem;
+  }
 
   .placeholder {
     color: #666;
   }
 
-  .pending {
-    color: #b00020;
+  h2 {
+    font-size: 1rem;
+    margin: 1.75rem 0 0.75rem;
+  }
+
+  .tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 0.75rem;
+  }
+
+  .tile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--pn-border);
+    border-radius: var(--pn-radius-md);
+    text-decoration: none;
+    color: var(--pn-text);
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--pn-shadow);
+      border-color: var(--pn-accent);
+      text-decoration: none;
+    }
+  }
+
+  .tile-icon {
+    font-size: 1.3rem;
+  }
+
+  .logout {
+    margin-top: 2rem;
   }
 }

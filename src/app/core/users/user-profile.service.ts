@@ -38,15 +38,22 @@ export class UserProfileService {
 
   /** Profilo public.users dell'utente autenticato corrente, o null se non loggato. */
   async getMyProfile(): Promise<UserProfile | null> {
-    const { data: authData } = await this.supabase.auth.getUser();
-    if (!authData.user) {
+    // getSession() (locale, dallo storage) invece di getUser() (rifà sempre
+    // una richiesta di rete per rivalidare il token): getUser() qui era la
+    // causa dei caricamenti che restavano bloccati finché non si ricaricava
+    // la pagina — un lock interno di supabase-js legato a quella richiesta
+    // di rete che a volte non si sblocca. Stessa scelta già fatta in
+    // authGuard, per lo stesso motivo (vedi commento lì).
+    const { data: sessionData } = await this.supabase.auth.getSession();
+    const authUser = sessionData.session?.user;
+    if (!authUser) {
       return null;
     }
 
     const { data, error } = await this.supabase
       .from('users')
       .select('id, type_id, name, surname, email, phone, dog_name, validated')
-      .eq('auth_user_id', authData.user.id)
+      .eq('auth_user_id', authUser.id)
       .single();
 
     if (error || !data) {
@@ -58,7 +65,7 @@ export class UserProfileService {
         console.error('getMyProfile: query users fallita', error);
       } else {
         console.error(
-          `getMyProfile: nessuna riga public.users per auth_user_id=${authData.user.id}`
+          `getMyProfile: nessuna riga public.users per auth_user_id=${authUser.id}`
         );
       }
       return null;

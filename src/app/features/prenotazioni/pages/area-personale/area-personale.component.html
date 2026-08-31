@@ -2,21 +2,47 @@
   <h1>Area personale</h1>
 
   @if (profile(); as p) {
-    <p>Ciao <strong>{{ p.name }} {{ p.surname }}</strong>.</p>
+    <p class="greeting">Ciao <strong>{{ p.name }} {{ p.surname }}</strong>.</p>
+
     @if (!p.validated) {
       <p class="pending">Il tuo account è in attesa di validazione da parte dello staff.</p>
     } @else {
-      <p><a routerLink="/prenotazioni/prenota">Prenota una lezione</a></p>
-      <p><a routerLink="/prenotazioni/le-mie-lezioni">Le mie lezioni</a></p>
+      <div class="tile-grid">
+        <a routerLink="/prenotazioni/prenota" class="tile">
+          <span class="tile-icon">📅</span>
+          <span class="tile-title">Prenota una lezione</span>
+        </a>
+        <a routerLink="/prenotazioni/le-mie-lezioni" class="tile">
+          <span class="tile-icon">📋</span>
+          <span class="tile-title">Le mie lezioni</span>
+        </a>
+      </div>
     }
+
     @if (isStaff) {
-      <p><a routerLink="/prenotazioni/utenti-da-validare">Utenti da validare</a></p>
-      <p><a routerLink="/prenotazioni/gestione-lezioni">Gestione lezioni</a></p>
-      <p><a routerLink="/prenotazioni/gestione-slot">Gestione slot</a></p>
-      <p><a routerLink="/prenotazioni/fasce-orarie">Fasce orarie</a></p>
-    }
-    @if (isAdmin) {
-      <p><a routerLink="/prenotazioni/gestione-utenti">Gestione utenti</a></p>
+      <h2>Staff</h2>
+      <div class="tile-grid">
+        <a routerLink="/prenotazioni/utenti-da-validare" class="tile">
+          <span class="tile-icon">✅</span>
+          <span class="tile-title">Utenti da validare</span>
+        </a>
+        <a routerLink="/prenotazioni/gestione-lezioni" class="tile">
+          <span class="tile-icon">🗓️</span>
+          <span class="tile-title">Gestione lezioni</span>
+        </a>
+        <a routerLink="/prenotazioni/gestione-slot" class="tile">
+          <span class="tile-icon">🕐</span>
+          <span class="tile-title">Gestione slot</span>
+        </a>
+        <a routerLink="/prenotazioni/fasce-orarie" class="tile">
+          <span class="tile-icon">⏰</span>
+          <span class="tile-title">Fasce orarie</span>
+        </a>
+        <a routerLink="/prenotazioni/gestione-utenti" class="tile">
+          <span class="tile-icon">👥</span>
+          <span class="tile-title">Gestione utenti</span>
+        </a>
+      </div>
     }
   } @else if (loadingProfile()) {
     <p>Caricamento profilo…</p>
@@ -24,5 +50,5 @@
     <p class="pending">Non è stato possibile caricare il profilo.</p>
   }
 
-  <button type="button" (click)="logout()">Esci</button>
+  <button type="button" class="logout" (click)="logout()">Esci</button>
 </section>

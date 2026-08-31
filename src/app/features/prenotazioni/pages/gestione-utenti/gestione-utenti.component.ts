@@ -6,6 +6,7 @@ import {
   AdminUsersService,
   UserTypeCode,
 } from '../../../../core/users/admin-users.service';
+import { UserProfileService } from '../../../../core/users/user-profile.service';
 
 const TYPE_LABELS: Record<UserTypeCode | '', string> = {
   customer: 'Cliente',
@@ -27,6 +28,7 @@ const REQUIRES_PHONE_AND_DOG = new Set<UserTypeCode>(['customer', 'future_custom
 })
 export class GestioneUtentiComponent implements OnInit {
   private readonly usersService = inject(AdminUsersService);
+  private readonly profileService = inject(UserProfileService);
   private readonly fb = inject(FormBuilder);
 
   readonly users = signal<AdminUserRow[]>([]);
@@ -35,6 +37,12 @@ export class GestioneUtentiComponent implements OnInit {
   readonly infoMessage = signal<string | null>(null);
   readonly creating = signal(false);
   readonly actingOnId = signal<number | null>(null);
+
+  // Un educatore vede l'elenco (RLS glielo permette già), ma creare utenti
+  // o gestirne la password resta riservato all'admin — lato server le due
+  // Edge Function rifiutano comunque un educatore, questo è solo per non
+  // mostrargli controlli che gli verrebbero respinti.
+  readonly isAdmin = signal(false);
 
   readonly typeLabels = TYPE_LABELS;
 
@@ -53,6 +61,12 @@ export class GestioneUtentiComponent implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    void this.loadRole();
+  }
+
+  private async loadRole(): Promise<void> {
+    const profile = await this.profileService.getMyProfile();
+    this.isAdmin.set(profile?.typeCode === 'admin');
   }
 
   async load(): Promise<void> {
