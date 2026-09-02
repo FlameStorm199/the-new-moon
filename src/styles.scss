@@ -12,10 +12,28 @@ html, body {
   background-color: #fff;
 }
 
+// Il padding della pagina è una variabile perché non serve solo a main: la
+// hero della home lo annulla con un margine negativo per andare a tutta
+// larghezza. Se i due valori divergono, la hero sborda e compare lo
+// scorrimento orizzontale — quindi si cambiano da un punto solo.
+:root {
+  --page-padding-x: 2rem;
+  --page-padding-y: 2rem;
+}
+
+// Su schermo stretto i 2rem per lato tolgono 64px di 390: il contenuto
+// viene compresso proprio dove ce n'è meno.
+@media (max-width: 600px) {
+  :root {
+    --page-padding-x: 1rem;
+    --page-padding-y: 1.25rem;
+  }
+}
+
 main {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: var(--page-padding-y) var(--page-padding-x);
 }
 
 a {

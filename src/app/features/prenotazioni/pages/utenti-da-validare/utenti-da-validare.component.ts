@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { SupabaseService } from '../../../../core/supabase/supabase.service';
+import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
 interface PendingUser {
   id: number;
@@ -17,7 +18,7 @@ const VALIDATABLE_TYPE_IDS = [1, 2];
 @Component({
   selector: 'app-utenti-da-validare',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BackLinkComponent],
   templateUrl: './utenti-da-validare.component.html',
   styleUrl: './utenti-da-validare.component.scss',
 })

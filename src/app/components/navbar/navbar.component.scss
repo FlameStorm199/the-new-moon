@@ -1,3 +1,7 @@
+// Sotto questa soglia i sei link in fila non stanno più accanto a logo e
+// social: passano in un pannello a comparsa aperto dal bottone hamburger.
+$mobile-max: 900px;
+
 header {
   position: sticky;
   top: 0;
@@ -10,6 +14,12 @@ header {
   .nav-wrapper {
     display: flex;
     align-items: stretch;
+
+    .logo-link {
+      display: flex;
+      align-items: center;
+      flex: 0 0 auto;
+    }
 
     .logo {
       height: 100%;
@@ -45,9 +55,13 @@ header {
 
     .nav-links {
       display: flex;
+      // Le voci dell'area prenotazioni per uno staff sono più delle sei
+      // pubbliche: se non entrano vanno a capo invece di traboccare.
+      flex-wrap: wrap;
       gap: 0.25rem;
       flex: 1;
       justify-content: center;
+      align-items: center;
 
       a {
         position: relative;
@@ -84,6 +98,25 @@ header {
           color: #3b6fd4;
 
           &::after { transform: translateX(-50%) scaleX(1); }
+        }
+
+        // L'uscita dall'area prenotazioni non è una pagina fra le altre:
+        // staccata e in grigio, così non si confonde con la navigazione.
+        &.exit-link {
+          margin-left: 0.75rem;
+          padding-left: 1rem;
+          border-left: 1px solid rgba(0, 0, 0, 0.12);
+          color: #888;
+          font-style: normal;
+          font-weight: 600;
+          font-size: 0.85rem;
+
+          &::after { display: none; }
+
+          &:hover {
+            color: #333;
+            background: transparent;
+          }
         }
       }
     }
@@ -165,6 +198,152 @@ header {
 
   .ig-btn {
     background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+  }
+
+  // Hamburger: nascosto sopra la soglia, dove i link stanno in fila.
+  .menu-toggle {
+    display: none;
+    flex: 0 0 auto;
+    align-self: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-left: auto;
+    padding: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    .bar {
+      display: block;
+      width: 22px;
+      height: 2px;
+      border-radius: 2px;
+      background: #333;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    // Aperto: le tre barre diventano una X.
+    &.open .bar:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    &.open .bar:nth-child(2) {
+      opacity: 0;
+    }
+
+    &.open .bar:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+  }
+}
+
+// =========================================================
+// Mobile: link in un pannello a comparsa
+// =========================================================
+
+// L'annidamento qui sotto RICALCA quello delle regole base, e non è
+// pignoleria: le media query non aggiungono specificità, quindi un
+// `header .nav-right` (0,1,1) perde contro il `header .nav-wrapper
+// .nav-right` (0,2,1) di sopra — il pannello resterebbe display:flex, cioè
+// sempre aperto. A parità di specificità vince invece quello che viene dopo
+// nel file, che è questo. Cambiando la struttura sopra, va rispecchiata qui.
+@media (max-width: $mobile-max) {
+  header {
+    .nav-wrapper {
+      align-items: center;
+      padding: 0.25rem 0;
+
+      .logo {
+        max-height: 56px;
+        padding: 0.2rem 0.75rem;
+      }
+
+      .social-buttons {
+        order: 2;
+        margin-left: auto;
+        padding: 0 0.25rem;
+        gap: 0.4rem;
+      }
+
+      // Il pannello si stacca dalla barra e copre la larghezza: i link
+      // vanno in colonna, ognuno con un'area toccabile piena.
+      .nav-right {
+        display: none;
+        order: 4;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: none;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        animation: dropdownFade 0.2s ease;
+
+        &.open {
+          display: flex;
+        }
+      }
+    }
+
+    .menu-toggle {
+      display: flex;
+      order: 3; // dopo i social, all'estrema destra
+      margin-left: 0.25rem;
+      margin-right: 0.5rem;
+    }
+
+    .fb-btn,
+    .ig-btn {
+      width: 34px;
+      height: 34px;
+      font-size: 0.95rem;
+    }
+
+    nav {
+      padding: 0.5rem 0;
+
+      .nav-links {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+
+        a {
+          padding: 0.85rem 1.25rem;
+          border-radius: 0;
+          font-size: 1rem;
+          text-align: left;
+
+          // La sottolineatura animata è pensata per i link in fila: in
+          // colonna diventa un trattino sospeso sotto il testo.
+          &::after {
+            display: none;
+          }
+
+          &.active,
+          &:hover {
+            background: rgba(59, 111, 212, 0.06);
+          }
+
+          // In colonna il separatore verticale non ha senso: diventa una
+          // riga staccata da quelle sopra.
+          &.exit-link {
+            margin-left: 0;
+            padding-left: 1.25rem;
+            border-left: none;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+          }
+        }
+      }
+    }
+
+    .paw-divider {
+      padding: 0.5rem 1.25rem;
+    }
   }
 }
 

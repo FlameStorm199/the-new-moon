@@ -5,6 +5,7 @@ import {
   TimeSlotRuleRow,
   TimeSlotRulesService,
 } from '../../../../core/slots/time-slot-rules.service';
+import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
 interface WeekdayGroup {
   weekday: number;
@@ -28,7 +29,7 @@ const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 @Component({
   selector: 'app-fasce-orarie',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, BackLinkComponent],
   templateUrl: './fasce-orarie.component.html',
   styleUrl: './fasce-orarie.component.scss',
 })

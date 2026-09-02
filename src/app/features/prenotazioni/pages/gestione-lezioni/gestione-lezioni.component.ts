@@ -13,6 +13,7 @@ import {
   CancelDialogState,
   CancelLessonDialogComponent,
 } from '../../components/cancel-lesson-dialog/cancel-lesson-dialog.component';
+import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
 interface DayGroup {
   date: string;
@@ -22,7 +23,7 @@ interface DayGroup {
 @Component({
   selector: 'app-gestione-lezioni',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CancelLessonDialogComponent],
+  imports: [CommonModule, ReactiveFormsModule, CancelLessonDialogComponent, BackLinkComponent],
   templateUrl: './gestione-lezioni.component.html',
   styleUrl: './gestione-lezioni.component.scss',
 })

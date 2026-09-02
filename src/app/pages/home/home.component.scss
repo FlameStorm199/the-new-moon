@@ -5,7 +5,10 @@
     position: relative;
     height: 650px;
     overflow: hidden;
-    margin: -2rem -2rem 0;
+    // Annulla il padding di main per andare a tutta larghezza: legato alla
+    // stessa variabile, altrimenti su mobile sborderebbe di quanto i due
+    // valori differiscono, aggiungendo scorrimento orizzontale.
+    margin: calc(var(--page-padding-y) * -1) calc(var(--page-padding-x) * -1) 0;
 
     img {
       width: 100%;
@@ -50,6 +53,25 @@
         transition: background 0.2s ease;
 
         &:hover { background: #2d5ab0; }
+      }
+    }
+
+    // Su telefono 650px di hero riempiono lo schermo intero: si arriva ai
+    // contenuti solo scorrendo, senza sapere che ci sono.
+    @media (max-width: 600px) {
+      height: 380px;
+
+      .hero-overlay {
+        padding: 1.25rem;
+
+        h2 {
+          font-size: 1.5rem;
+        }
+
+        p {
+          font-size: 0.95rem;
+          margin-bottom: 1.5rem;
+        }
       }
     }
   }

@@ -10,11 +10,12 @@ import {
   BookingDialogState,
 } from '../../components/booking-dialog/booking-dialog.component';
 import { WeekCalendarComponent } from '../../components/week-calendar/week-calendar.component';
+import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
 @Component({
   selector: 'app-prenota',
   standalone: true,
-  imports: [CommonModule, RouterLink, WeekCalendarComponent, BookingDialogComponent],
+  imports: [CommonModule, RouterLink, WeekCalendarComponent, BookingDialogComponent, BackLinkComponent],
   templateUrl: './prenota.component.html',
   styleUrl: './prenota.component.scss',
 })

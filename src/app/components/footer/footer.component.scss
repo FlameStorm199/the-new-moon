@@ -23,3 +23,24 @@ footer {
     font-size: 0.8rem;
   }
 }
+
+@media (max-width: 600px) {
+  footer {
+    // Due rem per lato su un telefono si mangiano un sesto della larghezza:
+    // il testo di contatti e sede finisce a spezzarsi parola per parola.
+    padding: 1.5rem 1rem;
+    margin-top: 2rem;
+    font-size: 0.82rem;
+
+    .footer-info {
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    // I recapiti restano toccabili: un numero o un'email a fine riga non
+    // devono finire appiccicati al bordo.
+    a {
+      word-break: break-word;
+    }
+  }
+}

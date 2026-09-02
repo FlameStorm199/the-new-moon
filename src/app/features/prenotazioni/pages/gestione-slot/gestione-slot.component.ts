@@ -3,6 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { PartOfDay, SlotRow, SlotsService } from '../../../../core/slots/slots.service';
+import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
 interface DayGroup {
   date: string;
@@ -14,7 +15,7 @@ type BulkScope = 'giornata' | 'mattina' | 'pomeriggio';
 @Component({
   selector: 'app-gestione-slot',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, BackLinkComponent],
   templateUrl: './gestione-slot.component.html',
   styleUrl: './gestione-slot.component.scss',
 })

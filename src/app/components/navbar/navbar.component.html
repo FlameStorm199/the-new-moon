@@ -1,21 +1,47 @@
 <header>
   <div class="nav-wrapper">
-    <img src="assets/images/logo_LLN.bmp" alt="Logo La Luna Nuova" class="logo" />
-    <div class="nav-right">
+    <a routerLink="/" class="logo-link" aria-label="Home">
+      <img src="assets/images/logo_LLN.bmp" alt="Logo La Luna Nuova" class="logo" />
+    </a>
+
+    <!-- Visibile solo sotto la soglia mobile: apre i link in un pannello -->
+    <button
+      type="button"
+      class="menu-toggle"
+      [class.open]="menuOpen"
+      [attr.aria-expanded]="menuOpen"
+      aria-controls="nav-menu"
+      aria-label="Menu"
+      (click)="toggleMenu($event)"
+    >
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+
+    <div class="nav-right" id="nav-menu" [class.open]="menuOpen">
       <nav>
         <div class="nav-links">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home page</a>
-          <a routerLink="/about" routerLinkActive="active">Chi siamo</a>
-          <a routerLink="/locations" routerLinkActive="active">Le nostre sedi</a>
-          <a routerLink="/activities" routerLinkActive="active">Le nostre attività</a>
-          <a routerLink="/news" routerLinkActive="active">News</a>
-          <a routerLink="/download" routerLinkActive="active">Bacheca</a>
+          @for (link of links(); track link.path) {
+            <a
+              [routerLink]="link.path"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: !!link.exact }"
+            >
+              {{ link.label }}
+            </a>
+          }
+
+          @if (inBookingArea()) {
+            <a routerLink="/" class="exit-link">← Torna al sito</a>
+          }
         </div>
       </nav>
       <div class="paw-divider">
         <span>🐾</span>
       </div>
     </div>
+
     <div class="social-buttons">
       <div class="fb-wrapper">
         <button class="fb-btn" aria-label="Facebook" (click)="toggleFbDropdown($event)">

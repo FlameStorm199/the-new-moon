@@ -11,11 +11,12 @@ import {
   CancelDialogState,
   CancelLessonDialogComponent,
 } from '../../components/cancel-lesson-dialog/cancel-lesson-dialog.component';
+import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
 @Component({
   selector: 'app-le-mie-lezioni',
   standalone: true,
-  imports: [CommonModule, RouterLink, CancelLessonDialogComponent],
+  imports: [CommonModule, RouterLink, CancelLessonDialogComponent, BackLinkComponent],
   templateUrl: './le-mie-lezioni.component.html',
   styleUrl: './le-mie-lezioni.component.scss',
 })

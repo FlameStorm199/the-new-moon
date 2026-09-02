@@ -7,6 +7,7 @@ import {
   UserTypeCode,
 } from '../../../../core/users/admin-users.service';
 import { UserProfileService } from '../../../../core/users/user-profile.service';
+import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
 const TYPE_LABELS: Record<UserTypeCode | '', string> = {
   customer: 'Cliente',
@@ -22,7 +23,7 @@ const REQUIRES_PHONE_AND_DOG = new Set<UserTypeCode>(['customer', 'future_custom
 @Component({
   selector: 'app-gestione-utenti',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, BackLinkComponent],
   templateUrl: './gestione-utenti.component.html',
   styleUrl: './gestione-utenti.component.scss',
 })
