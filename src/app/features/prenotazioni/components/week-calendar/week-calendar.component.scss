@@ -1,0 +1,300 @@
+// NOTA SULLA SPECIFICITÀ
+// Il tema in styles.scss stila i bottoni delle pagine prenotazioni con
+// `html body .prenota-page button[type='button']` — che, avendo tre elementi
+// nel selettore, batte un semplice `.slot` di questo componente anche con
+// l'incapsulamento di Angular: i blocchi finivano bianchi col bordo blu e le
+// frecce fuori centro nei cerchi, ereditando padding e colori di quel tema.
+// Le regole sui bottoni sono quindi prefissate con `:host`, che aggiunge
+// l'attributo dell'host al selettore e riporta la vittoria qui.
+
+$gutter-width: 3.5rem;
+
+:host {
+  display: block;
+}
+
+.week-calendar {
+  // Una riga = 5 minuti (vedi ROW_MINUTES nel componente): un'ora sono 12
+  // righe, quindi 84px. Blocchi da 55' alti ~77px, con l'orario leggibile.
+  --row-h: 7px;
+  --accent: var(--pn-accent, #3b6fd4);
+  --accent-dark: var(--pn-accent-dark, #2d5ab0);
+  --accent-soft: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+  --border: var(--pn-border, #e0e0e0);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin: 1.5rem 0 1.25rem;
+
+  .week-label {
+    font-weight: 700;
+    font-size: 1rem;
+    min-width: 14rem;
+    text-align: center;
+  }
+}
+
+:host .toolbar .nav {
+  // Dimensioni fisse e centratura flex: il padding del tema globale
+  // deformerebbe il cerchio e sposterebbe la freccia dal centro.
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  line-height: 1;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: #fff;
+  color: var(--accent);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-soft);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.empty-week {
+  font-size: 0.9rem;
+  color: #666;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.grid-header {
+  display: grid;
+  grid-template-columns: $gutter-width repeat(7, minmax(0, 1fr));
+  gap: 0 3px;
+  margin-bottom: 0.5rem;
+
+  .day-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+
+    .weekday {
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .daynum {
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    &.today {
+      background: var(--accent-soft);
+
+      .weekday,
+      .daynum {
+        color: var(--accent);
+      }
+    }
+  }
+}
+
+.grid-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: $gutter-width repeat(7, minmax(0, 1fr));
+  // grid-template-rows arriva dal componente (righe della settimana mostrata).
+  gap: 0 3px;
+
+  .hour-label {
+    grid-column: 1;
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+    padding-right: 0.5rem;
+    // Allineata alla linea, non al centro della fascia oraria.
+    transform: translateY(-0.5em);
+  }
+
+  .hour-line {
+    grid-column: 2 / -1;
+    border-top: 1px solid #eee;
+    height: 0;
+    pointer-events: none;
+  }
+
+  // Ore senza alcuno slot in tutta la settimana: compresse in una banda,
+  // invece di lasciare (con la pausa pranzo) mezzo calendario vuoto.
+  .gap-band {
+    // Parte dalla colonna dei giorni, non dal margine: la colonna delle ore
+    // deve restare libera, perché l'etichetta dell'ora subito successiva è
+    // alzata di mezza riga per allinearsi alla linea e finiva sopra la banda.
+    grid-column: 2 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #aaa;
+    background: repeating-linear-gradient(
+      45deg,
+      #fafafa,
+      #fafafa 6px,
+      #f4f4f4 6px,
+      #f4f4f4 12px
+    );
+    border-top: 1px dashed #e4e4e4;
+    border-bottom: 1px dashed #e4e4e4;
+  }
+
+  .day-column {
+    // grid-row e grid-template-rows arrivano dal componente: la colonna
+    // occupa tutte le righe della griglia e le ripete al proprio interno,
+    // così i blocchi restano allineati alle linee delle ore.
+    display: grid;
+    border-left: 1px solid #f2f2f2;
+
+    &.today {
+      background: rgba(59, 111, 212, 0.04);
+    }
+  }
+}
+
+:host .slot {
+  margin: 1px 2px;
+  padding: 0.25rem 0.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  overflow: hidden;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+
+  // Orari incolonnati: "09:00–09:55" su una riga sola è più largo della
+  // colonna di un giorno e sbordava da entrambi i lati.
+  .slot-from {
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .slot-to {
+    font-size: 0.72rem;
+    font-weight: 400;
+    white-space: nowrap;
+    opacity: 0.85;
+  }
+
+  .slot-flag {
+    margin-top: 0.1rem;
+    font-weight: 400;
+    font-size: 0.62rem;
+    white-space: nowrap;
+    opacity: 0.9;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--accent-dark);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &.flagged {
+    background: #b8791a;
+
+    &:hover:not(:disabled) {
+      background: #96610f;
+    }
+  }
+}
+
+// =========================================================
+// Alternanza griglia / elenco
+// =========================================================
+// Su schermo stretto sette colonne diventano illeggibili: sotto i 720px la
+// griglia sparisce e resta l'elenco per giorno, con gli stessi dati.
+
+.list-view {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .grid-view {
+    display: none;
+  }
+
+  .list-view {
+    display: block;
+  }
+}
+
+.list-day {
+  margin-bottom: 1.25rem;
+
+  h3 {
+    font-size: 0.95rem;
+    text-transform: capitalize;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--border);
+
+    &.today {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.95rem;
+
+    .slot-time {
+      flex: 1;
+      font-weight: 700;
+    }
+
+    .slot-flag {
+      background: #fff4e0;
+      color: #8a5a00;
+      border-radius: 0.25rem;
+      padding: 0.1rem 0.45rem;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+  }
+}

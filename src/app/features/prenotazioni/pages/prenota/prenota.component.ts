@@ -5,16 +5,12 @@ import { BookingService } from '../../../../core/lessons/booking.service';
 import { LessonsService } from '../../../../core/lessons/lessons.service';
 import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
-
-interface DayGroup {
-  date: string;
-  slots: SlotRow[];
-}
+import { WeekCalendarComponent } from '../../components/week-calendar/week-calendar.component';
 
 @Component({
   selector: 'app-prenota',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, WeekCalendarComponent],
   templateUrl: './prenota.component.html',
   styleUrl: './prenota.component.scss',
 })
@@ -35,15 +31,15 @@ export class PrenotaComponent implements OnInit {
   readonly successMessage = signal<string | null>(null);
   readonly bookingId = signal<number | null>(null);
 
-  readonly groupedByDate = computed<DayGroup[]>(() => {
-    const groups = new Map<string, SlotRow[]>();
-    for (const slot of this.slots()) {
-      const list = groups.get(slot.date) ?? [];
-      list.push(slot);
-      groups.set(slot.date, list);
-    }
-    return Array.from(groups.entries()).map(([date, slots]) => ({ date, slots }));
-  });
+  /**
+   * Slot che il calendario deve contrassegnare: solo per lo staff, quelli
+   * dentro la finestra in cui un cliente non potrebbe prenotare.
+   */
+  readonly flaggedSlotIds = computed(() =>
+    this.slots()
+      .filter((slot) => this.isOutsideCustomerWindow(slot))
+      .map((slot) => slot.id)
+  );
 
   get canBook(): boolean {
     const p = this.profile();

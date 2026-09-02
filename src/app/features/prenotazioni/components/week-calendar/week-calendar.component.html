@@ -1,0 +1,118 @@
+<div class="week-calendar">
+  <div class="toolbar">
+    <button
+      type="button"
+      class="nav"
+      [disabled]="!canGoPrevious()"
+      (click)="previousWeek()"
+      aria-label="Settimana precedente"
+    >
+      ‹
+    </button>
+    <span class="week-label">{{ weekLabel() }}</span>
+    <button
+      type="button"
+      class="nav"
+      [disabled]="!canGoNext()"
+      (click)="nextWeek()"
+      aria-label="Settimana successiva"
+    >
+      ›
+    </button>
+  </div>
+
+  @if (!hasSlotsThisWeek()) {
+    <p class="empty-week">
+      Nessun orario libero in questa settimana.
+      @if (canGoNext()) {
+        Prova con la successiva.
+      }
+    </p>
+  }
+
+  <!-- Griglia settimanale: da 720px in su -->
+  <div class="grid-view">
+    <div class="grid-header">
+      <span class="gutter"></span>
+      @for (day of days(); track day.date) {
+        <span class="day-head" [class.today]="day.isToday">
+          <span class="weekday">{{ day.weekdayLabel }}</span>
+          <span class="daynum">{{ day.dayLabel }}</span>
+        </span>
+      }
+    </div>
+
+    <div class="grid-body" [style.grid-template-rows]="gridRowsStyle()">
+      @for (line of hourLines(); track line.rowStart) {
+        <span class="hour-label" [style.grid-row-start]="line.rowStart">{{ line.label }}</span>
+        <span class="hour-line" [style.grid-row-start]="line.rowStart"></span>
+      }
+
+      @for (gap of gaps(); track gap.rowStart) {
+        <span
+          class="gap-band"
+          [style.grid-row-start]="gap.rowStart"
+          [style.grid-row-end]="gap.rowStart + gap.rows"
+        >
+          {{ gap.label }}
+        </span>
+      }
+
+      @for (day of days(); track day.date; let dayIndex = $index) {
+        <div
+          class="day-column"
+          [class.today]="day.isToday"
+          [style.grid-column-start]="dayIndex + 2"
+          [style.grid-row]="dayColumnRowStyle()"
+          [style.grid-template-rows]="gridRowsStyle()"
+        >
+          @for (item of day.slots; track item.slot.id) {
+            <button
+              type="button"
+              class="slot"
+              [class.flagged]="item.flagged"
+              [style.grid-row-start]="item.rowStart"
+              [style.grid-row-end]="item.rowEnd"
+              [disabled]="busySlotId === item.slot.id"
+              (click)="select(item.slot)"
+            >
+              <span class="slot-from">{{ item.timeFrom }}</span>
+              <span class="slot-to">{{ item.timeTo }}</span>
+              @if (item.flagged) {
+                <span class="slot-flag">{{ flaggedLabel }}</span>
+              }
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Elenco per giorno: sotto i 720px, dove la griglia non sta -->
+  <div class="list-view">
+    @for (day of days(); track day.date) {
+      @if (day.slots.length > 0) {
+        <div class="list-day">
+          <h3 [class.today]="day.isToday">{{ day.weekdayLabel }} {{ day.dayLabel }}</h3>
+          <ul>
+            @for (item of day.slots; track item.slot.id) {
+              <li>
+                <span class="slot-time">{{ item.timeFrom }} – {{ item.timeTo }}</span>
+                @if (item.flagged) {
+                  <span class="slot-flag">{{ flaggedLabel }}</span>
+                }
+                <button
+                  type="button"
+                  [disabled]="busySlotId === item.slot.id"
+                  (click)="select(item.slot)"
+                >
+                  {{ busySlotId === item.slot.id ? 'Prenotazione…' : 'Prenota' }}
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
+  </div>
+</div>
