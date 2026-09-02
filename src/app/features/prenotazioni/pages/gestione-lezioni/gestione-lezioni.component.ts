@@ -9,6 +9,10 @@ import {
 } from '../../../../core/lessons/lessons.service';
 import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { CustomerOption, UserProfileService } from '../../../../core/users/user-profile.service';
+import {
+  CancelDialogState,
+  CancelLessonDialogComponent,
+} from '../../components/cancel-lesson-dialog/cancel-lesson-dialog.component';
 
 interface DayGroup {
   date: string;
@@ -18,7 +22,7 @@ interface DayGroup {
 @Component({
   selector: 'app-gestione-lezioni',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CancelLessonDialogComponent],
   templateUrl: './gestione-lezioni.component.html',
   styleUrl: './gestione-lezioni.component.scss',
 })
@@ -39,8 +43,10 @@ export class GestioneLezioniComponent implements OnInit {
   /** Lezione per cui è aperto il pannello "sposta su un altro slot". */
   readonly movingLesson = signal<LessonRow | null>(null);
 
-  /** Lezione per cui è aperto il pannello di cancellazione con motivazione. */
+  /** Lezione su cui è aperto il modale: prima conferma, poi ricevuta. */
   readonly cancellingLesson = signal<LessonRow | null>(null);
+  readonly cancelDialogState = signal<CancelDialogState>('confirm');
+  readonly cancelDialogError = signal<string | null>(null);
 
   readonly statusLabels = LESSON_STATUS_LABELS;
 
@@ -109,17 +115,44 @@ export class GestioneLezioniComponent implements OnInit {
     this.movingLesson.set(null);
   }
 
-  startCancel(lesson: LessonRow): void {
-    this.cancellingLesson.set(this.cancellingLesson()?.id === lesson.id ? null : lesson);
+  /** Il clic non cancella: apre la richiesta di conferma. */
+  openCancel(lesson: LessonRow): void {
+    this.cancellingLesson.set(lesson);
+    this.cancelDialogState.set('confirm');
+    this.cancelDialogError.set(null);
+    this.errorMessage.set(null);
+    this.infoMessage.set(null);
+  }
+
+  closeCancelDialog(): void {
+    this.cancellingLesson.set(null);
+    this.cancelDialogError.set(null);
   }
 
   /**
    * `reason` è facoltativo: se compilato finisce sulla lezione e nell'email
    * che avvisa il cliente della cancellazione.
    */
-  async confirmCancel(lesson: LessonRow, reason: string): Promise<void> {
-    await this.run(lesson.id, () => this.lessonsService.cancel(lesson.id, reason));
-    this.cancellingLesson.set(null);
+  async confirmCancel(reason: string): Promise<void> {
+    const lesson = this.cancellingLesson();
+    if (!lesson) {
+      return;
+    }
+
+    this.busyId.set(lesson.id);
+    this.cancelDialogError.set(null);
+    try {
+      await this.lessonsService.cancel(lesson.id, reason);
+      await this.load();
+      // Il pannello resta aperto e cambia stato: una sola finestra da
+      // chiudere invece di conferma più avviso di esito.
+      this.cancelDialogState.set('success');
+    } catch (err) {
+      const message = (err as { message?: string } | null)?.message;
+      this.cancelDialogError.set(message || 'Cancellazione non riuscita.');
+    } finally {
+      this.busyId.set(null);
+    }
   }
 
   async submitNewLesson(): Promise<void> {

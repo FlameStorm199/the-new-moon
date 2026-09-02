@@ -7,11 +7,15 @@ import {
   LessonsService,
 } from '../../../../core/lessons/lessons.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
+import {
+  CancelDialogState,
+  CancelLessonDialogComponent,
+} from '../../components/cancel-lesson-dialog/cancel-lesson-dialog.component';
 
 @Component({
   selector: 'app-le-mie-lezioni',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, CancelLessonDialogComponent],
   templateUrl: './le-mie-lezioni.component.html',
   styleUrl: './le-mie-lezioni.component.scss',
 })
@@ -23,8 +27,13 @@ export class LeMieLezioniComponent implements OnInit {
   readonly lessons = signal<LessonRow[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly infoMessage = signal<string | null>(null);
   readonly cancellingId = signal<number | null>(null);
+
+  /** Lezione su cui è aperto il modale: prima conferma, poi ricevuta. */
+  readonly dialogLesson = signal<LessonRow | null>(null);
+  readonly dialogState = signal<CancelDialogState>('confirm');
+  readonly dialogError = signal<string | null>(null);
+
   readonly cancelMinHours = signal<number | null>(null);
   readonly statusLabels = LESSON_STATUS_LABELS;
 
@@ -80,22 +89,38 @@ export class LeMieLezioniComponent implements OnInit {
     return this.startOf(lesson).getTime() - Date.now() >= minHours * 3600_000;
   }
 
-  async cancel(lesson: LessonRow): Promise<void> {
-    if (!confirm(`Cancellare la lezione del ${lesson.date} alle ${lesson.time_from.slice(0, 5)}?`)) {
+  /** Il clic non cancella: apre la richiesta di conferma. */
+  openCancel(lesson: LessonRow): void {
+    this.dialogLesson.set(lesson);
+    this.dialogState.set('confirm');
+    this.dialogError.set(null);
+    this.errorMessage.set(null);
+  }
+
+  closeDialog(): void {
+    this.dialogLesson.set(null);
+    this.dialogError.set(null);
+  }
+
+  async confirmCancel(): Promise<void> {
+    const lesson = this.dialogLesson();
+    if (!lesson) {
       return;
     }
+
     this.cancellingId.set(lesson.id);
-    this.errorMessage.set(null);
-    this.infoMessage.set(null);
+    this.dialogError.set(null);
     try {
       await this.lessonsService.cancel(lesson.id);
       this.lessons.update((list) =>
         list.map((l) => (l.id === lesson.id ? { ...l, status: 'cancelled' as const } : l))
       );
-      this.infoMessage.set('Lezione cancellata. Lo slot è di nuovo disponibile.');
+      // Il pannello resta aperto e cambia stato: una sola finestra da
+      // chiudere invece di conferma più avviso di esito.
+      this.dialogState.set('success');
     } catch (err) {
       const message = (err as { message?: string } | null)?.message;
-      this.errorMessage.set(message || 'Cancellazione non riuscita.');
+      this.dialogError.set(message || 'Cancellazione non riuscita.');
     } finally {
       this.cancellingId.set(null);
     }

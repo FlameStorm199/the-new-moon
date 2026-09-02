@@ -11,16 +11,9 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SlotRow } from '../../../../core/slots/slots.service';
+import { formatLongDate, formatTimeRange } from '../date-format';
 
 export type BookingDialogState = 'confirm' | 'success';
-
-const WEEKDAYS = [
-  'domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato',
-];
-const MONTHS = [
-  'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
-  'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
-];
 
 /**
  * Un solo pannello per due momenti: prima chiede conferma, poi — senza
@@ -70,12 +63,10 @@ export class BookingDialogComponent implements AfterViewInit {
   }
 
   get dateLabel(): string {
-    const [year, month, day] = this.slot.date.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    return `${WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
+    return formatLongDate(this.slot.date);
   }
 
   get timeLabel(): string {
-    return `${this.slot.time_from.slice(0, 5)} – ${this.slot.time_to.slice(0, 5)}`;
+    return formatTimeRange(this.slot.time_from, this.slot.time_to);
   }
 }

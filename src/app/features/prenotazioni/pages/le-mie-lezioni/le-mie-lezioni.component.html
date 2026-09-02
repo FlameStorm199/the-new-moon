@@ -11,9 +11,6 @@
     @if (errorMessage()) {
       <p class="error">{{ errorMessage() }}</p>
     }
-    @if (infoMessage()) {
-      <p class="success">{{ infoMessage() }}</p>
-    }
 
     <h2>Prossime</h2>
     @if (upcoming().length === 0) {
@@ -37,9 +34,9 @@
                 type="button"
                 class="danger"
                 [disabled]="cancellingId() === lesson.id"
-                (click)="cancel(lesson)"
+                (click)="openCancel(lesson)"
               >
-                {{ cancellingId() === lesson.id ? 'Cancellazione…' : 'Cancella' }}
+                Cancella
               </button>
             } @else {
               <span class="note">
@@ -70,5 +67,16 @@
         }
       </ul>
     }
+  }
+
+  @if (dialogLesson(); as lesson) {
+    <app-cancel-lesson-dialog
+      [lesson]="lesson"
+      [state]="dialogState()"
+      [busy]="cancellingId() === lesson.id"
+      [errorMessage]="dialogError()"
+      (confirmed)="confirmCancel()"
+      (closed)="closeDialog()"
+    />
   }
 </section>

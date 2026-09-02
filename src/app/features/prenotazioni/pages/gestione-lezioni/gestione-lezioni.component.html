@@ -92,26 +92,9 @@
                     type="button"
                     class="danger"
                     [disabled]="busyId() === lesson.id"
-                    (click)="startCancel(lesson)"
+                    (click)="openCancel(lesson)"
                   >
                     Cancella
-                  </button>
-                </div>
-              }
-
-              @if (cancellingLesson()?.id === lesson.id) {
-                <div class="cancel-panel">
-                  <label>
-                    Motivo (facoltativo, verrà incluso nell'email al cliente)
-                    <input type="text" #reason />
-                  </label>
-                  <button
-                    type="button"
-                    class="danger"
-                    [disabled]="busyId() === lesson.id"
-                    (click)="confirmCancel(lesson, reason.value)"
-                  >
-                    Conferma cancellazione
                   </button>
                 </div>
               }
@@ -142,5 +125,18 @@
         </ul>
       </div>
     }
+  }
+
+  @if (cancellingLesson(); as lesson) {
+    <app-cancel-lesson-dialog
+      [lesson]="lesson"
+      [state]="cancelDialogState()"
+      [busy]="busyId() === lesson.id"
+      [errorMessage]="cancelDialogError()"
+      [withReason]="true"
+      [customerLabel]="customerLabel(lesson)"
+      (confirmed)="confirmCancel($event)"
+      (closed)="closeCancelDialog()"
+    />
   }
 </section>
