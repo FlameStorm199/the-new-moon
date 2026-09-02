@@ -83,8 +83,17 @@ export class LessonsService {
     return data ?? [];
   }
 
-  async cancel(lessonId: number): Promise<void> {
-    const { error } = await this.supabase.rpc('cancel_lesson', { p_lesson_id: lessonId });
+  /**
+   * `reason` è la motivazione facoltativa che lo staff può allegare: finisce
+   * sulla lezione e nell'email che arriva al cliente. Il customer che
+   * cancella da sé non la passa (la UI non gliela chiede).
+   */
+  async cancel(lessonId: number, reason?: string): Promise<void> {
+    const trimmed = reason?.trim();
+    const { error } = await this.supabase.rpc('cancel_lesson', {
+      p_lesson_id: lessonId,
+      p_reason: trimmed ? trimmed : null,
+    });
     if (error) {
       throw error;
     }
@@ -114,13 +123,10 @@ export class LessonsService {
     }
   }
 
-  /** Rimozione amministrativa (solo admin): la lezione sparisce dallo storico. */
-  async remove(lessonId: number): Promise<void> {
-    const { error } = await this.supabase.rpc('delete_lesson', { p_lesson_id: lessonId });
-    if (error) {
-      throw error;
-    }
-  }
+  // La rimozione amministrativa (RPC delete_lesson) non è più esposta
+  // dall'app: dai test col cliente è emerso che la cancellazione basta, e
+  // "Elimina" accanto a "Cancella" era solo un modo per sbagliare. La RPC
+  // resta lato database per l'eventuale intervento d'emergenza da SQL editor.
 
   /**
    * Soglie orarie lette dal database: i testi della UI ("puoi cancellare fino

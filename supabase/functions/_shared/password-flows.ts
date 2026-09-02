@@ -14,6 +14,25 @@ import { sendEmail } from "./email.ts";
 // Auth esiste già (caso admin-create-user, che crea prima l'utente e poi
 // genera questo link).
 
+// Pagina su cui atterra chi clicca il link: lì supabase-js raccoglie da solo
+// i token che Supabase mette nel frammento dell'URL, stabilisce la sessione
+// di recupero e permette di impostare la nuova password.
+//
+// SITE_URL è un secret della Edge Function, NON l'header Origin della
+// richiesta: Origin lo decide il chiamante, e chi chiedesse un reset per
+// l'indirizzo di un altro potrebbe far arrivare alla vittima un'email
+// legittima il cui link consegna i token di accesso a un dominio scelto da
+// lui. L'unica destinazione ammessa deve essere configurata lato server.
+// Fallback solo per lo sviluppo locale: IN PRODUZIONE SITE_URL va impostata
+// tra i secret della Edge Function, altrimenti le email di reset/invito
+// manderebbero l'utente su localhost.
+const DEFAULT_SITE_URL = "http://localhost:4200";
+
+function recoveryRedirectUrl(): string {
+  const siteUrl = (Deno.env.get("SITE_URL") ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
+  return `${siteUrl}/prenotazioni/reimposta-password`;
+}
+
 export async function generateRecoveryLink(
   supabaseAdmin: any,
   email: string,
@@ -21,6 +40,7 @@ export async function generateRecoveryLink(
   const { data, error } = await supabaseAdmin.auth.admin.generateLink({
     type: "recovery",
     email,
+    options: { redirectTo: recoveryRedirectUrl() },
   });
 
   if (error || !data?.properties?.action_link) {

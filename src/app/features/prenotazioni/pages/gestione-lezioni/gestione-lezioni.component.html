@@ -92,20 +92,27 @@
                     type="button"
                     class="danger"
                     [disabled]="busyId() === lesson.id"
-                    (click)="cancel(lesson)"
+                    (click)="startCancel(lesson)"
                   >
                     Cancella
                   </button>
-                  @if (isAdmin()) {
-                    <button
-                      type="button"
-                      class="danger"
-                      [disabled]="busyId() === lesson.id"
-                      (click)="remove(lesson)"
-                    >
-                      Elimina
-                    </button>
-                  }
+                </div>
+              }
+
+              @if (cancellingLesson()?.id === lesson.id) {
+                <div class="cancel-panel">
+                  <label>
+                    Motivo (facoltativo, verrà incluso nell'email al cliente)
+                    <input type="text" #reason />
+                  </label>
+                  <button
+                    type="button"
+                    class="danger"
+                    [disabled]="busyId() === lesson.id"
+                    (click)="confirmCancel(lesson, reason.value)"
+                  >
+                    Conferma cancellazione
+                  </button>
                 </div>
               }
 

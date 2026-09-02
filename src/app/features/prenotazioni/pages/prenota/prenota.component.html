@@ -19,6 +19,10 @@
       </p>
     }
 
+    @if (bookingMinHours(); as minHours) {
+      <p class="hint">Le lezioni sono prenotabili fino a {{ minHours }} ore prima.</p>
+    }
+
     @if (loadingSlots()) {
       <p>Caricamento slot disponibili…</p>
     } @else if (groupedByDate().length === 0) {

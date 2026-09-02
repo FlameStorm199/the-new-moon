@@ -35,10 +35,12 @@ export class GestioneLezioniComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly infoMessage = signal<string | null>(null);
   readonly busyId = signal<number | null>(null);
-  readonly isAdmin = signal(false);
 
   /** Lezione per cui è aperto il pannello "sposta su un altro slot". */
   readonly movingLesson = signal<LessonRow | null>(null);
+
+  /** Lezione per cui è aperto il pannello di cancellazione con motivazione. */
+  readonly cancellingLesson = signal<LessonRow | null>(null);
 
   readonly statusLabels = LESSON_STATUS_LABELS;
 
@@ -68,16 +70,14 @@ export class GestioneLezioniComponent implements OnInit {
     this.loading.set(true);
     this.errorMessage.set(null);
     try {
-      const [lessons, customers, slots, profile] = await Promise.all([
+      const [lessons, customers, slots] = await Promise.all([
         this.lessonsService.listUpcoming(30),
         this.profileService.listValidatedCustomers(),
         this.slotsService.listAvailable(30),
-        this.profileService.getMyProfile(),
       ]);
       this.lessons.set(lessons);
       this.customers.set(customers);
       this.freeSlots.set(slots);
-      this.isAdmin.set(profile?.typeCode === 'admin');
     } catch {
       this.errorMessage.set('Errore nel caricamento delle lezioni.');
     } finally {
@@ -109,22 +109,17 @@ export class GestioneLezioniComponent implements OnInit {
     this.movingLesson.set(null);
   }
 
-  async cancel(lesson: LessonRow): Promise<void> {
-    if (!confirm(`Cancellare la lezione di ${this.customerLabel(lesson)} del ${lesson.date}?`)) {
-      return;
-    }
-    await this.run(lesson.id, () => this.lessonsService.cancel(lesson.id));
+  startCancel(lesson: LessonRow): void {
+    this.cancellingLesson.set(this.cancellingLesson()?.id === lesson.id ? null : lesson);
   }
 
-  async remove(lesson: LessonRow): Promise<void> {
-    if (
-      !confirm(
-        `Eliminare definitivamente la lezione di ${this.customerLabel(lesson)} del ${lesson.date}? Sparirà anche dallo storico del cliente.`
-      )
-    ) {
-      return;
-    }
-    await this.run(lesson.id, () => this.lessonsService.remove(lesson.id));
+  /**
+   * `reason` è facoltativo: se compilato finisce sulla lezione e nell'email
+   * che avvisa il cliente della cancellazione.
+   */
+  async confirmCancel(lesson: LessonRow, reason: string): Promise<void> {
+    await this.run(lesson.id, () => this.lessonsService.cancel(lesson.id, reason));
+    this.cancellingLesson.set(null);
   }
 
   async submitNewLesson(): Promise<void> {

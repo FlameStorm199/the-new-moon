@@ -82,7 +82,8 @@
     }
 
     .actions,
-    .move-panel {
+    .move-panel,
+    .cancel-panel {
       flex-basis: 100%;
       display: flex;
       align-items: center;
@@ -90,7 +91,8 @@
       gap: 0.5rem;
     }
 
-    .move-panel {
+    .move-panel,
+    .cancel-panel {
       border-top: 1px dashed #ddd;
       padding-top: 0.5rem;
 
@@ -98,6 +100,19 @@
         display: flex;
         align-items: center;
         gap: 0.35rem;
+        font-size: 0.85rem;
+      }
+    }
+
+    .cancel-panel {
+      align-items: flex-end;
+
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+        min-width: 14rem;
         font-size: 0.85rem;
       }
     }

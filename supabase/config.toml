@@ -433,3 +433,9 @@ entrypoint = "./functions/manage-user-password/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/manage-user-password/*.html" ]
+
+[functions.send-lesson-notification]
+enabled = true
+verify_jwt = false
+import_map = "./functions/send-lesson-notification/deno.json"
+entrypoint = "./functions/send-lesson-notification/index.ts"

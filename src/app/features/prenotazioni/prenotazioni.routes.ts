@@ -14,6 +14,24 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       import('./pages/register/register.component').then((m) => m.RegisterComponent),
   },
   {
+    path: 'password-dimenticata',
+    loadComponent: () =>
+      import('./pages/password-dimenticata/password-dimenticata.component').then(
+        (m) => m.PasswordDimenticataComponent
+      ),
+  },
+  {
+    // Nessun guard: ci si arriva dal link ricevuto via email, e la sessione
+    // di recupero viene stabilita dalla pagina stessa leggendo i token
+    // dall'URL. Un authGuard qui rimbalzerebbe l'utente al login prima
+    // ancora che quei token vengano letti.
+    path: 'reimposta-password',
+    loadComponent: () =>
+      import('./pages/reimposta-password/reimposta-password.component').then(
+        (m) => m.ReimpostaPasswordComponent
+      ),
+  },
+  {
     path: 'area-personale',
     canActivate: [authGuard],
     loadComponent: () =>
