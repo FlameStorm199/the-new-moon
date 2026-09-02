@@ -5,12 +5,16 @@ import { BookingService } from '../../../../core/lessons/booking.service';
 import { LessonsService } from '../../../../core/lessons/lessons.service';
 import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
+import {
+  BookingDialogComponent,
+  BookingDialogState,
+} from '../../components/booking-dialog/booking-dialog.component';
 import { WeekCalendarComponent } from '../../components/week-calendar/week-calendar.component';
 
 @Component({
   selector: 'app-prenota',
   standalone: true,
-  imports: [CommonModule, RouterLink, WeekCalendarComponent],
+  imports: [CommonModule, RouterLink, WeekCalendarComponent, BookingDialogComponent],
   templateUrl: './prenota.component.html',
   styleUrl: './prenota.component.scss',
 })
@@ -28,8 +32,16 @@ export class PrenotaComponent implements OnInit {
   readonly slots = signal<SlotRow[]>([]);
   readonly loadingSlots = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly successMessage = signal<string | null>(null);
   readonly bookingId = signal<number | null>(null);
+
+  /**
+   * Slot su cui è aperto il modale. Uno solo per entrambi i momenti: prima
+   * chiede conferma, poi diventa la ricevuta — senza chiudersi in mezzo.
+   */
+  readonly dialogSlot = signal<SlotRow | null>(null);
+  readonly dialogState = signal<BookingDialogState>('confirm');
+  /** Errori della prenotazione: vanno mostrati dove l'utente sta guardando. */
+  readonly dialogError = signal<string | null>(null);
 
   /**
    * Slot che il calendario deve contrassegnare: solo per lo staff, quelli
@@ -114,17 +126,36 @@ export class PrenotaComponent implements OnInit {
     return !this.isBookableNow(slot, minHours);
   }
 
-  async book(slot: SlotRow): Promise<void> {
-    this.bookingId.set(slot.id);
+  /** Il clic sul calendario non prenota: apre la richiesta di conferma. */
+  openBooking(slot: SlotRow): void {
+    this.dialogSlot.set(slot);
+    this.dialogState.set('confirm');
+    this.dialogError.set(null);
     this.errorMessage.set(null);
-    this.successMessage.set(null);
+  }
+
+  closeDialog(): void {
+    this.dialogSlot.set(null);
+    this.dialogError.set(null);
+  }
+
+  async confirmBooking(): Promise<void> {
+    const slot = this.dialogSlot();
+    if (!slot) {
+      return;
+    }
+
+    this.bookingId.set(slot.id);
+    this.dialogError.set(null);
     try {
       await this.bookingService.bookLesson(slot.id);
-      this.successMessage.set('Lezione prenotata con successo!');
       this.slots.update((list) => list.filter((s) => s.id !== slot.id));
+      // Il pannello resta aperto e cambia stato: una sola finestra da
+      // chiudere invece di conferma più avviso di esito.
+      this.dialogState.set('success');
     } catch (err) {
       const message = err instanceof Error ? err.message : null;
-      this.errorMessage.set(message ?? 'Prenotazione non riuscita.');
+      this.dialogError.set(message ?? 'Prenotazione non riuscita.');
     } finally {
       this.bookingId.set(null);
     }

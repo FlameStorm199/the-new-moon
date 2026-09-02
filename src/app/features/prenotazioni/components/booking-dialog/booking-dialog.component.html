@@ -1,0 +1,58 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="booking-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    @if (state === 'confirm') {
+      <h2 id="booking-dialog-title">Confermi la prenotazione?</h2>
+
+      <div class="detail">
+        <span class="date">{{ dateLabel }}</span>
+        <span class="time">{{ timeLabel }}</span>
+      </div>
+
+      <p class="note">Puoi prenotare una lezione a settimana.</p>
+
+      @if (errorMessage) {
+        <p class="error">{{ errorMessage }}</p>
+      }
+
+      <div class="actions">
+        <button type="button" class="secondary" [disabled]="busy" (click)="closed.emit()">
+          Annulla
+        </button>
+        <button
+          #primaryAction
+          type="button"
+          class="primary"
+          [disabled]="busy"
+          (click)="confirmed.emit()"
+        >
+          {{ busy ? 'Prenotazione…' : 'Prenota' }}
+        </button>
+      </div>
+    } @else {
+      <div class="tick" aria-hidden="true">✓</div>
+
+      <h2 id="booking-dialog-title">Lezione prenotata</h2>
+
+      <div class="detail">
+        <span class="date">{{ dateLabel }}</span>
+        <span class="time">{{ timeLabel }}</span>
+      </div>
+
+      <p class="note">Ti abbiamo inviato un'email di conferma.</p>
+
+      <div class="actions">
+        <a routerLink="/prenotazioni/le-mie-lezioni" class="link-action">Le mie lezioni</a>
+        <button #primaryAction type="button" class="primary" (click)="closed.emit()">
+          Chiudi
+        </button>
+      </div>
+    }
+  </div>
+</div>

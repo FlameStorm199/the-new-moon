@@ -12,12 +12,6 @@
     @if (errorMessage()) {
       <p class="error">{{ errorMessage() }}</p>
     }
-    @if (successMessage()) {
-      <p class="success">
-        {{ successMessage() }}
-        <a routerLink="/prenotazioni/le-mie-lezioni">Vedi le mie lezioni</a>
-      </p>
-    }
 
     @if (bookingMinHours(); as minHours) {
       @if (isStaff) {
@@ -40,8 +34,19 @@
         [flaggedSlotIds]="flaggedSlotIds()"
         flaggedLabel="&lt; 36h"
         [busySlotId]="bookingId()"
-        (slotSelected)="book($event)"
+        (slotSelected)="openBooking($event)"
       />
     }
+  }
+
+  @if (dialogSlot(); as slot) {
+    <app-booking-dialog
+      [slot]="slot"
+      [state]="dialogState()"
+      [busy]="bookingId() === slot.id"
+      [errorMessage]="dialogError()"
+      (confirmed)="confirmBooking()"
+      (closed)="closeDialog()"
+    />
   }
 </section>
