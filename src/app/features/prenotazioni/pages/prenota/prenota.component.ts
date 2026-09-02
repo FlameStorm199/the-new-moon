@@ -53,7 +53,7 @@ export class PrenotaComponent implements OnInit {
     return p.validated || p.typeCode === 'trainer' || p.typeCode === 'admin';
   }
 
-  private get isStaff(): boolean {
+  get isStaff(): boolean {
     const type = this.profile()?.typeCode;
     return type === 'trainer' || type === 'admin';
   }
@@ -102,6 +102,20 @@ export class PrenotaComponent implements OnInit {
     const slotStart = new Date(`${slot.date}T${slot.time_from}`);
     const threshold = new Date(Date.now() + minHoursBefore * 60 * 60 * 1000);
     return slotStart >= threshold;
+  }
+
+  /**
+   * Solo per lo staff: gli slot dentro la finestra minima restano
+   * prenotabili (è una deroga voluta, per chi telefona all'ultimo), ma vanno
+   * segnalati — altrimenti sembra che la regola delle N ore non funzioni,
+   * mentre semplicemente non si applica a chi sta guardando.
+   */
+  isOutsideCustomerWindow(slot: SlotRow): boolean {
+    const minHours = this.bookingMinHours();
+    if (minHours === null || !this.isStaff) {
+      return false;
+    }
+    return !this.isBookableNow(slot, minHours);
   }
 
   async book(slot: SlotRow): Promise<void> {

@@ -20,7 +20,14 @@
     }
 
     @if (bookingMinHours(); as minHours) {
-      <p class="hint">Le lezioni sono prenotabili fino a {{ minHours }} ore prima.</p>
+      @if (isStaff) {
+        <p class="hint">
+          Stai prenotando come staff: vedi anche gli slot a meno di {{ minHours }} ore, che a un
+          cliente non compaiono.
+        </p>
+      } @else {
+        <p class="hint">Le lezioni sono prenotabili fino a {{ minHours }} ore prima.</p>
+      }
     }
 
     @if (loadingSlots()) {
@@ -38,6 +45,9 @@
                   {{ slot.time_from.slice(0, 5) }} - {{ slot.time_to.slice(0, 5) }}
                   ({{ slot.part_of_day }})
                 </span>
+                @if (isOutsideCustomerWindow(slot)) {
+                  <span class="badge">fuori finestra cliente</span>
+                }
                 <button
                   type="button"
                   [disabled]="bookingId() === slot.id"
