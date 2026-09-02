@@ -7,7 +7,22 @@
 // Le regole sui bottoni sono quindi prefissate con `:host`, che aggiunge
 // l'attributo dell'host al selettore e riporta la vittoria qui.
 
+// =========================================================
+// SOGLIE DI LARGHEZZA — si regolano solo da qui
+// =========================================================
+// $grid-min-width: sotto questa larghezza la griglia settimanale sparisce e
+//   resta l'elenco per giorno. Abbassarla ancora è possibile, ma il limite
+//   fisico è la colonna del singolo giorno: la larghezza disponibile meno la
+//   corsia delle ore, diviso sette. Sotto i ~55px per colonna l'orario
+//   incolonnato ("09:00" su una riga) non ci sta più e torna a sbordare.
+// $grid-compact-width: sotto questa, la griglia resta ma si stringe — corsia
+//   delle ore, caratteri e altezza riga ridotti. È ciò che permette a
+//   $grid-min-width di stare così in basso.
+$grid-min-width: 560px;
+$grid-compact-width: 900px;
+
 $gutter-width: 3.5rem;
+$gutter-width-compact: 2.6rem;
 
 :host {
   display: block;
@@ -240,7 +255,50 @@ $gutter-width: 3.5rem;
   display: none;
 }
 
-@media (max-width: 720px) {
+// Griglia compatta: guadagna lo spazio che permette di tenere le sette
+// colonne fino a $grid-min-width invece di arrendersi molto prima.
+@media (max-width: $grid-compact-width) {
+  .week-calendar {
+    --row-h: 6px;
+  }
+
+  .grid-header,
+  .grid-body {
+    grid-template-columns: $gutter-width-compact repeat(7, minmax(0, 1fr));
+    gap: 0 2px;
+  }
+
+  .grid-header .day-head {
+    font-size: 0.7rem;
+
+    .daynum {
+      font-size: 1rem;
+    }
+  }
+
+  .grid-body .hour-label {
+    font-size: 0.68rem;
+    padding-right: 0.35rem;
+  }
+
+  :host .slot {
+    padding: 0.15rem 0.2rem;
+
+    .slot-from {
+      font-size: 0.75rem;
+    }
+
+    .slot-to {
+      font-size: 0.65rem;
+    }
+
+    .slot-flag {
+      font-size: 0.55rem;
+    }
+  }
+}
+
+@media (max-width: $grid-min-width) {
   .grid-view {
     display: none;
   }
