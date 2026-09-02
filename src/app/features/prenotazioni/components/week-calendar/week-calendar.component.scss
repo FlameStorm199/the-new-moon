@@ -8,17 +8,13 @@
 // l'attributo dell'host al selettore e riporta la vittoria qui.
 
 // =========================================================
-// SOGLIE DI LARGHEZZA — si regolano solo da qui
+// LARGHEZZE — si regolano solo da qui
 // =========================================================
-// $grid-min-width: sotto questa larghezza la griglia settimanale sparisce e
-//   resta l'elenco per giorno. Abbassarla ancora è possibile, ma il limite
-//   fisico è la colonna del singolo giorno: la larghezza disponibile meno la
-//   corsia delle ore, diviso sette. Sotto i ~55px per colonna l'orario
-//   incolonnato ("09:00" su una riga) non ci sta più e torna a sbordare.
-// $grid-compact-width: sotto questa, la griglia resta ma si stringe — corsia
-//   delle ore, caratteri e altezza riga ridotti. È ciò che permette a
-//   $grid-min-width di stare così in basso.
-$grid-min-width: 560px;
+// Il passaggio da 7 a 3 giorni NON è qui ma nel componente
+// (NARROW_MAX_WIDTH): il numero di colonne è struttura, non stile, e il CSS
+// può ridimensionare le colonne ma non toglierne quattro dal DOM. Le due
+// soglie vanno tenute coerenti — questa serve a stringere la griglia a 7
+// giorni su tablet e telefoni in orizzontale, prima che scattino i 3 giorni.
 $grid-compact-width: 900px;
 
 $gutter-width: 3.5rem;
@@ -45,10 +41,10 @@ $gutter-width-compact: 2.6rem;
   gap: 1.25rem;
   margin: 1.5rem 0 1.25rem;
 
-  .week-label {
+  .range-label {
     font-weight: 700;
     font-size: 1rem;
-    min-width: 14rem;
+    min-width: 12rem;
     text-align: center;
   }
 }
@@ -81,16 +77,20 @@ $gutter-width-compact: 2.6rem;
   }
 }
 
-.empty-week {
+.empty-range {
   font-size: 0.9rem;
   color: #666;
   text-align: center;
   padding: 1rem 0;
 }
 
+.grid-header,
+.grid-body {
+  grid-template-columns: $gutter-width repeat(7, minmax(0, 1fr));
+}
+
 .grid-header {
   display: grid;
-  grid-template-columns: $gutter-width repeat(7, minmax(0, 1fr));
   gap: 0 3px;
   margin-bottom: 0.5rem;
 
@@ -127,8 +127,7 @@ $gutter-width-compact: 2.6rem;
 .grid-body {
   position: relative;
   display: grid;
-  grid-template-columns: $gutter-width repeat(7, minmax(0, 1fr));
-  // grid-template-rows arriva dal componente (righe della settimana mostrata).
+  // grid-template-rows arriva dal componente (righe dell'intervallo mostrato).
   gap: 0 3px;
 
   .hour-label {
@@ -148,7 +147,7 @@ $gutter-width-compact: 2.6rem;
     pointer-events: none;
   }
 
-  // Ore senza alcuno slot in tutta la settimana: compresse in una banda,
+  // Ore senza alcuno slot nei giorni mostrati: compresse in una banda,
   // invece di lasciare (con la pausa pranzo) mezzo calendario vuoto.
   .gap-band {
     // Parte dalla colonna dei giorni, non dal margine: la colonna delle ore
@@ -197,7 +196,6 @@ $gutter-width-compact: 2.6rem;
   color: #fff;
   border: none;
   border-radius: 0.4rem;
-  font-size: 0.8rem;
   font-weight: 700;
   line-height: 1.15;
   text-align: center;
@@ -246,17 +244,10 @@ $gutter-width-compact: 2.6rem;
 }
 
 // =========================================================
-// Alternanza griglia / elenco
+// Griglia compatta (tablet, telefono in orizzontale)
 // =========================================================
-// Su schermo stretto sette colonne diventano illeggibili: sotto i 720px la
-// griglia sparisce e resta l'elenco per giorno, con gli stessi dati.
+// Stringe le sette colonne prima che il componente passi a tre giorni.
 
-.list-view {
-  display: none;
-}
-
-// Griglia compatta: guadagna lo spazio che permette di tenere le sette
-// colonne fino a $grid-min-width invece di arrendersi molto prima.
 @media (max-width: $grid-compact-width) {
   .week-calendar {
     --row-h: 6px;
@@ -298,61 +289,47 @@ $gutter-width-compact: 2.6rem;
   }
 }
 
-@media (max-width: $grid-min-width) {
-  .grid-view {
-    display: none;
+// =========================================================
+// Vista a 3 giorni (telefono in verticale)
+// =========================================================
+// La classe arriva dal componente. Vince sulla griglia compatta qui sopra
+// per specificità (due classi contro una), quindi con tre colonne larghe si
+// tornano ad avere caratteri e altezze piene, non quelle ridotte.
+
+.week-calendar.days-3 {
+  --row-h: 7px;
+
+  .grid-header,
+  .grid-body {
+    grid-template-columns: $gutter-width-compact repeat(3, minmax(0, 1fr));
+    gap: 0 4px;
   }
 
-  .list-view {
-    display: block;
-  }
-}
+  .grid-header .day-head {
+    font-size: 0.8rem;
 
-.list-day {
-  margin-bottom: 1.25rem;
-
-  h3 {
-    font-size: 0.95rem;
-    text-transform: capitalize;
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--border);
-
-    &.today {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+    .daynum {
+      font-size: 1.25rem;
     }
   }
 
-  ul {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  .grid-body .hour-label {
+    font-size: 0.72rem;
   }
 
-  li {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    padding: 0.6rem 0.75rem;
-    font-size: 0.95rem;
+  .slot {
+    padding: 0.3rem 0.4rem;
 
-    .slot-time {
-      flex: 1;
-      font-weight: 700;
+    .slot-from {
+      font-size: 0.95rem;
+    }
+
+    .slot-to {
+      font-size: 0.8rem;
     }
 
     .slot-flag {
-      background: #fff4e0;
-      color: #8a5a00;
-      border-radius: 0.25rem;
-      padding: 0.1rem 0.45rem;
-      font-size: 0.75rem;
-      white-space: nowrap;
+      font-size: 0.68rem;
     }
   }
 }

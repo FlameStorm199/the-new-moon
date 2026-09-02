@@ -1,5 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  Output,
+  computed,
+  signal,
+} from '@angular/core';
 import { SlotRow } from '../../../../core/slots/slots.service';
 
 interface PositionedSlot {
@@ -25,14 +33,14 @@ interface HourLine {
   rowStart: number;
 }
 
-/** Fascia oraria saltata perché senza slot in tutta la settimana. */
+/** Fascia oraria saltata perché senza slot nei giorni mostrati. */
 interface GapBand {
   label: string;
   rowStart: number;
   rows: number;
 }
 
-const WEEKDAY_LABELS = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
+const WEEKDAY_LABELS = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
 const MONTH_LABELS = [
   'gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre',
@@ -50,24 +58,35 @@ const ROWS_PER_HOUR = 60 / ROW_MINUTES;
 /** Altezza della banda che sostituisce le ore senza slot. */
 const GAP_ROWS = 4;
 
-/** Ore mostrate quando la settimana è vuota, solo per non avere una griglia a zero righe. */
+/** Ore mostrate quando l'intervallo è vuoto, per non avere una griglia a zero righe. */
 const FALLBACK_HOURS = [9, 10, 11];
 
 /**
- * Vista settimanale in stile agenda: i giorni sono colonne, le ore righe, e
- * ogni slot libero è un blocco cliccabile posizionato sul suo orario reale.
+ * Sotto questa larghezza si passa da 7 a 3 giorni. Sette colonne su un
+ * telefono in verticale (~390px, meno i margini della pagina) darebbero
+ * ~36px l'una, dove un orario ne chiede da solo ~34: con tre colonne se ne
+ * hanno ~85 e la griglia resta leggibile. Il valore vive qui e non nel SCSS
+ * perché il numero di colonne è una scelta di struttura, non di stile: il
+ * CSS può ridimensionare le colonne, non toglierne quattro dal DOM.
+ */
+const NARROW_MAX_WIDTH = 600;
+const DAYS_WIDE = 7;
+const DAYS_NARROW = 3;
+
+/**
+ * Vista ad agenda: i giorni sono colonne, le ore righe, e ogni slot libero è
+ * un blocco cliccabile posizionato sul suo orario reale.
+ *
+ * Mostra una settimana intera sugli schermi larghi e tre giorni su quelli
+ * stretti, avanzando di conseguenza — come fanno le agende sul telefono.
  *
  * Riceve gli slot già filtrati da chi la usa (la pagina di prenotazione
  * toglie quelli sotto la finestra minima per i clienti): qui dentro non
  * vivono regole di business, solo posizionamento e navigazione.
  *
- * Le ore in cui non esiste alcuno slot in tutta la settimana non vengono
+ * Le ore in cui non esiste alcuno slot nei giorni mostrati non vengono
  * disegnate a grandezza naturale ma compresse in una banda: con apertura
  * mattutina e serale, un asse continuo 9→20 sarebbe per metà vuoto.
- *
- * Sotto i 720px la griglia diventa illeggibile su un telefono: la stessa
- * settimana viene quindi mostrata come elenco per giorno, alternata via CSS
- * (nessun listener di resize da tenere in vita).
  */
 @Component({
   selector: 'app-week-calendar',
@@ -76,14 +95,42 @@ const FALLBACK_HOURS = [9, 10, 11];
   templateUrl: './week-calendar.component.html',
   styleUrl: './week-calendar.component.scss',
 })
-export class WeekCalendarComponent {
+export class WeekCalendarComponent implements OnDestroy {
   private readonly allSlots = signal<SlotRow[]>([]);
   private readonly flaggedIds = signal<ReadonlySet<number>>(new Set());
+
+  /** 7 su schermo largo, 3 su schermo stretto. */
+  readonly daysToShow = signal(DAYS_WIDE);
+
+  /** Primo giorno mostrato. Con 7 giorni è sempre un lunedì. */
+  private readonly rangeStart = signal<Date>(startOfWeek(new Date()));
+
+  private readonly mediaQuery: MediaQueryList | null;
+  private readonly onViewportChange = (event: MediaQueryListEvent) =>
+    this.applyViewport(event.matches);
+
+  constructor() {
+    // matchMedia invece di un listener su resize: notifica solo quando si
+    // attraversa davvero la soglia, non a ogni pixel di ridimensionamento.
+    this.mediaQuery =
+      typeof window !== 'undefined' && window.matchMedia
+        ? window.matchMedia(`(max-width: ${NARROW_MAX_WIDTH}px)`)
+        : null;
+
+    if (this.mediaQuery) {
+      this.applyViewport(this.mediaQuery.matches);
+      this.mediaQuery.addEventListener('change', this.onViewportChange);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.mediaQuery?.removeEventListener('change', this.onViewportChange);
+  }
 
   @Input({ required: true })
   set slots(value: SlotRow[]) {
     this.allSlots.set(value ?? []);
-    this.ensureWeekWithSlots();
+    this.ensureRangeWithSlots();
   }
 
   /**
@@ -104,9 +151,6 @@ export class WeekCalendarComponent {
 
   @Output() readonly slotSelected = new EventEmitter<SlotRow>();
 
-  /** Lunedì della settimana mostrata. */
-  private readonly weekStart = signal<Date>(startOfWeek(new Date()));
-
   private readonly slotsByDate = computed(() => {
     const map = new Map<string, SlotRow[]>();
     for (const slot of this.allSlots()) {
@@ -117,25 +161,25 @@ export class WeekCalendarComponent {
     return map;
   });
 
-  private readonly slotsThisWeek = computed(() => {
-    const start = this.weekStart();
+  private readonly visibleDates = computed(() => {
+    const start = this.rangeStart();
+    return Array.from({ length: this.daysToShow() }, (_, i) => addDays(start, i));
+  });
+
+  private readonly slotsInRange = computed(() => {
     const byDate = this.slotsByDate();
-    const visible: SlotRow[] = [];
-    for (let i = 0; i < 7; i++) {
-      visible.push(...(byDate.get(toIsoDate(addDays(start, i))) ?? []));
-    }
-    return visible;
+    return this.visibleDates().flatMap((date) => byDate.get(toIsoDate(date)) ?? []);
   });
 
   /**
-   * Disposizione verticale della settimana: quali ore disegnare, a che riga
-   * inizia ciascuna, e dove cadono le bande che sostituiscono le ore vuote.
-   * Tutto il posizionamento passa di qui, così griglia, righe orarie e
-   * blocchi non possono scivolare l'uno rispetto all'altro.
+   * Disposizione verticale: quali ore disegnare, a che riga inizia ciascuna,
+   * e dove cadono le bande che sostituiscono le ore vuote. Tutto il
+   * posizionamento passa di qui, così griglia, righe orarie e blocchi non
+   * possono scivolare l'uno rispetto all'altro.
    */
   private readonly layout = computed(() => {
     const hours = new Set<number>();
-    for (const slot of this.slotsThisWeek()) {
+    for (const slot of this.slotsInRange()) {
       const from = toMinutes(slot.time_from);
       const to = toMinutes(slot.time_to);
       // -1 sul minuto finale: uno slot che termina alle 12:00 occupa fino
@@ -183,14 +227,12 @@ export class WeekCalendarComponent {
   readonly dayColumnRowStyle = computed(() => `1 / span ${this.layout().totalRows}`);
 
   readonly days = computed<CalendarDay[]>(() => {
-    const start = this.weekStart();
     const todayIso = toIsoDate(new Date());
     const byDate = this.slotsByDate();
     const flagged = this.flaggedIds();
     const { rowByHour } = this.layout();
 
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = addDays(start, index);
+    return this.visibleDates().map((date) => {
       const iso = toIsoDate(date);
       const daySlots = (byDate.get(iso) ?? [])
         .slice()
@@ -198,7 +240,7 @@ export class WeekCalendarComponent {
 
       return {
         date: iso,
-        weekdayLabel: WEEKDAY_LABELS[index],
+        weekdayLabel: WEEKDAY_LABELS[date.getDay()],
         dayLabel: String(date.getDate()),
         isToday: iso === todayIso,
         slots: daySlots.map((slot) => ({
@@ -213,9 +255,10 @@ export class WeekCalendarComponent {
     });
   });
 
-  readonly weekLabel = computed(() => {
-    const start = this.weekStart();
-    const end = addDays(start, 6);
+  readonly rangeLabel = computed(() => {
+    const dates = this.visibleDates();
+    const start = dates[0];
+    const end = dates[dates.length - 1];
     const startMonth = MONTH_LABELS[start.getMonth()];
     const endMonth = MONTH_LABELS[end.getMonth()];
     if (startMonth === endMonth) {
@@ -224,36 +267,32 @@ export class WeekCalendarComponent {
     return `${start.getDate()} ${startMonth} – ${end.getDate()} ${endMonth} ${end.getFullYear()}`;
   });
 
-  readonly hasSlotsThisWeek = computed(() => this.slotsThisWeek().length > 0);
+  readonly hasSlotsInRange = computed(() => this.slotsInRange().length > 0);
 
-  /** Settimane raggiungibili: solo quelle in cui esistono davvero slot. */
-  private readonly slotWeekStarts = computed(() => {
-    const weeks = new Set<number>();
-    for (const slot of this.allSlots()) {
-      weeks.add(startOfWeek(parseIsoDate(slot.date)).getTime());
-    }
-    return Array.from(weeks).sort((a, b) => a - b);
-  });
+  private readonly slotDates = computed(() =>
+    Array.from(new Set(this.allSlots().map((slot) => slot.date))).sort()
+  );
 
   readonly canGoPrevious = computed(() => {
-    const weeks = this.slotWeekStarts();
-    return weeks.length > 0 && this.weekStart().getTime() > weeks[0];
+    const dates = this.slotDates();
+    return dates.length > 0 && dates[0] < toIsoDate(this.rangeStart());
   });
 
   readonly canGoNext = computed(() => {
-    const weeks = this.slotWeekStarts();
-    return weeks.length > 0 && this.weekStart().getTime() < weeks[weeks.length - 1];
+    const dates = this.slotDates();
+    const lastVisible = toIsoDate(this.visibleDates()[this.visibleDates().length - 1]);
+    return dates.length > 0 && dates[dates.length - 1] > lastVisible;
   });
 
-  previousWeek(): void {
+  previous(): void {
     if (this.canGoPrevious()) {
-      this.weekStart.set(addDays(this.weekStart(), -7));
+      this.rangeStart.set(addDays(this.rangeStart(), -this.daysToShow()));
     }
   }
 
-  nextWeek(): void {
+  next(): void {
     if (this.canGoNext()) {
-      this.weekStart.set(addDays(this.weekStart(), 7));
+      this.rangeStart.set(addDays(this.rangeStart(), this.daysToShow()));
     }
   }
 
@@ -261,22 +300,36 @@ export class WeekCalendarComponent {
     this.slotSelected.emit(slot);
   }
 
-  /**
-   * All'arrivo di nuovi slot, apre la prima settimana che ne contiene invece
-   * della corrente: con la finestra minima di prenotazione la settimana di
-   * oggi è spesso vuota, e aprirla su una griglia deserta farebbe pensare che
-   * non ci sia disponibilità.
-   */
-  private ensureWeekWithSlots(): void {
-    const weeks = this.slotWeekStarts();
-    if (weeks.length === 0) {
+  private applyViewport(isNarrow: boolean): void {
+    const count = isNarrow ? DAYS_NARROW : DAYS_WIDE;
+    if (count === this.daysToShow()) {
       return;
     }
-    const current = this.weekStart().getTime();
-    if (!weeks.includes(current)) {
-      const next = weeks.find((w) => w >= current);
-      this.weekStart.set(new Date(next ?? weeks[0]));
+    this.daysToShow.set(count);
+    // Passando a 7 giorni l'inizio deve tornare su un lunedì, altrimenti la
+    // griglia mostrerebbe una "settimana" che parte da un giorno qualsiasi.
+    this.rangeStart.set(this.alignStart(this.rangeStart()));
+    this.ensureRangeWithSlots();
+  }
+
+  private alignStart(date: Date): Date {
+    return this.daysToShow() === DAYS_WIDE ? startOfWeek(date) : date;
+  }
+
+  /**
+   * All'arrivo di nuovi slot (o al cambio di vista), apre il primo
+   * intervallo che ne contiene invece di restare su uno vuoto: con la
+   * finestra minima di prenotazione i primi giorni sono spesso senza
+   * disponibilità, e una griglia deserta farebbe pensare che non ce ne sia.
+   */
+  private ensureRangeWithSlots(): void {
+    const dates = this.slotDates();
+    if (dates.length === 0 || this.hasSlotsInRange()) {
+      return;
     }
+    const currentIso = toIsoDate(this.rangeStart());
+    const target = dates.find((date) => date >= currentIso) ?? dates[0];
+    this.rangeStart.set(this.alignStart(parseIsoDate(target)));
   }
 }
 
