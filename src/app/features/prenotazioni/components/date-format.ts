@@ -24,3 +24,15 @@ export function formatLongDate(isoDate: string): string {
 export function formatTimeRange(timeFrom: string, timeTo: string): string {
   return `${timeFrom.slice(0, 5)} – ${timeTo.slice(0, 5)}`;
 }
+
+/**
+ * "03/09/2026" da una data ISO (YYYY-MM-DD): il formato italiano richiesto
+ * ovunque nell'app al posto dell'anno-mese-giorno grezzo del database.
+ * Manipolazione di stringa, non un Date: costruire un Date qui per poi
+ * riformattarlo sarebbe solo un giro più lungo per lo stesso risultato,
+ * dato che i pezzi sono già nell'ordine giusto — vanno solo invertiti.
+ */
+export function formatShortDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-');
+  return `${day}/${month}/${year}`;
+}

@@ -108,7 +108,7 @@
   } @else {
     @for (group of groupedByDate(); track group.date) {
       <div class="day-group">
-        <h3>{{ group.date }}</h3>
+        <h3>{{ formatDate(group.date) }}</h3>
         <ul>
           @for (slot of group.slots; track slot.id) {
             <li [class.inactive]="!slot.active">

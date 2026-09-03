@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import { PartOfDay, SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
+import { formatShortDate } from '../../components/date-format';
 
 interface DayGroup {
   date: string;
@@ -21,6 +22,8 @@ type BulkScope = 'giornata' | 'mattina' | 'pomeriggio';
 })
 export class GestioneSlotComponent implements OnInit {
   private readonly slotsService = inject(SlotsService);
+
+  readonly formatDate = formatShortDate;
 
   readonly slots = signal<SlotRow[]>([]);
   readonly loading = signal(true);

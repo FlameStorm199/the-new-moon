@@ -14,6 +14,7 @@ import {
   CancelLessonDialogComponent,
 } from '../../components/cancel-lesson-dialog/cancel-lesson-dialog.component';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
+import { formatShortDate } from '../../components/date-format';
 
 interface DayGroup {
   date: string;
@@ -32,6 +33,8 @@ export class GestioneLezioniComponent implements OnInit {
   private readonly bookingService = inject(BookingService);
   private readonly slotsService = inject(SlotsService);
   private readonly profileService = inject(UserProfileService);
+
+  readonly formatDate = formatShortDate;
 
   readonly lessons = signal<LessonRow[]>([]);
   readonly customers = signal<CustomerOption[]>([]);
@@ -98,7 +101,7 @@ export class GestioneLezioniComponent implements OnInit {
   }
 
   slotLabel(slot: SlotRow): string {
-    return `${slot.date} ${slot.time_from.slice(0, 5)}-${slot.time_to.slice(0, 5)}`;
+    return `${formatShortDate(slot.date)} ${slot.time_from.slice(0, 5)}-${slot.time_to.slice(0, 5)}`;
   }
 
   startMove(lesson: LessonRow): void {

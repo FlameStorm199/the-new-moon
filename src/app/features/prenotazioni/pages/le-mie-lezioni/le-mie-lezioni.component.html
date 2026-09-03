@@ -24,7 +24,7 @@
         @for (lesson of upcoming(); track lesson.id) {
           <li>
             <div class="when">
-              <strong>{{ lesson.date }}</strong>
+              <strong>{{ formatDate(lesson.date) }}</strong>
               {{ lesson.time_from.slice(0, 5) }} - {{ lesson.time_to.slice(0, 5) }}
             </div>
             @if (lesson.description) {
@@ -58,7 +58,7 @@
         @for (lesson of history(); track lesson.id) {
           <li>
             <div class="when">
-              <strong>{{ lesson.date }}</strong>
+              <strong>{{ formatDate(lesson.date) }}</strong>
               {{ lesson.time_from.slice(0, 5) }} - {{ lesson.time_to.slice(0, 5) }}
             </div>
             <span class="badge" [class.cancelled]="lesson.status === 'cancelled'">
