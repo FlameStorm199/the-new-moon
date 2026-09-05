@@ -9,9 +9,17 @@ export class BookingService {
    * Prenota lo slot per l'utente autenticato corrente. Tutte le regole
    * (36h anticipo, 1 lezione/settimana, validazione account, slot libero)
    * sono enforced dalla RPC book_lesson lato DB, non qui.
+   *
+   * `note` è quella scritta dal cliente stesso in fase di prenotazione:
+   * finisce nella stessa colonna (description) che lo staff vede in
+   * "Gestione lezioni" — un solo campo note, non uno per cliente e uno per
+   * staff, altrimenti quale dei due mostrare diventerebbe ambiguo.
    */
-  async bookLesson(slotId: number): Promise<void> {
-    const { error } = await this.supabase.rpc('book_lesson', { p_slot_id: slotId });
+  async bookLesson(slotId: number, note?: string): Promise<void> {
+    const { error } = await this.supabase.rpc('book_lesson', {
+      p_slot_id: slotId,
+      p_description: note?.trim() || null,
+    });
     if (error) {
       throw error;
     }

@@ -46,7 +46,7 @@
       [state]="dialogState()"
       [busy]="bookingId() === slot.id"
       [errorMessage]="dialogError()"
-      (confirmed)="confirmBooking()"
+      (confirmed)="confirmBooking($event)"
       (closed)="closeDialog()"
     />
   }

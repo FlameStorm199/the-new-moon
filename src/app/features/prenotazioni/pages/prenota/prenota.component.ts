@@ -140,7 +140,7 @@ export class PrenotaComponent implements OnInit {
     this.dialogError.set(null);
   }
 
-  async confirmBooking(): Promise<void> {
+  async confirmBooking(note: string): Promise<void> {
     const slot = this.dialogSlot();
     if (!slot) {
       return;
@@ -149,14 +149,19 @@ export class PrenotaComponent implements OnInit {
     this.bookingId.set(slot.id);
     this.dialogError.set(null);
     try {
-      await this.bookingService.bookLesson(slot.id);
+      await this.bookingService.bookLesson(slot.id, note);
       this.slots.update((list) => list.filter((s) => s.id !== slot.id));
       // Il pannello resta aperto e cambia stato: una sola finestra da
       // chiudere invece di conferma più avviso di esito.
       this.dialogState.set('success');
     } catch (err) {
-      const message = err instanceof Error ? err.message : null;
-      this.dialogError.set(message ?? 'Prenotazione non riuscita.');
+      // Non "err instanceof Error": senza throwOnError() supabase-js
+      // restituisce l'errore RPC come oggetto semplice (il JSON di
+      // PostgREST), non come istanza di Error — quel controllo falliva
+      // sempre e nascondeva il messaggio vero (es. il limite di una lezione
+      // a settimana) dietro il generico "Prenotazione non riuscita".
+      const message = (err as { message?: string } | null)?.message;
+      this.dialogError.set(message || 'Prenotazione non riuscita.');
     } finally {
       this.bookingId.set(null);
     }

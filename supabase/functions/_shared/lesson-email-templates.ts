@@ -13,6 +13,8 @@ export interface LessonDetail {
   time_from: string;
   time_to: string;
   cancellation_reason: string | null;
+  /** Nota lasciata alla prenotazione — dal cliente stesso, o dallo staff se ha prenotato per lui. */
+  description: string | null;
 }
 
 export interface PreviousSlot {
@@ -52,6 +54,13 @@ function reasonBlock(reason: string | null): string {
   </p>`;
 }
 
+function noteBlock(description: string | null): string {
+  if (!description) return '';
+  return `<p style="border-left:3px solid #ddd; padding-left:0.75rem; color:#555;">
+    <strong>Nota:</strong> ${escapeHtml(description)}
+  </p>`;
+}
+
 function shell(bodyHtml: string): string {
   return `
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #222;">
@@ -80,6 +89,7 @@ export function customerEmailFor(
         html: shell(`
           <h2>Lezione confermata${dogName}</h2>
           <p>La tua lezione è confermata per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
+          ${noteBlock(lesson.description)}
         `),
       };
     case 'rescheduled':
@@ -130,6 +140,7 @@ export function trainerEmailFor(
         html: shell(`
           <h2>Nuova prenotazione</h2>
           <p><strong>${customer}</strong>${dogName} ha prenotato per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
+          ${noteBlock(lesson.description)}
         `),
       };
     case 'rescheduled':

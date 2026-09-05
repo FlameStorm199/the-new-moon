@@ -17,6 +17,11 @@
 
       <p class="note">Puoi prenotare una lezione a settimana.</p>
 
+      <label class="field">
+        Note per l'educatore (facoltative)
+        <textarea #noteInput rows="2" [disabled]="busy"></textarea>
+      </label>
+
       @if (errorMessage) {
         <p class="error">{{ errorMessage }}</p>
       }
@@ -30,7 +35,7 @@
           type="button"
           class="primary"
           [disabled]="busy"
-          (click)="confirmed.emit()"
+          (click)="confirm()"
         >
           {{ busy ? 'Prenotazione…' : 'Prenota' }}
         </button>

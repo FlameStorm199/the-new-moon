@@ -37,15 +37,22 @@ export class BookingDialogComponent implements AfterViewInit {
   @Input() busy = false;
   @Input() errorMessage: string | null = null;
 
-  @Output() readonly confirmed = new EventEmitter<void>();
+  /** Emette la nota scritta dal cliente (stringa vuota se non compilata). */
+  @Output() readonly confirmed = new EventEmitter<string>();
   @Output() readonly closed = new EventEmitter<void>();
 
   @ViewChild('primaryAction') private primaryAction?: ElementRef<HTMLElement>;
+  @ViewChild('noteInput') private noteInput?: ElementRef<HTMLTextAreaElement>;
 
   ngAfterViewInit(): void {
     // Il focus entra nel pannello, così tastiera e lettori di schermo non
-    // restano indietro sulla pagina sotto.
-    this.primaryAction?.nativeElement.focus();
+    // restano indietro sulla pagina sotto. Sul campo nota se c'è (stato di
+    // conferma), altrimenti sul bottone (stato di ricevuta, che non ha campi).
+    (this.noteInput ?? this.primaryAction)?.nativeElement.focus();
+  }
+
+  confirm(): void {
+    this.confirmed.emit(this.noteInput?.nativeElement.value.trim() ?? '');
   }
 
   @HostListener('document:keydown.escape')

@@ -45,7 +45,7 @@ export default {
     const { data: lesson, error: lessonError } = await ctx.supabaseAdmin
       .from("v_lessons_detail")
       .select(
-        "id, customer_name, customer_surname, customer_dog_name, customer_email, date, time_from, time_to, cancellation_reason"
+        "id, customer_name, customer_surname, customer_dog_name, customer_email, date, time_from, time_to, cancellation_reason, description"
       )
       .eq("id", body.lesson_id)
       .maybeSingle();
