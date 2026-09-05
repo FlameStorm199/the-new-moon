@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { BookingService } from '../../../../core/lessons/booking.service';
 import {
   LESSON_STATUS_LABELS,
@@ -9,22 +8,41 @@ import {
 } from '../../../../core/lessons/lessons.service';
 import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { CustomerOption, UserProfileService } from '../../../../core/users/user-profile.service';
+import { BackLinkComponent } from '../../components/back-link/back-link.component';
 import {
   CancelDialogState,
   CancelLessonDialogComponent,
 } from '../../components/cancel-lesson-dialog/cancel-lesson-dialog.component';
-import { BackLinkComponent } from '../../components/back-link/back-link.component';
-import { formatShortDate } from '../../components/date-format';
+import { formatLongDate, formatShortDate, todayIso } from '../../components/date-format';
+import {
+  MoveLessonDialogComponent,
+  MoveLessonDialogState,
+  MoveLessonFormValue,
+} from '../../components/move-lesson-dialog/move-lesson-dialog.component';
+import {
+  NewLessonDialogComponent,
+  NewLessonDialogState,
+  NewLessonFormValue,
+  NewLessonSummary,
+} from '../../components/new-lesson-dialog/new-lesson-dialog.component';
 
 interface DayGroup {
   date: string;
   lessons: LessonRow[];
 }
 
+const ACTIVE_STATUSES = new Set(['pending', 'confirmed']);
+
 @Component({
   selector: 'app-gestione-lezioni',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CancelLessonDialogComponent, BackLinkComponent],
+  imports: [
+    CommonModule,
+    BackLinkComponent,
+    NewLessonDialogComponent,
+    MoveLessonDialogComponent,
+    CancelLessonDialogComponent,
+  ],
   templateUrl: './gestione-lezioni.component.html',
   styleUrl: './gestione-lezioni.component.scss',
 })
@@ -34,25 +52,38 @@ export class GestioneLezioniComponent implements OnInit {
   private readonly slotsService = inject(SlotsService);
   private readonly profileService = inject(UserProfileService);
 
-  readonly formatDate = formatShortDate;
+  /** Intestazione di ogni giornata: per esteso, più leggibile di un DD/MM/YYYY in un titolo. */
+  readonly formatDayHeader = formatLongDate;
+  readonly statusLabels = LESSON_STATUS_LABELS;
 
   readonly lessons = signal<LessonRow[]>([]);
   readonly customers = signal<CustomerOption[]>([]);
   readonly freeSlots = signal<SlotRow[]>([]);
   readonly loading = signal(true);
+  /** Solo per il caricamento iniziale: gli esiti delle azioni li mostra il modale coinvolto. */
   readonly errorMessage = signal<string | null>(null);
-  readonly infoMessage = signal<string | null>(null);
   readonly busyId = signal<number | null>(null);
 
-  /** Lezione per cui è aperto il pannello "sposta su un altro slot". */
-  readonly movingLesson = signal<LessonRow | null>(null);
+  /** Riga il cui menu "⋯" è aperto: uno solo alla volta. */
+  readonly openActionsFor = signal<number | null>(null);
 
-  /** Lezione su cui è aperto il modale: prima conferma, poi ricevuta. */
+  // --- Modale "Prenota per un cliente" ---
+  readonly newLessonOpen = signal(false);
+  readonly newLessonState = signal<NewLessonDialogState>('form');
+  readonly newLessonBusy = signal(false);
+  readonly newLessonError = signal<string | null>(null);
+  readonly newLessonSummary = signal<NewLessonSummary | null>(null);
+
+  // --- Modale "Sposta lezione" ---
+  readonly movingLesson = signal<LessonRow | null>(null);
+  readonly moveDialogState = signal<MoveLessonDialogState>('form');
+  readonly moveDialogError = signal<string | null>(null);
+  readonly movedToSlotLabel = signal<string | null>(null);
+
+  // --- Modale "Cancella lezione" (prima/dopo, invariato) ---
   readonly cancellingLesson = signal<LessonRow | null>(null);
   readonly cancelDialogState = signal<CancelDialogState>('confirm');
   readonly cancelDialogError = signal<string | null>(null);
-
-  readonly statusLabels = LESSON_STATUS_LABELS;
 
   readonly groupedByDate = computed<DayGroup[]>(() => {
     const groups = new Map<string, LessonRow[]>();
@@ -64,13 +95,17 @@ export class GestioneLezioniComponent implements OnInit {
     return Array.from(groups.entries()).map(([date, lessons]) => ({ date, lessons }));
   });
 
-  readonly form = new FormGroup({
-    customerId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    slotId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    bypassWeeklyLimit: new FormControl(false, { nonNullable: true }),
-    description: new FormControl('', { nonNullable: true }),
+  /** Per il riepilogo sotto il titolo: le cancellate/rifiutate non contano. */
+  private readonly activeLessons = computed(() =>
+    this.lessons().filter((l) => ACTIVE_STATUSES.has(l.status))
+  );
+
+  readonly upcomingCount = computed(() => this.activeLessons().length);
+
+  readonly todayCount = computed(() => {
+    const today = todayIso();
+    return this.activeLessons().filter((l) => l.date === today).length;
   });
-  readonly creating = signal(false);
 
   ngOnInit(): void {
     void this.load();
@@ -100,37 +135,117 @@ export class GestioneLezioniComponent implements OnInit {
     return `${lesson.customer_name} ${lesson.customer_surname}${dog}`;
   }
 
-  slotLabel(slot: SlotRow): string {
-    return `${formatShortDate(slot.date)} ${slot.time_from.slice(0, 5)}-${slot.time_to.slice(0, 5)}`;
+  isCancellable(lesson: LessonRow): boolean {
+    return lesson.status !== 'cancelled' && lesson.status !== 'rejected';
   }
 
-  startMove(lesson: LessonRow): void {
-    this.movingLesson.set(this.movingLesson()?.id === lesson.id ? null : lesson);
+  // --- Menu azioni per riga ---
+
+  toggleActions(lessonId: number, event: Event): void {
+    event.stopPropagation();
+    this.openActionsFor.set(this.openActionsFor() === lessonId ? null : lessonId);
   }
 
-  async confirmMove(lesson: LessonRow, slotId: string, bypass: boolean): Promise<void> {
-    if (!slotId) {
-      this.errorMessage.set('Scegli lo slot di destinazione.');
-      return;
+  /** Un clic ovunque chiude il menu aperto: niente da tenere in giro dopo. */
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.openActionsFor.set(null);
+  }
+
+  // --- "Prenota per un cliente" ---
+
+  openNewLesson(): void {
+    this.openActionsFor.set(null);
+    this.newLessonState.set('form');
+    this.newLessonError.set(null);
+    this.newLessonSummary.set(null);
+    this.newLessonOpen.set(true);
+  }
+
+  closeNewLessonDialog(): void {
+    this.newLessonOpen.set(false);
+  }
+
+  async submitNewLesson(value: NewLessonFormValue): Promise<void> {
+    // Presi PRIMA della chiamata: dopo il ricaricamento lo slot appena
+    // occupato non è più tra i freeSlots, e la ricevuta lo mostrerebbe vuoto.
+    const customer = this.customers().find((c) => c.id === value.customerId);
+    const slot = this.freeSlots().find((s) => s.id === value.slotId);
+
+    this.newLessonBusy.set(true);
+    this.newLessonError.set(null);
+    try {
+      await this.bookingService.bookLessonForCustomer(
+        value.slotId,
+        value.customerId,
+        value.bypassWeeklyLimit,
+        value.description
+      );
+      this.newLessonSummary.set({
+        customerLabel: customer
+          ? `${customer.name} ${customer.surname}${customer.dog_name ? ` (${customer.dog_name})` : ''}`
+          : 'Cliente',
+        slotLabel: slot
+          ? `${formatShortDate(slot.date)} ${slot.time_from.slice(0, 5)}–${slot.time_to.slice(0, 5)}`
+          : '',
+      });
+      this.newLessonState.set('success');
+      await this.load();
+    } catch (err) {
+      this.newLessonError.set(errorText(err) ?? 'Prenotazione non riuscita.');
+    } finally {
+      this.newLessonBusy.set(false);
     }
-    await this.run(lesson.id, () =>
-      this.lessonsService.moveToSlot(lesson.id, Number(slotId), bypass)
-    );
+  }
+
+  // --- "Sposta lezione" ---
+
+  openMove(lesson: LessonRow): void {
+    this.openActionsFor.set(null);
+    this.movingLesson.set(lesson);
+    this.moveDialogState.set('form');
+    this.moveDialogError.set(null);
+    this.movedToSlotLabel.set(null);
+  }
+
+  closeMoveDialog(): void {
     this.movingLesson.set(null);
   }
 
-  /** Il clic non cancella: apre la richiesta di conferma. */
+  async confirmMove(value: MoveLessonFormValue): Promise<void> {
+    const lesson = this.movingLesson();
+    if (!lesson) {
+      return;
+    }
+    const slot = this.freeSlots().find((s) => s.id === value.slotId);
+
+    this.busyId.set(lesson.id);
+    this.moveDialogError.set(null);
+    try {
+      await this.lessonsService.moveToSlot(lesson.id, value.slotId, value.bypassWeeklyLimit);
+      this.movedToSlotLabel.set(
+        slot ? `${formatShortDate(slot.date)} ${slot.time_from.slice(0, 5)}–${slot.time_to.slice(0, 5)}` : null
+      );
+      this.moveDialogState.set('success');
+      await this.load();
+    } catch (err) {
+      this.moveDialogError.set(errorText(err) ?? 'Spostamento non riuscito.');
+    } finally {
+      this.busyId.set(null);
+    }
+  }
+
+  // --- "Cancella lezione" ---
+
   openCancel(lesson: LessonRow): void {
+    this.openActionsFor.set(null);
     this.cancellingLesson.set(lesson);
     this.cancelDialogState.set('confirm');
     this.cancelDialogError.set(null);
-    this.errorMessage.set(null);
-    this.infoMessage.set(null);
   }
 
   closeCancelDialog(): void {
     this.cancellingLesson.set(null);
-    this.cancelDialogError.set(null);
   }
 
   /**
@@ -148,54 +263,15 @@ export class GestioneLezioniComponent implements OnInit {
     try {
       await this.lessonsService.cancel(lesson.id, reason);
       await this.load();
-      // Il pannello resta aperto e cambia stato: una sola finestra da
-      // chiudere invece di conferma più avviso di esito.
       this.cancelDialogState.set('success');
     } catch (err) {
-      const message = (err as { message?: string } | null)?.message;
-      this.cancelDialogError.set(message || 'Cancellazione non riuscita.');
+      this.cancelDialogError.set(errorText(err) ?? 'Cancellazione non riuscita.');
     } finally {
       this.busyId.set(null);
     }
   }
+}
 
-  async submitNewLesson(): Promise<void> {
-    if (this.form.invalid || this.creating()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const value = this.form.getRawValue();
-    this.creating.set(true);
-    await this.run(null, () =>
-      this.bookingService.bookLessonForCustomer(
-        Number(value.slotId),
-        Number(value.customerId),
-        value.bypassWeeklyLimit,
-        value.description
-      )
-    );
-    this.creating.set(false);
-    this.form.patchValue({ slotId: '', description: '', bypassWeeklyLimit: false });
-  }
-
-  /**
-   * Gli errori delle RPC (slot occupato, limite settimanale, permessi) sono
-   * già scritti per un lettore umano: vengono mostrati com'è, senza essere
-   * appiattiti su un generico "errore".
-   */
-  private async run(lessonId: number | null, action: () => Promise<void>): Promise<void> {
-    this.busyId.set(lessonId);
-    this.errorMessage.set(null);
-    this.infoMessage.set(null);
-    try {
-      await action();
-      await this.load();
-      this.infoMessage.set('Operazione completata.');
-    } catch (err) {
-      const message = (err as { message?: string } | null)?.message;
-      this.errorMessage.set(message || 'Operazione non riuscita.');
-    } finally {
-      this.busyId.set(null);
-    }
-  }
+function errorText(err: unknown): string | null {
+  return (err as { message?: string } | null)?.message ?? null;
 }

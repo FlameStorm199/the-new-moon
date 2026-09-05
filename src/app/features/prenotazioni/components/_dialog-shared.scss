@@ -23,6 +23,11 @@
   position: relative;
   width: 100%;
   max-width: 24rem;
+  // Scorre da solo invece di sforare lo schermo: i pannelli con un form
+  // (nuova prenotazione, spostamento) hanno più campi di quelli di sola
+  // conferma, e su un notebook basso possono superare l'altezza disponibile.
+  max-height: 90vh;
+  overflow-y: auto;
   background: #fff;
   border-radius: 1rem;
   padding: 1.75rem 1.5rem 1.25rem;
@@ -34,6 +39,18 @@
     font-size: 1.15rem;
     font-weight: 700;
     margin-bottom: 1rem;
+  }
+
+  // Pannelli con un vero form (più campi di un semplice conferma/annulla):
+  // più larghi, e il contenuto torna allineato a sinistra come in un form,
+  // non centrato come un messaggio.
+  &.wide {
+    max-width: 30rem;
+    text-align: left;
+
+    h2 {
+      text-align: center;
+    }
   }
 }
 
@@ -85,6 +102,52 @@
   margin-top: 0.75rem;
   font-size: 0.85rem;
   color: #666;
+}
+
+// Campo di un form dentro un modale (usato da un solo select/input in poi:
+// il motivo di cancellazione, e i campi dei modali di nuova prenotazione e
+// spostamento). Non nello stile globale dell'app (styles.scss) perché è
+// specifico dei modali — dentro un .panel centrato, non una pagina.
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 1rem;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+
+  input,
+  select {
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--pn-border, #e0e0e0);
+    border-radius: 0.5rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: #222;
+    background: #fff;
+
+    &:focus {
+      outline: none;
+      border-color: var(--pn-accent, #3b6fd4);
+      box-shadow: 0 0 0 3px var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+    }
+  }
+
+  .field-hint {
+    font-weight: 400;
+    font-size: 0.78rem;
+    color: #888;
+  }
+
+  // Checkbox: l'etichetta va a fianco, non sopra come per un select/input.
+  &.checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
 }
 
 .error {
@@ -145,6 +208,19 @@
 
   &:hover:not(:disabled) {
     background: #8e0019;
+  }
+}
+
+// Azione cautelativa ma non distruttiva (chiudere un periodo — reversibile
+// con "Riapri", non elimina nulla): ambra, distinta sia dal blu di
+// un'azione che procede sia dal rosso di una che cancella qualcosa.
+:host .actions .warning {
+  border: none;
+  background: var(--pn-warning, #b06a00);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #8a5400;
   }
 }
 

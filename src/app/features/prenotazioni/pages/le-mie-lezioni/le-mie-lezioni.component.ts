@@ -12,7 +12,7 @@ import {
   CancelLessonDialogComponent,
 } from '../../components/cancel-lesson-dialog/cancel-lesson-dialog.component';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
-import { formatShortDate } from '../../components/date-format';
+import { formatLongDate } from '../../components/date-format';
 
 @Component({
   selector: 'app-le-mie-lezioni',
@@ -25,7 +25,7 @@ export class LeMieLezioniComponent implements OnInit {
   private readonly lessonsService = inject(LessonsService);
   private readonly profileService = inject(UserProfileService);
 
-  readonly formatDate = formatShortDate;
+  readonly formatDate = formatLongDate;
 
   readonly profile = signal<UserProfile | null>(null);
   readonly lessons = signal<LessonRow[]>([]);

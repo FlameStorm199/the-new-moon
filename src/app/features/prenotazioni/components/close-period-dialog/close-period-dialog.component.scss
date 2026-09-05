@@ -1,0 +1,16 @@
+@use '../dialog-shared' as *;
+
+.field-row {
+  display: flex;
+  gap: 0.75rem;
+
+  .field {
+    flex: 1;
+  }
+}
+
+// Tre bottoni in fila (annulla + due azioni equivalenti) non stanno su una
+// riga sola in un pannello da 30rem senza stringersi: vanno a capo.
+.actions {
+  flex-wrap: wrap;
+}

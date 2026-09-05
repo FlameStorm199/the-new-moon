@@ -1,0 +1,67 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel wide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="move-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    @if (state === 'form') {
+      <h2 id="move-dialog-title">Sposta lezione</h2>
+
+      <div class="detail">
+        <span class="who">{{ customerLabel }}</span>
+        <span class="date">{{ dateLabel }}</span>
+        <span class="time">{{ timeLabel }}</span>
+      </div>
+
+      <label class="field">
+        Nuovo slot
+        <select #firstField #destSelect>
+          <option value="">— scegli —</option>
+          @for (slot of freeSlots; track slot.id) {
+            <option [value]="slot.id">{{ slotLabel(slot) }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="field checkbox">
+        <input #bypassCheckbox type="checkbox" />
+        Scavalca il limite di una lezione a settimana
+      </label>
+
+      @if (displayError) {
+        <p class="error">{{ displayError }}</p>
+      }
+
+      <div class="actions">
+        <button type="button" class="secondary" [disabled]="busy" (click)="closed.emit()">
+          Annulla
+        </button>
+        <button #primaryAction type="button" class="primary" [disabled]="busy" (click)="submit()">
+          {{ busy ? 'Spostamento…' : 'Sposta' }}
+        </button>
+      </div>
+    } @else {
+      <div class="tick" aria-hidden="true">✓</div>
+
+      <h2 id="move-dialog-title">Lezione spostata</h2>
+
+      <div class="detail">
+        <span class="who">{{ customerLabel }}</span>
+        @if (movedToSlotLabel) {
+          <span class="date">{{ movedToSlotLabel }}</span>
+        }
+      </div>
+
+      <p class="note">Il cliente riceve un'email di avviso.</p>
+
+      <div class="actions">
+        <button #primaryAction type="button" class="primary" (click)="closed.emit()">
+          Chiudi
+        </button>
+      </div>
+    }
+  </div>
+</div>

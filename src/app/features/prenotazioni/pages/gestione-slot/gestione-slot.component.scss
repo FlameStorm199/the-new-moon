@@ -1,5 +1,6 @@
+// Pagina staff, uso principalmente da PC (stessa scelta di gestione lezioni).
 .staff-page {
-  max-width: 32rem;
+  max-width: 60rem;
   margin: 0 auto;
   padding: 1.5rem 1rem;
 
@@ -7,42 +8,42 @@
     color: #b00020;
   }
 
+  .empty {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
   .hint {
     font-size: 0.85rem;
     color: #555;
+    margin: 0.5rem 0 1.25rem;
   }
 
-  .success {
-    color: #1b7a3d;
-  }
+  // =========================================================
+  // Intestazione: titolo + riepilogo a sinistra, azioni a destra
+  // =========================================================
 
-  .bulk,
-  .new-slot {
+  .page-header {
     display: flex;
-    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
 
-    label {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      font-size: 0.9rem;
+    h1 {
+      margin-bottom: 0.35rem;
     }
+  }
 
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+  .summary {
+    font-size: 0.85rem;
+    color: #666;
+  }
 
-      label {
-        flex: 1;
-        min-width: 8rem;
-      }
-    }
+  .header-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
   }
 
   .list-header {
@@ -51,59 +52,183 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 0.5rem;
+    margin-bottom: 0.75rem;
 
     label {
       display: flex;
       align-items: center;
       gap: 0.35rem;
       font-size: 0.85rem;
+      color: #555;
+    }
+  }
+}
+
+// button[type='button'] del tema globale batte per specificità un semplice
+// .primary-cta/.secondary-cta: stesso motivo per cui i modali usano :host.
+:host .staff-page .primary-cta {
+  flex: 0 0 auto;
+  background: var(--pn-accent, #3b6fd4);
+  color: #fff;
+  border: none;
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--pn-radius-md, 8px);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--pn-accent-dark, #2d5ab0);
+  }
+}
+
+:host .staff-page .secondary-cta {
+  flex: 0 0 auto;
+  background: #fff;
+  color: var(--pn-accent, #3b6fd4);
+  border: 1px solid var(--pn-accent, #3b6fd4);
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--pn-radius-md, 8px);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+  }
+}
+
+.staff-page {
+  // =========================================================
+  // Card di ogni giorno
+  // =========================================================
+
+  .day-card {
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-lg, 12px);
+    // NON overflow:hidden: vedi il commento nella scss di gestione-lezioni
+    // (il menu "⋯" lì veniva tagliato via) — qui non c'è un menu simile, ma
+    // resta la stessa regola per non doverla ricordare la prossima volta
+    // che questa card guadagna qualcosa che esce dal suo bordo.
+
+    h3 {
+      margin: 0;
+      padding: 0.75rem 1.1rem;
+      font-size: 0.95rem;
+      text-transform: capitalize;
+      background: #fafbfc;
+      border-bottom: 1px solid var(--pn-border, #e0e0e0);
+      border-radius: var(--pn-radius-lg, 12px) var(--pn-radius-lg, 12px) 0 0;
     }
   }
 
-  .day-group {
-    margin-bottom: 1.25rem;
+  // =========================================================
+  // Righe (grid a colonne)
+  // =========================================================
 
-    h3 {
-      margin-bottom: 0.5rem;
+  .slot-row {
+    display: grid;
+    grid-template-columns: 7rem 6rem 1fr auto;
+    align-items: center;
+    column-gap: 0.75rem;
+    padding: 0.6rem 1.1rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+
+    &:last-child {
+      border-bottom: none;
     }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+    &.inactive {
+      opacity: 0.55;
+    }
+  }
+
+  .col-time {
+    font-weight: 600;
+    color: #444;
+  }
+
+  .col-part {
+    color: #777;
+    text-transform: capitalize;
+  }
+
+  .col-badges {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .col-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .badge {
+    background: #eef2f6;
+    color: #33475b;
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+
+    &.manual {
+      background: #e8f0fd;
+      color: #1a4fa0;
+    }
+  }
+}
+
+:host .staff-page .toggle {
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--pn-border, #e0e0e0);
+  background: #fff;
+  color: #555;
+  border-radius: var(--pn-radius-md, 8px);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f5f6f8;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+// =========================================================
+// Sotto i 560px: la griglia a 4 colonne fisse non ha più spazio — pagina
+// pensata per PC (vedi in cima al file), stesso trattamento di
+// gestione-lezioni per non lasciarla comunque illeggibile.
+// =========================================================
+
+@media (max-width: 560px) {
+  .staff-page .slot-row {
+    grid-template-columns: 1fr auto;
+    row-gap: 0.2rem;
+
+    .col-time {
+      grid-column: 1;
     }
 
-    li {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      border: 1px solid #ddd;
-      border-radius: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      font-size: 0.9rem;
+    .col-part {
+      display: none;
+    }
 
-      &.inactive {
-        opacity: 0.5;
-      }
+    .col-badges {
+      grid-column: 1;
+    }
 
-      .time {
-        flex: 1;
-      }
-
-      .badge {
-        background: #fde8e8;
-        color: #b00020;
-        border-radius: 0.25rem;
-        padding: 0.1rem 0.4rem;
-        font-size: 0.75rem;
-
-        &.manual {
-          background: #e8f0fd;
-          color: #1a4fa0;
-        }
-      }
+    .col-actions {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      align-self: start;
     }
   }
 }

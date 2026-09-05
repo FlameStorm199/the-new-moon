@@ -19,10 +19,10 @@
       </div>
 
       @if (withReason) {
-        <label class="reason">
+        <label class="field">
           Motivo (facoltativo)
           <input #reasonInput type="text" [disabled]="busy" />
-          <span class="reason-hint">Verrà incluso nell'email al cliente.</span>
+          <span class="field-hint">Verrà incluso nell'email al cliente.</span>
         </label>
       } @else {
         <p class="note">Lo slot tornerà disponibile per gli altri.</p>

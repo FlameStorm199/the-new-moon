@@ -1,0 +1,68 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel wide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="new-slot-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    @if (state === 'form') {
+      <h2 id="new-slot-dialog-title">Aggiungi slot</h2>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <label class="field">
+          Data
+          <input #firstField type="date" formControlName="date" />
+        </label>
+
+        <label class="field">
+          Fascia
+          <select formControlName="partOfDay">
+            <option value="mattina">Mattina</option>
+            <option value="pomeriggio">Pomeriggio</option>
+          </select>
+        </label>
+
+        <label class="field">
+          Dalle
+          <input type="time" formControlName="timeFrom" />
+        </label>
+
+        <label class="field">
+          Alle
+          <input type="time" formControlName="timeTo" />
+        </label>
+
+        @if (errorMessage) {
+          <p class="error">{{ errorMessage }}</p>
+        }
+
+        <div class="actions">
+          <button type="button" class="secondary" [disabled]="busy" (click)="closed.emit()">
+            Annulla
+          </button>
+          <button #primaryAction type="submit" class="primary" [disabled]="busy">
+            {{ busy ? 'Creazione…' : 'Aggiungi' }}
+          </button>
+        </div>
+      </form>
+    } @else {
+      <div class="tick" aria-hidden="true">✓</div>
+
+      <h2 id="new-slot-dialog-title">Slot aggiunto</h2>
+
+      @if (summaryLabel) {
+        <div class="detail">
+          <span class="date">{{ summaryLabel }}</span>
+        </div>
+      }
+
+      <div class="actions">
+        <button #primaryAction type="button" class="primary" (click)="closed.emit()">
+          Chiudi
+        </button>
+      </div>
+    }
+  </div>
+</div>

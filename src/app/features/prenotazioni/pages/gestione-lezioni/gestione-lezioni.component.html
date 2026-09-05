@@ -1,58 +1,24 @@
 <section class="staff-page">
   <app-back-link />
-  <h1>Gestione lezioni</h1>
+
+  <div class="page-header">
+    <div>
+      <h1>Gestione lezioni</h1>
+      @if (!loading()) {
+        <p class="summary">
+          {{ upcomingCount() }} lezion{{ upcomingCount() === 1 ? 'e' : 'i' }} nei prossimi 30
+          giorni · {{ todayCount() }} oggi
+        </p>
+      }
+    </div>
+    <button type="button" class="primary-cta" (click)="openNewLesson()">
+      Prenota per un cliente
+    </button>
+  </div>
 
   @if (errorMessage()) {
     <p class="error">{{ errorMessage() }}</p>
   }
-  @if (infoMessage()) {
-    <p class="success">{{ infoMessage() }}</p>
-  }
-
-  <form class="new-lesson" [formGroup]="form" (ngSubmit)="submitNewLesson()" novalidate>
-    <h2>Prenota per un cliente</h2>
-
-    <label>
-      Cliente
-      <select formControlName="customerId">
-        <option value="">— scegli —</option>
-        @for (customer of customers(); track customer.id) {
-          <option [value]="customer.id">
-            {{ customer.surname }} {{ customer.name }}
-            @if (customer.dog_name) {
-              ({{ customer.dog_name }})
-            }
-          </option>
-        }
-      </select>
-    </label>
-
-    <label>
-      Slot libero
-      <select formControlName="slotId">
-        <option value="">— scegli —</option>
-        @for (slot of freeSlots(); track slot.id) {
-          <option [value]="slot.id">{{ slotLabel(slot) }}</option>
-        }
-      </select>
-    </label>
-
-    <label class="inline">
-      <input type="checkbox" formControlName="bypassWeeklyLimit" />
-      Scavalca il limite di una lezione a settimana
-    </label>
-
-    <label>
-      Note (facoltative)
-      <input type="text" formControlName="description" />
-    </label>
-
-    <button type="submit" [disabled]="creating()">
-      {{ creating() ? 'Prenotazione…' : 'Prenota' }}
-    </button>
-  </form>
-
-  <h2>Prossimi 30 giorni</h2>
 
   @if (loading()) {
     <p>Caricamento…</p>
@@ -60,72 +26,88 @@
     <p class="empty">Nessuna lezione in programma.</p>
   } @else {
     @for (group of groupedByDate(); track group.date) {
-      <div class="day-group">
-        <h3>{{ formatDate(group.date) }}</h3>
-        <ul>
+      <div class="day-card">
+        <h2>{{ formatDayHeader(group.date) }}</h2>
+
+        <div class="lesson-table">
+          <div class="lesson-row header-row" aria-hidden="true">
+            <span class="col-time">Orario</span>
+            <span class="col-customer">Cliente</span>
+            <span class="col-status">Stato</span>
+            <span class="col-actions"></span>
+          </div>
+
           @for (lesson of group.lessons; track lesson.id) {
-            <li [class.cancelled]="lesson.status === 'cancelled'">
-              <span class="time">
-                {{ lesson.time_from.slice(0, 5) }} - {{ lesson.time_to.slice(0, 5) }}
+            <div class="lesson-row" [class.cancelled]="lesson.status === 'cancelled'">
+              <span class="col-time">
+                {{ lesson.time_from.slice(0, 5) }}–{{ lesson.time_to.slice(0, 5) }}
               </span>
-              <span class="customer">{{ customerLabel(lesson) }}</span>
-              <span class="badge" [class.cancelled]="lesson.status === 'cancelled'">
-                {{ statusLabels[lesson.status] }}
+              <span class="col-customer">{{ customerLabel(lesson) }}</span>
+              <span class="col-status">
+                <span class="badge" [class.cancelled]="lesson.status === 'cancelled'">
+                  {{ statusLabels[lesson.status] }}
+                </span>
+                @if (lesson.bypass_weekly_limit) {
+                  <span class="badge bypass">bypass</span>
+                }
               </span>
-              @if (lesson.bypass_weekly_limit) {
-                <span class="badge bypass">bypass settimanale</span>
-              }
+              <span class="col-actions">
+                @if (isCancellable(lesson)) {
+                  <button
+                    type="button"
+                    class="kebab"
+                    [class.open]="openActionsFor() === lesson.id"
+                    [disabled]="busyId() === lesson.id"
+                    (click)="toggleActions(lesson.id, $event)"
+                    aria-label="Azioni"
+                  >
+                    ⋯
+                  </button>
+                  @if (openActionsFor() === lesson.id) {
+                    <div class="actions-menu" (click)="$event.stopPropagation()">
+                      <button type="button" (click)="openMove(lesson)">Sposta</button>
+                      <button type="button" class="danger" (click)="openCancel(lesson)">
+                        Cancella
+                      </button>
+                    </div>
+                  }
+                }
+              </span>
 
               @if (lesson.description) {
-                <p class="description">{{ lesson.description }}</p>
+                <p class="col-description">{{ lesson.description }}</p>
               }
-
-              @if (lesson.status !== 'cancelled' && lesson.status !== 'rejected') {
-                <div class="actions">
-                  <button
-                    type="button"
-                    [disabled]="busyId() === lesson.id"
-                    (click)="startMove(lesson)"
-                  >
-                    Sposta
-                  </button>
-                  <button
-                    type="button"
-                    class="danger"
-                    [disabled]="busyId() === lesson.id"
-                    (click)="openCancel(lesson)"
-                  >
-                    Cancella
-                  </button>
-                </div>
-              }
-
-              @if (movingLesson()?.id === lesson.id) {
-                <div class="move-panel">
-                  <select #dest>
-                    <option value="">— slot di destinazione —</option>
-                    @for (slot of freeSlots(); track slot.id) {
-                      <option [value]="slot.id">{{ slotLabel(slot) }}</option>
-                    }
-                  </select>
-                  <label class="inline">
-                    <input type="checkbox" #bypass />
-                    Scavalca il limite settimanale
-                  </label>
-                  <button
-                    type="button"
-                    [disabled]="busyId() === lesson.id"
-                    (click)="confirmMove(lesson, dest.value, bypass.checked)"
-                  >
-                    Conferma spostamento
-                  </button>
-                </div>
-              }
-            </li>
+            </div>
           }
-        </ul>
+        </div>
       </div>
     }
+  }
+
+  @if (newLessonOpen()) {
+    <app-new-lesson-dialog
+      [customers]="customers()"
+      [freeSlots]="freeSlots()"
+      [state]="newLessonState()"
+      [busy]="newLessonBusy()"
+      [errorMessage]="newLessonError()"
+      [summary]="newLessonSummary()"
+      (submitted)="submitNewLesson($event)"
+      (closed)="closeNewLessonDialog()"
+    />
+  }
+
+  @if (movingLesson(); as lesson) {
+    <app-move-lesson-dialog
+      [lesson]="lesson"
+      [freeSlots]="freeSlots()"
+      [state]="moveDialogState()"
+      [busy]="busyId() === lesson.id"
+      [errorMessage]="moveDialogError()"
+      [movedToSlotLabel]="movedToSlotLabel()"
+      (submitted)="confirmMove($event)"
+      (closed)="closeMoveDialog()"
+    />
   }
 
   @if (cancellingLesson(); as lesson) {

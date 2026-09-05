@@ -38,7 +38,15 @@
 
     .when {
       flex: 1;
-      min-width: 12rem;
+      min-width: 16rem;
+
+      // formatLongDate scrive il giorno della settimana in minuscolo
+      // (corretto in mezzo a una frase, "giovedì" non si maiuscola in
+      // italiano) ma qui è l'inizio dell'etichetta: la maiuscola va messa
+      // via CSS, non nella funzione — che resta valida anche altrove.
+      strong {
+        text-transform: capitalize;
+      }
     }
 
     .description {

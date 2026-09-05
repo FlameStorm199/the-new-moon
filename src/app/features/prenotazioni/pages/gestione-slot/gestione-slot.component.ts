@@ -1,35 +1,63 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { PartOfDay, SlotRow, SlotsService } from '../../../../core/slots/slots.service';
+import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
-import { formatShortDate } from '../../components/date-format';
+import {
+  ClosePeriodDialogComponent,
+  ClosePeriodDialogState,
+  ClosePeriodFormValue,
+} from '../../components/close-period-dialog/close-period-dialog.component';
+import { formatLongDate, formatShortDate } from '../../components/date-format';
+import {
+  NewSlotDialogComponent,
+  NewSlotDialogState,
+  NewSlotFormValue,
+} from '../../components/new-slot-dialog/new-slot-dialog.component';
 
 interface DayGroup {
   date: string;
   slots: SlotRow[];
 }
 
-type BulkScope = 'giornata' | 'mattina' | 'pomeriggio';
-
 @Component({
   selector: 'app-gestione-slot',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, BackLinkComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    BackLinkComponent,
+    NewSlotDialogComponent,
+    ClosePeriodDialogComponent,
+  ],
   templateUrl: './gestione-slot.component.html',
   styleUrl: './gestione-slot.component.scss',
 })
 export class GestioneSlotComponent implements OnInit {
   private readonly slotsService = inject(SlotsService);
 
-  readonly formatDate = formatShortDate;
+  /** Intestazione di ogni giornata: per esteso, come in gestione lezioni. */
+  readonly formatDayHeader = formatLongDate;
 
   readonly slots = signal<SlotRow[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly savingId = signal<number | null>(null);
   readonly horizonDays = signal(7);
+
+  // --- Modale "Aggiungi slot" ---
+  readonly newSlotOpen = signal(false);
+  readonly newSlotState = signal<NewSlotDialogState>('form');
+  readonly newSlotBusy = signal(false);
+  readonly newSlotError = signal<string | null>(null);
+  readonly newSlotSummary = signal<string | null>(null);
+
+  // --- Modale "Chiudi o riapri un periodo" ---
+  readonly closePeriodOpen = signal(false);
+  readonly closePeriodState = signal<ClosePeriodDialogState>('form');
+  readonly closePeriodBusy = signal(false);
+  readonly closePeriodError = signal<string | null>(null);
+  readonly closePeriodResult = signal<string | null>(null);
 
   readonly groupedByDate = computed<DayGroup[]>(() => {
     const groups = new Map<string, SlotRow[]>();
@@ -41,23 +69,8 @@ export class GestioneSlotComponent implements OnInit {
     return Array.from(groups.entries()).map(([date, slots]) => ({ date, slots }));
   });
 
-  readonly form = new FormGroup({
-    date: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    partOfDay: new FormControl<PartOfDay>('mattina', { nonNullable: true }),
-    timeFrom: new FormControl('09:00', { nonNullable: true, validators: [Validators.required] }),
-    timeTo: new FormControl('10:00', { nonNullable: true, validators: [Validators.required] }),
-  });
-  readonly creating = signal(false);
-  readonly createError = signal<string | null>(null);
-
-  readonly bulkForm = new FormGroup({
-    dateFrom: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    dateTo: new FormControl('', { nonNullable: true }),
-    scope: new FormControl<BulkScope>('giornata', { nonNullable: true }),
-  });
-  readonly bulkRunning = signal(false);
-  readonly bulkError = signal<string | null>(null);
-  readonly bulkMessage = signal<string | null>(null);
+  readonly totalCount = computed(() => this.slots().length);
+  readonly occupiedCount = computed(() => this.slots().filter((s) => s.occupied).length);
 
   ngOnInit(): void {
     void this.load();
@@ -91,75 +104,86 @@ export class GestioneSlotComponent implements OnInit {
     } catch (err) {
       // Es. "lo slot ha già una lezione prenotata": messaggio del database,
       // già scritto per chi lo legge.
-      const message = (err as { message?: string } | null)?.message;
-      this.errorMessage.set(message || 'Errore nel salvataggio.');
+      this.errorMessage.set(errorText(err) ?? 'Errore nel salvataggio.');
     } finally {
       this.savingId.set(null);
     }
   }
 
-  /** `active = false` per liberare il periodo, `true` per riaprirlo. */
-  async applyBulk(active: boolean): Promise<void> {
-    if (this.bulkForm.invalid || this.bulkRunning()) {
-      this.bulkForm.markAllAsTouched();
-      return;
-    }
-    const value = this.bulkForm.getRawValue();
-    if (value.dateTo && value.dateTo < value.dateFrom) {
-      this.bulkError.set('La data di fine è precedente a quella di inizio.');
-      return;
-    }
+  // --- "Aggiungi slot" ---
 
-    this.bulkRunning.set(true);
-    this.bulkError.set(null);
-    this.bulkMessage.set(null);
-    try {
-      const result = await this.slotsService.setActiveBulk({
-        dateFrom: value.dateFrom,
-        dateTo: value.dateTo || value.dateFrom,
-        partOfDay: value.scope === 'giornata' ? null : value.scope,
-        active,
-      });
-
-      const verbo = active ? 'riattivati' : 'disattivati';
-      let message = `${result.updated} slot ${verbo}.`;
-      if (result.occupiedSkipped > 0) {
-        message +=
-          ` ${result.occupiedSkipped} slot hanno già una lezione prenotata e non sono stati toccati:` +
-          ' gestiscili da "Gestione lezioni".';
-      }
-      this.bulkMessage.set(message);
-      await this.load();
-    } catch (err) {
-      const message = (err as { message?: string } | null)?.message;
-      this.bulkError.set(message || 'Operazione non riuscita.');
-    } finally {
-      this.bulkRunning.set(false);
-    }
+  openNewSlot(): void {
+    this.newSlotState.set('form');
+    this.newSlotError.set(null);
+    this.newSlotSummary.set(null);
+    this.newSlotOpen.set(true);
   }
 
-  async submitNewSlot(): Promise<void> {
-    if (this.form.invalid || this.creating()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    this.creating.set(true);
-    this.createError.set(null);
-    const value = this.form.getRawValue();
+  closeNewSlotDialog(): void {
+    this.newSlotOpen.set(false);
+  }
+
+  async submitNewSlot(value: NewSlotFormValue): Promise<void> {
+    this.newSlotBusy.set(true);
+    this.newSlotError.set(null);
     try {
-      await this.slotsService.createSlot({
-        date: value.date,
-        partOfDay: value.partOfDay,
-        timeFrom: value.timeFrom,
-        timeTo: value.timeTo,
-      });
+      await this.slotsService.createSlot(value);
+      this.newSlotSummary.set(
+        `${formatShortDate(value.date)} ${value.timeFrom}–${value.timeTo}`
+      );
+      this.newSlotState.set('success');
       await this.load();
     } catch {
-      this.createError.set(
+      this.newSlotError.set(
         'Errore nella creazione dello slot (controlla che non si sovrapponga a un altro).'
       );
     } finally {
-      this.creating.set(false);
+      this.newSlotBusy.set(false);
     }
   }
+
+  // --- "Chiudi o riapri un periodo" ---
+
+  openClosePeriod(): void {
+    this.closePeriodState.set('form');
+    this.closePeriodError.set(null);
+    this.closePeriodResult.set(null);
+    this.closePeriodOpen.set(true);
+  }
+
+  closeClosePeriodDialog(): void {
+    this.closePeriodOpen.set(false);
+  }
+
+  async submitClosePeriod(value: ClosePeriodFormValue): Promise<void> {
+    this.closePeriodBusy.set(true);
+    this.closePeriodError.set(null);
+    try {
+      const result = await this.slotsService.setActiveBulk({
+        dateFrom: value.dateFrom,
+        dateTo: value.dateTo,
+        partOfDay: value.scope === 'giornata' ? null : value.scope,
+        active: value.active,
+      });
+
+      const verbo = value.active ? 'riattivati' : 'disattivati';
+      let message = `${result.updated} slot ${verbo}.`;
+      if (result.occupiedSkipped > 0) {
+        message +=
+          ` ${result.occupiedSkipped} slot hanno già una lezione prenotata e non sono stati` +
+          ' toccati: gestiscili da "Gestione lezioni".';
+      }
+      this.closePeriodResult.set(message);
+      this.closePeriodState.set('success');
+      await this.load();
+    } catch (err) {
+      this.closePeriodError.set(errorText(err) ?? 'Operazione non riuscita.');
+    } finally {
+      this.closePeriodBusy.set(false);
+    }
+  }
+}
+
+function errorText(err: unknown): string | null {
+  return (err as { message?: string } | null)?.message ?? null;
 }
