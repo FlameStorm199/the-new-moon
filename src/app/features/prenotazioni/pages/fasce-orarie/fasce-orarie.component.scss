@@ -59,6 +59,24 @@
       .sep {
         color: #888;
       }
+
+      .hours {
+        font-weight: 600;
+        color: #444;
+      }
+
+      .badge {
+        background: #eaf7ef;
+        color: #1b7a3d;
+        border-radius: 0.25rem;
+        padding: 0.1rem 0.45rem;
+        font-size: 0.75rem;
+
+        &.inactive {
+          background: #f0f0f0;
+          color: #777;
+        }
+      }
     }
   }
 }

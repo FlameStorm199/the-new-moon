@@ -1,0 +1,96 @@
+@use '../dialog-shared' as *;
+
+.note {
+  text-align: left;
+}
+
+.add-form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  .field {
+    flex: 1;
+    min-width: 9rem;
+    margin-top: 0.75rem;
+  }
+}
+
+// Tre elementi in fila (annulla/azioni non presenti qui, ma bottone submit
+// che deve restare alla stessa altezza dei campi) non stanno su una riga
+// sola in un pannello da 30rem senza andare a capo.
+:host .add-form button {
+  flex: 0 0 auto;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: var(--pn-accent, #3b6fd4);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--pn-accent-dark, #2d5ab0);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.closed-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1.25rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--pn-border, #e0e0e0);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+
+    .date {
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    .reason {
+      flex: 1;
+      color: #777;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+:host .closed-list button {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.75rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--pn-border, #e0e0e0);
+  background: #fff;
+  color: #555;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f5f6f8;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}

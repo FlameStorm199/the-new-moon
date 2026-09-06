@@ -6,6 +6,7 @@ import {
   TimeSlotRulesService,
 } from '../../../../core/slots/time-slot-rules.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
+import { UserProfileService } from '../../../../core/users/user-profile.service';
 
 interface WeekdayGroup {
   weekday: number;
@@ -35,12 +36,18 @@ const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 })
 export class FasceOrarieComponent implements OnInit {
   private readonly rulesService = inject(TimeSlotRulesService);
+  private readonly profileService = inject(UserProfileService);
 
   readonly rules = signal<TimeSlotRuleRow[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly infoMessage = signal<string | null>(null);
   readonly savingId = signal<number | null>(null);
+
+  // Un assistente vede le fasce (RLS is_staff()) ma non può modificarle: la
+  // scrittura resta riservata a trainer/admin (RLS tsr_update_staff). Solo
+  // per non mostrargli campi e bottoni che verrebbero comunque respinti.
+  readonly canAct = signal(false);
 
   readonly weekdayOrder = WEEKDAY_ORDER;
   readonly weekdayLabels = WEEKDAY_LABELS;
@@ -55,6 +62,13 @@ export class FasceOrarieComponent implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    void this.loadRole();
+  }
+
+  private async loadRole(): Promise<void> {
+    const profile = await this.profileService.getMyProfile();
+    const type = profile?.typeCode;
+    this.canAct.set(type === 'trainer' || type === 'admin');
   }
 
   async load(): Promise<void> {

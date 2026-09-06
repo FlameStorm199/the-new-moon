@@ -20,13 +20,15 @@
             <span>{{ user.phone }}</span>
             <span>Cane: {{ user.dog_name }}</span>
           </div>
-          <button
-            type="button"
-            [disabled]="validatingId() === user.id"
-            (click)="validate(user.id)"
-          >
-            {{ validatingId() === user.id ? 'Validazione…' : 'Valida' }}
-          </button>
+          @if (canAct()) {
+            <button
+              type="button"
+              [disabled]="validatingId() === user.id"
+              (click)="validate(user.id)"
+            >
+              {{ validatingId() === user.id ? 'Validazione…' : 'Valida' }}
+            </button>
+          }
         </li>
       }
     </ul>

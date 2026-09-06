@@ -33,24 +33,33 @@
               <li [class.inactive]="!rule.active">
                 <span class="part">{{ rule.part_of_day }}</span>
 
-                <input type="time" #from [value]="rule.time_from.slice(0, 5)" />
-                <span class="sep">→</span>
-                <input type="time" #to [value]="rule.time_to.slice(0, 5)" />
+                @if (canAct()) {
+                  <input type="time" #from [value]="rule.time_from.slice(0, 5)" />
+                  <span class="sep">→</span>
+                  <input type="time" #to [value]="rule.time_to.slice(0, 5)" />
 
-                <button
-                  type="button"
-                  [disabled]="savingId() === rule.id"
-                  (click)="saveHours(rule, from.value, to.value)"
-                >
-                  Salva
-                </button>
-                <button
-                  type="button"
-                  [disabled]="savingId() === rule.id"
-                  (click)="toggleActive(rule)"
-                >
-                  {{ rule.active ? 'Disattiva' : 'Attiva' }}
-                </button>
+                  <button
+                    type="button"
+                    [disabled]="savingId() === rule.id"
+                    (click)="saveHours(rule, from.value, to.value)"
+                  >
+                    Salva
+                  </button>
+                  <button
+                    type="button"
+                    [disabled]="savingId() === rule.id"
+                    (click)="toggleActive(rule)"
+                  >
+                    {{ rule.active ? 'Disattiva' : 'Attiva' }}
+                  </button>
+                } @else {
+                  <span class="hours">
+                    {{ rule.time_from.slice(0, 5) }} → {{ rule.time_to.slice(0, 5) }}
+                  </span>
+                  <span class="badge" [class.inactive]="!rule.active">
+                    {{ rule.active ? 'attiva' : 'disattiva' }}
+                  </span>
+                }
               </li>
             }
           </ul>

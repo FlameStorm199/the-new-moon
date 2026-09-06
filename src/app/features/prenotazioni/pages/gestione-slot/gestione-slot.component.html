@@ -11,18 +11,24 @@
         </p>
       }
     </div>
-    <div class="header-actions">
-      <button type="button" class="secondary-cta" (click)="openClosePeriod()">
-        Chiudi/riapri periodo
-      </button>
-      <button type="button" class="primary-cta" (click)="openNewSlot()">+ Aggiungi slot</button>
-    </div>
+    @if (canAct()) {
+      <div class="header-actions">
+        <button type="button" class="secondary-cta" (click)="openClosedDays()">
+          Giorni di chiusura
+        </button>
+        <button type="button" class="secondary-cta" (click)="openClosePeriod()">
+          Chiudi/riapri periodo
+        </button>
+        <button type="button" class="primary-cta" (click)="openNewSlot()">+ Aggiungi slot</button>
+      </div>
+    }
   </div>
 
   <p class="hint">
     Gli slot dei prossimi giorni sono generati automaticamente dalle
     <a routerLink="/prenotazioni/fasce-orarie">fasce orarie</a>: modificarle ricalcola subito
-    questa lista.
+    questa lista. "Chiudi/riapri periodo" agisce sugli slot già generati qui sotto; "Giorni di
+    chiusura" serve per date più lontane (es. Natale), anche prima che vengano generate.
   </p>
 
   @if (errorMessage()) {
@@ -66,14 +72,16 @@
                 }
               </span>
               <span class="col-actions">
-                <button
-                  type="button"
-                  class="toggle"
-                  [disabled]="savingId() === slot.id"
-                  (click)="toggleActive(slot)"
-                >
-                  {{ slot.active ? 'Disattiva' : 'Riattiva' }}
-                </button>
+                @if (canAct()) {
+                  <button
+                    type="button"
+                    class="toggle"
+                    [disabled]="savingId() === slot.id"
+                    (click)="toggleActive(slot)"
+                  >
+                    {{ slot.active ? 'Disattiva' : 'Riattiva' }}
+                  </button>
+                }
               </span>
             </div>
           }
@@ -102,5 +110,9 @@
       (submitted)="submitClosePeriod($event)"
       (closed)="closeClosePeriodDialog()"
     />
+  }
+
+  @if (closedDaysOpen()) {
+    <app-closed-days-dialog (closed)="closeClosedDaysDialog()" />
   }
 </section>

@@ -38,6 +38,11 @@ export interface NewSlotInput {
   timeTo: string;
 }
 
+export interface ClosedDay {
+  date: string;
+  reason: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SlotsService {
   private readonly supabase = inject(SupabaseService).client;
@@ -138,6 +143,40 @@ export class SlotsService {
       time_to: input.timeTo,
       source: 'manual',
     });
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Giornate chiuse indipendentemente dall'orizzonte di generazione (es.
+   * Natale segnato ad agosto): il generatore le rispetta anche mesi prima
+   * che l'orizzonte le raggiunga davvero — vedi
+   * slot_candidates_for_horizon() in database/20_closed_days.sql.
+   */
+  async listClosedDays(): Promise<ClosedDay[]> {
+    const { data, error } = await this.supabase
+      .from('closed_days')
+      .select('date, reason')
+      .order('date', { ascending: true });
+    if (error) {
+      throw error;
+    }
+    return data ?? [];
+  }
+
+  async addClosedDay(date: string, reason?: string): Promise<void> {
+    const { error } = await this.supabase
+      .from('closed_days')
+      .insert({ date, reason: reason?.trim() || null });
+    if (error) {
+      throw error;
+    }
+  }
+
+  /** Riapre la giornata: nessuna via di mezzo, o è chiusa o non lo è. */
+  async removeClosedDay(date: string): Promise<void> {
+    const { error } = await this.supabase.from('closed_days').delete().eq('date', date);
     if (error) {
       throw error;
     }

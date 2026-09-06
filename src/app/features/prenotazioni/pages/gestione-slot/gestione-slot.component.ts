@@ -14,6 +14,8 @@ import {
   NewSlotDialogState,
   NewSlotFormValue,
 } from '../../components/new-slot-dialog/new-slot-dialog.component';
+import { ClosedDaysDialogComponent } from '../../components/closed-days-dialog/closed-days-dialog.component';
+import { UserProfileService } from '../../../../core/users/user-profile.service';
 
 interface DayGroup {
   date: string;
@@ -29,15 +31,23 @@ interface DayGroup {
     BackLinkComponent,
     NewSlotDialogComponent,
     ClosePeriodDialogComponent,
+    ClosedDaysDialogComponent,
   ],
   templateUrl: './gestione-slot.component.html',
   styleUrl: './gestione-slot.component.scss',
 })
 export class GestioneSlotComponent implements OnInit {
   private readonly slotsService = inject(SlotsService);
+  private readonly profileService = inject(UserProfileService);
 
   /** Intestazione di ogni giornata: per esteso, come in gestione lezioni. */
   readonly formatDayHeader = formatLongDate;
+
+  // Un assistente vede tutti gli slot (RLS is_staff()) ma non può crearli,
+  // attivarli/disattivarli né chiudere periodi o giornate: le RPC coinvolte
+  // respingono già chi non è trainer/admin, qui solo per non mostrargli
+  // controlli inutili.
+  readonly canAct = signal(false);
 
   readonly slots = signal<SlotRow[]>([]);
   readonly loading = signal(true);
@@ -59,6 +69,9 @@ export class GestioneSlotComponent implements OnInit {
   readonly closePeriodError = signal<string | null>(null);
   readonly closePeriodResult = signal<string | null>(null);
 
+  // --- Modale "Giorni di chiusura" ---
+  readonly closedDaysOpen = signal(false);
+
   readonly groupedByDate = computed<DayGroup[]>(() => {
     const groups = new Map<string, SlotRow[]>();
     for (const slot of this.slots()) {
@@ -74,6 +87,13 @@ export class GestioneSlotComponent implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    void this.loadRole();
+  }
+
+  private async loadRole(): Promise<void> {
+    const profile = await this.profileService.getMyProfile();
+    const type = profile?.typeCode;
+    this.canAct.set(type === 'trainer' || type === 'admin');
   }
 
   async load(): Promise<void> {
@@ -181,6 +201,19 @@ export class GestioneSlotComponent implements OnInit {
     } finally {
       this.closePeriodBusy.set(false);
     }
+  }
+  // --- "Giorni di chiusura" ---
+
+  openClosedDays(): void {
+    this.closedDaysOpen.set(true);
+  }
+
+  async closeClosedDaysDialog(): Promise<void> {
+    this.closedDaysOpen.set(false);
+    // Chiudere/riaprire una data può aver cambiato gli slot già generati
+    // (se dentro l'orizzonte): la lista sotto va aggiornata alla chiusura,
+    // non serve tenerla sincronizzata mentre il modale resta aperto.
+    await this.load();
   }
 }
 

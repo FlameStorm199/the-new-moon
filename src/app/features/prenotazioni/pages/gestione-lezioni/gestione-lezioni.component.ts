@@ -56,6 +56,11 @@ export class GestioneLezioniComponent implements OnInit {
   readonly formatDayHeader = formatLongDate;
   readonly statusLabels = LESSON_STATUS_LABELS;
 
+  // Un assistente vede tutte le lezioni (RLS is_staff()) ma non può prenotare,
+  // spostare o cancellare: le RPC coinvolte respingono già chi non è
+  // trainer/admin, qui solo per non mostrargli controlli inutili.
+  readonly canAct = signal(false);
+
   readonly lessons = signal<LessonRow[]>([]);
   readonly customers = signal<CustomerOption[]>([]);
   readonly freeSlots = signal<SlotRow[]>([]);
@@ -109,6 +114,13 @@ export class GestioneLezioniComponent implements OnInit {
 
   ngOnInit(): void {
     void this.load();
+    void this.loadRole();
+  }
+
+  private async loadRole(): Promise<void> {
+    const profile = await this.profileService.getMyProfile();
+    const type = profile?.typeCode;
+    this.canAct.set(type === 'trainer' || type === 'admin');
   }
 
   async load(): Promise<void> {

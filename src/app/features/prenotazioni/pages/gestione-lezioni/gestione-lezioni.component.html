@@ -11,9 +11,11 @@
         </p>
       }
     </div>
-    <button type="button" class="primary-cta" (click)="openNewLesson()">
-      Prenota per un cliente
-    </button>
+    @if (canAct()) {
+      <button type="button" class="primary-cta" (click)="openNewLesson()">
+        Prenota per un cliente
+      </button>
+    }
   </div>
 
   @if (errorMessage()) {
@@ -52,7 +54,7 @@
                 }
               </span>
               <span class="col-actions">
-                @if (isCancellable(lesson)) {
+                @if (canAct() && isCancellable(lesson)) {
                   <button
                     type="button"
                     class="kebab"

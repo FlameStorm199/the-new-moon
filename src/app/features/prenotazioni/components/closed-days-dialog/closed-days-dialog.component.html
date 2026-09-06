@@ -1,0 +1,64 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel wide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="closed-days-title"
+    (click)="$event.stopPropagation()"
+  >
+    <h2 id="closed-days-title">Giorni di chiusura</h2>
+
+    <p class="note">
+      Valgono anche oltre l'orizzonte di generazione: puoi chiudere oggi una data di mesi avanti
+      (es. Natale) — nessuno slot verrà creato lì, per nessuna fascia.
+    </p>
+
+    <form class="add-form" (ngSubmit)="submitAdd()" novalidate>
+      <label class="field">
+        Data
+        <input #dateInput type="date" [disabled]="adding()" />
+      </label>
+      <label class="field">
+        Motivo (facoltativo)
+        <input #reasonInput type="text" placeholder="es. Natale" [disabled]="adding()" />
+      </label>
+      <button type="submit" class="primary" [disabled]="adding()">
+        {{ adding() ? 'Chiusura…' : 'Chiudi giornata' }}
+      </button>
+    </form>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    @if (loading()) {
+      <p class="note">Caricamento…</p>
+    } @else if (days().length === 0) {
+      <p class="note">Nessuna giornata chiusa al momento.</p>
+    } @else {
+      <ul class="closed-list">
+        @for (day of days(); track day.date) {
+          <li>
+            <span class="date">{{ formatDate(day.date) }}</span>
+            @if (day.reason) {
+              <span class="reason">{{ day.reason }}</span>
+            }
+            <button
+              type="button"
+              class="secondary"
+              [disabled]="removingDate() === day.date"
+              (click)="remove(day)"
+            >
+              {{ removingDate() === day.date ? 'Riapertura…' : 'Riapri' }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    <div class="actions">
+      <button type="button" class="primary" (click)="closed.emit()">Chiudi finestra</button>
+    </div>
+  </div>
+</div>

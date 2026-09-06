@@ -19,9 +19,22 @@ export class AreaPersonaleComponent implements OnInit {
   readonly profile = signal<UserProfile | null>(null);
   readonly loadingProfile = signal(true);
 
+  /** Solo trainer/admin: sono gli unici che possono anche prenotare per sé — usato da canUsePlatform. */
   get isStaff(): boolean {
     const type = this.profile()?.typeCode;
     return type === 'trainer' || type === 'admin';
+  }
+
+  /**
+   * Assistente incluso: vede tutta la sezione Staff (le pagine lì sotto sono
+   * ormai in sola lettura per lui, RLS is_staff() — vedi
+   * database/21_assistant_read_access.sql), non può solo scriverci. Diversa
+   * da isStaff apposta: quella resta stretta a trainer/admin perché governa
+   * anche "puoi prenotare una lezione", cosa che un assistente non può fare.
+   */
+  get isStaffViewer(): boolean {
+    const type = this.profile()?.typeCode;
+    return type === 'trainer' || type === 'admin' || type === 'assistant';
   }
 
   /**
@@ -32,9 +45,8 @@ export class AreaPersonaleComponent implements OnInit {
    * in prenota.component.ts e le-mie-lezioni.component.ts.
    *
    * isStaff qui è solo trainer/admin, non assistente: un assistente non può
-   * prenotare (book_lesson lo rifiuta) né vede "Gestione lezioni"/fasce/ecc.
-   * (le policy RLS lì sono is_trainer_or_admin(), non is_staff()) — quindi
-   * niente tasti cliente per lui, correttamente.
+   * prenotare (book_lesson lo rifiuta), quindi niente tasti cliente per lui,
+   * correttamente — vede invece la sezione Staff tramite isStaffViewer.
    */
   get canUsePlatform(): boolean {
     const p = this.profile();

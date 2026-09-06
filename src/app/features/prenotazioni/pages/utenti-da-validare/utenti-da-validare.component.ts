@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { SupabaseService } from '../../../../core/supabase/supabase.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
+import { UserProfileService } from '../../../../core/users/user-profile.service';
 
 interface PendingUser {
   id: number;
@@ -24,14 +25,29 @@ const VALIDATABLE_TYPE_IDS = [1, 2];
 })
 export class UtentiDaValidareComponent implements OnInit {
   private readonly supabase = inject(SupabaseService).client;
+  private readonly profileService = inject(UserProfileService);
 
   readonly users = signal<PendingUser[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly validatingId = signal<number | null>(null);
 
+  // Un assistente vede questa lista (RLS glielo permette già) ma non può
+  // validare: la scrittura su users resta riservata a trainer/admin sia
+  // lato RLS (users_update_staff) sia dentro il trigger che la governa
+  // (enforce_users_update_rules) — qui solo per non mostrargli un bottone
+  // che verrebbe comunque respinto.
+  readonly canAct = signal(false);
+
   ngOnInit(): void {
     void this.load();
+    void this.loadRole();
+  }
+
+  private async loadRole(): Promise<void> {
+    const profile = await this.profileService.getMyProfile();
+    const type = profile?.typeCode;
+    this.canAct.set(type === 'trainer' || type === 'admin');
   }
 
   async load(): Promise<void> {
