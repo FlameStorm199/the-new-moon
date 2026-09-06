@@ -14,7 +14,7 @@
     @if (canAct()) {
       <div class="header-actions">
         <button type="button" class="secondary-cta" (click)="openClosedDays()">
-          Giorni di chiusura
+          Elenco chiusure
         </button>
         <button type="button" class="secondary-cta" (click)="openClosePeriod()">
           Chiudi/riapri periodo
@@ -27,8 +27,9 @@
   <p class="hint">
     Gli slot dei prossimi giorni sono generati automaticamente dalle
     <a routerLink="/prenotazioni/fasce-orarie">fasce orarie</a>: modificarle ricalcola subito
-    questa lista. "Chiudi/riapri periodo" agisce sugli slot già generati qui sotto; "Giorni di
-    chiusura" serve per date più lontane (es. Natale), anche prima che vengano generate.
+    questa lista. "Chiudi/riapri periodo" chiude o riapre qualunque intervallo di date, vicino o
+    lontano: il sistema decide da solo come applicarlo. "Elenco chiusure" mostra tutte le
+    chiusure registrate finora.
   </p>
 
   @if (errorMessage()) {

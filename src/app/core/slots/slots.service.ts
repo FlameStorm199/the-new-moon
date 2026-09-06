@@ -17,17 +17,19 @@ export interface SlotRow {
 
 export type SlotSource = 'rule' | 'manual';
 
-export interface BulkSlotInput {
+export interface ClosePeriodInput {
   dateFrom: string;
   /** Se omessa, l'operazione riguarda il solo giorno `dateFrom`. */
   dateTo?: string;
   /** null/omesso = intera giornata. */
   partOfDay?: PartOfDay | null;
+  /** true = riapri, false = tieni libero. */
   active: boolean;
+  reason?: string;
 }
 
-export interface BulkSlotResult {
-  updated: number;
+export interface ClosePeriodResult {
+  days: number;
   occupiedSkipped: number;
 }
 
@@ -38,8 +40,11 @@ export interface NewSlotInput {
   timeTo: string;
 }
 
+export type ClosedDayScope = 'giornata' | PartOfDay;
+
 export interface ClosedDay {
   date: string;
+  part_of_day: ClosedDayScope;
   reason: string | null;
 }
 
@@ -108,24 +113,28 @@ export class SlotsService {
   }
 
   /**
-   * Attiva/disattiva in blocco gli slot di un intervallo ("tieni libera la
-   * giornata / la mattina / il pomeriggio"). Gli slot già prenotati non
-   * vengono toccati: la RPC li conta e li riporta in `occupiedSkipped`, così
-   * lo staff sa che su quelle date restano lezioni da gestire a mano.
+   * Chiude o riapre un intervallo di date ("tieni libera la giornata / la
+   * mattina / il pomeriggio"), vicino o lontano indifferentemente: passa
+   * sempre da closed_days (vedi close_period() in
+   * database/22_unify_period_closures.sql), che il generatore rispetta a
+   * qualunque distanza. Gli slot già prenotati non vengono mai toccati: la
+   * RPC li conta e li riporta in `occupiedSkipped`, così lo staff sa che su
+   * quelle date restano lezioni da gestire a mano.
    */
-  async setActiveBulk(input: BulkSlotInput): Promise<BulkSlotResult> {
-    const { data, error } = await this.supabase.rpc('set_slots_active_bulk', {
+  async closePeriod(input: ClosePeriodInput): Promise<ClosePeriodResult> {
+    const { data, error } = await this.supabase.rpc('close_period', {
       p_date_from: input.dateFrom,
       p_date_to: input.dateTo ?? input.dateFrom,
       p_part_of_day: input.partOfDay ?? null,
       p_active: input.active,
+      p_reason: input.reason?.trim() || null,
     });
     if (error) {
       throw error;
     }
     const result = (data ?? {}) as Record<string, number>;
     return {
-      updated: result['updated'] ?? 0,
+      days: result['days'] ?? 0,
       occupiedSkipped: result['occupied_skipped'] ?? 0,
     };
   }
@@ -149,15 +158,15 @@ export class SlotsService {
   }
 
   /**
-   * Giornate chiuse indipendentemente dall'orizzonte di generazione (es.
-   * Natale segnato ad agosto): il generatore le rispetta anche mesi prima
-   * che l'orizzonte le raggiunga davvero — vedi
-   * slot_candidates_for_horizon() in database/20_closed_days.sql.
+   * Tutte le chiusure registrate, vicine e lontane: sono la stessa tabella
+   * (vedi closePeriod()), quindi un'unica lista le mostra entrambe — le
+   * vicine hanno anche effetto immediato sugli slot già generati, le
+   * lontane si vedranno da sole quando il generatore ci arriva.
    */
   async listClosedDays(): Promise<ClosedDay[]> {
     const { data, error } = await this.supabase
       .from('closed_days')
-      .select('date, reason')
+      .select('date, part_of_day, reason')
       .order('date', { ascending: true });
     if (error) {
       throw error;
@@ -165,18 +174,13 @@ export class SlotsService {
     return data ?? [];
   }
 
-  async addClosedDay(date: string, reason?: string): Promise<void> {
+  /** Riapre esattamente questa riga: creazione e chiusura passano entrambe da closePeriod(). */
+  async removeClosedDay(date: string, partOfDay: ClosedDayScope): Promise<void> {
     const { error } = await this.supabase
       .from('closed_days')
-      .insert({ date, reason: reason?.trim() || null });
-    if (error) {
-      throw error;
-    }
-  }
-
-  /** Riapre la giornata: nessuna via di mezzo, o è chiusa o non lo è. */
-  async removeClosedDay(date: string): Promise<void> {
-    const { error } = await this.supabase.from('closed_days').delete().eq('date', date);
+      .delete()
+      .eq('date', date)
+      .eq('part_of_day', partOfDay);
     if (error) {
       throw error;
     }

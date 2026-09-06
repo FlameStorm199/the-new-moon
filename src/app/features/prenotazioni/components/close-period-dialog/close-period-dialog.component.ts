@@ -11,6 +11,7 @@ export interface ClosePeriodFormValue {
   scope: ClosePeriodScope;
   /** true = riapri, false = tieni libero. */
   active: boolean;
+  reason?: string;
 }
 
 /**
@@ -50,6 +51,7 @@ export class ClosePeriodDialogComponent implements AfterViewInit {
     dateFrom: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     dateTo: new FormControl('', { nonNullable: true }),
     scope: new FormControl<ClosePeriodScope>('giornata', { nonNullable: true }),
+    reason: new FormControl('', { nonNullable: true }),
   });
 
   ngAfterViewInit(): void {
@@ -85,6 +87,7 @@ export class ClosePeriodDialogComponent implements AfterViewInit {
       dateTo: value.dateTo || value.dateFrom,
       scope: value.scope,
       active,
+      reason: value.reason || undefined,
     });
   }
 }

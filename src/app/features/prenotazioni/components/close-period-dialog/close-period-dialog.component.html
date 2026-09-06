@@ -10,6 +10,11 @@
     @if (state === 'form') {
       <h2 id="close-period-dialog-title">Chiudi o riapri un periodo</h2>
 
+      <p class="note">
+        Funziona anche su date lontane, oltre l'orizzonte di generazione (es. Natale segnato ad
+        agosto): se gli slot non esistono ancora, nasceranno già chiusi.
+      </p>
+
       <form [formGroup]="form" novalidate>
         <div class="field-row">
           <label class="field">
@@ -30,6 +35,11 @@
             <option value="mattina">Solo mattina</option>
             <option value="pomeriggio">Solo pomeriggio</option>
           </select>
+        </label>
+
+        <label class="field">
+          Motivo (facoltativo)
+          <input type="text" formControlName="reason" placeholder="Es. chiuso per ferie" />
         </label>
 
         @if (displayError) {

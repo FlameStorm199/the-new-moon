@@ -7,26 +7,12 @@
     aria-labelledby="closed-days-title"
     (click)="$event.stopPropagation()"
   >
-    <h2 id="closed-days-title">Giorni di chiusura</h2>
+    <h2 id="closed-days-title">Chiusure</h2>
 
     <p class="note">
-      Valgono anche oltre l'orizzonte di generazione: puoi chiudere oggi una data di mesi avanti
-      (es. Natale) — nessuno slot verrà creato lì, per nessuna fascia.
+      Tutte le date tenute libere, vicine e lontane. Per aggiungerne una nuova usa "Chiudi/riapri
+      periodo"; da qui puoi solo consultarle o riaprirle.
     </p>
-
-    <form class="add-form" (ngSubmit)="submitAdd()" novalidate>
-      <label class="field">
-        Data
-        <input #dateInput type="date" [disabled]="adding()" />
-      </label>
-      <label class="field">
-        Motivo (facoltativo)
-        <input #reasonInput type="text" placeholder="es. Natale" [disabled]="adding()" />
-      </label>
-      <button type="submit" class="primary" [disabled]="adding()">
-        {{ adding() ? 'Chiusura…' : 'Chiudi giornata' }}
-      </button>
-    </form>
 
     @if (errorMessage()) {
       <p class="error">{{ errorMessage() }}</p>
@@ -35,22 +21,23 @@
     @if (loading()) {
       <p class="note">Caricamento…</p>
     } @else if (days().length === 0) {
-      <p class="note">Nessuna giornata chiusa al momento.</p>
+      <p class="note">Nessuna chiusura registrata al momento.</p>
     } @else {
       <ul class="closed-list">
-        @for (day of days(); track day.date) {
+        @for (day of days(); track rowKey(day)) {
           <li>
             <span class="date">{{ formatDate(day.date) }}</span>
+            <span class="scope">{{ scopeLabels[day.part_of_day] }}</span>
             @if (day.reason) {
               <span class="reason">{{ day.reason }}</span>
             }
             <button
               type="button"
               class="secondary"
-              [disabled]="removingDate() === day.date"
+              [disabled]="removingKey() === rowKey(day)"
               (click)="remove(day)"
             >
-              {{ removingDate() === day.date ? 'Riapertura…' : 'Riapri' }}
+              {{ removingKey() === rowKey(day) ? 'Riapertura…' : 'Riapri' }}
             </button>
           </li>
         }

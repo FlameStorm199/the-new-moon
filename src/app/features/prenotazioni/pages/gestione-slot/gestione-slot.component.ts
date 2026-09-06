@@ -179,19 +179,21 @@ export class GestioneSlotComponent implements OnInit {
     this.closePeriodBusy.set(true);
     this.closePeriodError.set(null);
     try {
-      const result = await this.slotsService.setActiveBulk({
+      const result = await this.slotsService.closePeriod({
         dateFrom: value.dateFrom,
         dateTo: value.dateTo,
         partOfDay: value.scope === 'giornata' ? null : value.scope,
         active: value.active,
+        reason: value.reason,
       });
 
-      const verbo = value.active ? 'riattivati' : 'disattivati';
-      let message = `${result.updated} slot ${verbo}.`;
-      if (result.occupiedSkipped > 0) {
+      const verbo = value.active ? 'riaperti' : 'chiusi';
+      const giorni = result.days === 1 ? '1 giorno' : `${result.days} giorni`;
+      let message = `${giorni} ${verbo}.`;
+      if (!value.active && result.occupiedSkipped > 0) {
         message +=
-          ` ${result.occupiedSkipped} slot hanno già una lezione prenotata e non sono stati` +
-          ' toccati: gestiscili da "Gestione lezioni".';
+          ` ${result.occupiedSkipped} slot in quell'intervallo hanno già una lezione prenotata e` +
+          ' non sono stati toccati: gestiscili da "Gestione lezioni".';
       }
       this.closePeriodResult.set(message);
       this.closePeriodState.set('success');
