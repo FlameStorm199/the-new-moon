@@ -95,8 +95,12 @@ export class NavbarComponent {
     ];
 
     // Un cliente non ancora validato non ha nulla da prenotare: mostrargli
-    // le voci porterebbe solo a pagine che gli dicono di aspettare.
-    if (profile.validated || isStaff) {
+    // le voci porterebbe solo a pagine che gli dicono di aspettare. Per lo
+    // staff invece questi due tab restano, ma non qui: mescolati alle voci
+    // di gestione confondevano chi testava la piattaforma (sembravano "le
+    // stesse tab dei clienti"). Restano raggiungibili dal link piccolo
+    // "Area assistito" in area-personale, non dalla navbar.
+    if (profile.validated && !isStaff) {
       items.push(
         { path: '/prenotazioni/prenota', label: 'Prenota' },
         { path: '/prenotazioni/le-mie-lezioni', label: 'Le mie lezioni' }
@@ -108,7 +112,6 @@ export class NavbarComponent {
         { path: '/prenotazioni/gestione-lezioni', label: 'Lezioni' },
         { path: '/prenotazioni/gestione-slot', label: 'Slot' },
         { path: '/prenotazioni/fasce-orarie', label: 'Fasce orarie' },
-        { path: '/prenotazioni/utenti-da-validare', label: 'Da validare' },
         { path: '/prenotazioni/gestione-utenti', label: 'Utenti' }
       );
     }

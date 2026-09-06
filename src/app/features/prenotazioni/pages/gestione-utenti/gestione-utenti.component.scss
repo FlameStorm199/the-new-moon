@@ -70,6 +70,46 @@
 
   .actions {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
+  }
+
+  .icon-btn {
+    flex: 0 0 auto;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+
+    &.accept {
+      border: 1px solid var(--pn-success, #1b7a3d);
+      color: var(--pn-success, #1b7a3d);
+      background: #fff;
+
+      &:hover:not(:disabled) {
+        background: var(--pn-success-bg, #eaf7ef);
+      }
+    }
+
+    &.reject {
+      border: 1px solid var(--pn-danger, #b00020);
+      color: var(--pn-danger, #b00020);
+      background: #fff;
+
+      &:hover:not(:disabled) {
+        background: var(--pn-danger-bg, #fdecea);
+      }
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 }

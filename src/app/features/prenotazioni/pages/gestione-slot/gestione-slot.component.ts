@@ -175,6 +175,7 @@ export class GestioneSlotComponent implements OnInit {
     this.closePeriodOpen.set(false);
   }
 
+  /** Solo chiusura: per riaprire una data si passa da "Elenco chiusure" (closeClosedDaysDialog). */
   async submitClosePeriod(value: ClosePeriodFormValue): Promise<void> {
     this.closePeriodBusy.set(true);
     this.closePeriodError.set(null);
@@ -183,14 +184,13 @@ export class GestioneSlotComponent implements OnInit {
         dateFrom: value.dateFrom,
         dateTo: value.dateTo,
         partOfDay: value.scope === 'giornata' ? null : value.scope,
-        active: value.active,
+        active: false,
         reason: value.reason,
       });
 
-      const verbo = value.active ? 'riaperti' : 'chiusi';
       const giorni = result.days === 1 ? '1 giorno' : `${result.days} giorni`;
-      let message = `${giorni} ${verbo}.`;
-      if (!value.active && result.occupiedSkipped > 0) {
+      let message = `${giorni} chiusi.`;
+      if (result.occupiedSkipped > 0) {
         message +=
           ` ${result.occupiedSkipped} slot in quell'intervallo hanno già una lezione prenotata e` +
           ' non sono stati toccati: gestiscili da "Gestione lezioni".';

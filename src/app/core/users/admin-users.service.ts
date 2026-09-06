@@ -74,6 +74,33 @@ export class AdminUsersService {
     }));
   }
 
+  /** Stessa scrittura di prima in utenti-da-validare.component.ts: valida un customer/future_customer in attesa. */
+  async validate(id: number): Promise<void> {
+    const { error } = await this.supabase.from('users').update({ validated: true }).eq('id', id);
+    if (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Rifiuta un utente non ancora validato: soft-delete come il resto
+   * dell'app (deleted_at), così sparisce da tutte le liste (query filtrate
+   * su deleted_at is null) senza una riga di stato dedicata da inventare.
+   * Riservato all'admin: enforce_users_update_rules() in
+   * database/03_rls_policies.sql permette al trainer di toccare solo
+   * `validated`, non `deleted_at` — un trainer che la chiamasse otterrebbe
+   * un errore dal trigger, non un rifiuto silenzioso.
+   */
+  async rejectPendingUser(id: number, actingAdminId: number): Promise<void> {
+    const { error } = await this.supabase
+      .from('users')
+      .update({ deleted_at: new Date().toISOString(), deleted_by: actingAdminId })
+      .eq('id', id);
+    if (error) {
+      throw error;
+    }
+  }
+
   async createUser(input: CreateUserInput): Promise<CreateUserResult> {
     const { data, error } = await this.supabase.functions.invoke('admin-create-user', {
       body: input,

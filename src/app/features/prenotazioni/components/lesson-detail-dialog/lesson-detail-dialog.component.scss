@@ -1,0 +1,46 @@
+@use '../dialog-shared' as *;
+
+// La X (.close-x) vive in dialog-shared.scss: la usano tutti i modali della
+// sezione, non solo questo.
+
+.info-list {
+  margin: 1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    font-size: 0.9rem;
+
+    dt {
+      color: #777;
+      flex: 0 0 auto;
+    }
+
+    dd {
+      margin: 0;
+      font-weight: 600;
+      color: #222;
+      text-align: right;
+    }
+
+    // Nota libera: può andare su più righe, dove un allineamento a destra
+    // (adatto a un singolo valore breve come "Cane") si legge male — qui
+    // torna a sinistra, come una frase normale.
+    &.notes {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.2rem;
+
+      dd {
+        font-weight: 400;
+        text-align: left;
+        white-space: pre-wrap;
+      }
+    }
+  }
+}

@@ -1,5 +1,10 @@
-.staff-page {
-  max-width: 36rem;
+// Il modale di info riusa lo stile condiviso dei modali (backdrop, panel,
+// close-x, note): stessa "voce" del resto della sezione anche per un
+// popup che qui vive dentro una pagina, non dentro un altro componente.
+@use '../../components/dialog-shared' as *;
+
+.staff-page.fasce-page {
+  max-width: 42rem;
   margin: 0 auto;
   padding: 1.5rem 1rem;
 
@@ -11,72 +16,304 @@
     color: #1b7a3d;
   }
 
-  .hint {
-    font-size: 0.85rem;
-    color: #555;
-  }
-
-  .day-group {
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
     margin-bottom: 1.25rem;
 
-    h3 {
-      margin-bottom: 0.5rem;
-    }
-
-    .empty {
-      font-size: 0.85rem;
-      color: #777;
+    h1 {
       margin: 0;
     }
+  }
 
-    ul {
-      list-style: none;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+  // =========================================================
+  // Barra di salvataggio: sempre visibile quando si può modificare (non
+  // solo a modifica avvenuta, altrimenti "dove sono Salva e Annulla?"),
+  // ma spenta finché non c'è nulla da salvare. Resta visibile scorrendo la
+  // griglia (position: sticky), così non tocca cercarla dopo aver
+  // modificato una riga in fondo.
+  // =========================================================
+  .save-bar {
+    position: sticky;
+    top: 0.5rem;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.65rem 1rem;
+    border-radius: var(--pn-radius-md, 8px);
+    background: #fafafa;
+    border: 1px solid var(--pn-border, #e0e0e0);
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &.dirty {
+      background: #fff;
+      border-color: var(--pn-accent, #3b6fd4);
+      box-shadow: var(--pn-shadow, 0 6px 20px rgba(0, 0, 0, 0.07));
     }
 
-    li {
+    .save-bar-count {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #999;
+    }
+
+    &.dirty .save-bar-count {
+      color: var(--pn-accent, #3b6fd4);
+    }
+
+    .save-bar-actions {
       display: flex;
-      align-items: center;
-      flex-wrap: wrap;
       gap: 0.5rem;
-      border: 1px solid #ddd;
-      border-radius: 0.5rem;
+    }
+  }
+
+  // =========================================================
+  // Griglia: una riga per giorno, una colonna per mattina/pomeriggio.
+  // Molto più compatta dei sette blocchi separati di prima, e mette a
+  // confronto la stessa fascia su giorni diversi guardando in verticale.
+  // =========================================================
+  .fasce-grid {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-md, 8px);
+    overflow: hidden;
+  }
+
+  .grid-row {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--pn-border, #e0e0e0);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &.grid-head {
+      background: #fafafa;
       padding: 0.5rem 0.75rem;
-      font-size: 0.9rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #888;
+    }
 
-      &.inactive {
-        opacity: 0.55;
+    &:not(.grid-head):nth-child(odd) {
+      background: #fbfbfd;
+    }
+  }
+
+  .day-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .rule-cell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2rem;
+
+    &.inactive {
+      opacity: 0.5;
+    }
+
+    &.empty {
+      color: #bbb;
+      justify-content: center;
+    }
+  }
+
+  .hours-edit {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+
+    input[type='time'] {
+      width: 6rem;
+      padding: 0.3rem 0.4rem;
+      border: 1px solid var(--pn-border, #e0e0e0);
+      border-radius: 0.4rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      color: #222;
+      background: #fff;
+
+      &:focus {
+        outline: none;
+        border-color: var(--pn-accent, #3b6fd4);
+        box-shadow: 0 0 0 2px var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
       }
+    }
 
-      .part {
-        flex: 1;
-        min-width: 5.5rem;
+    .sep {
+      color: #999;
+      font-size: 0.8rem;
+    }
+  }
+
+  .hours {
+    font-weight: 600;
+    color: #444;
+    font-size: 0.85rem;
+  }
+
+  .badge {
+    background: #eaf7ef;
+    color: #1b7a3d;
+    border-radius: 0.25rem;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
+
+    &.inactive {
+      background: #f0f0f0;
+      color: #777;
+    }
+  }
+
+  // Interruttore attiva/disattiva: un cursore capito a colpo d'occhio,
+  // niente più un bottone di testo che cambia etichetta ("Disattiva" /
+  // "Attiva") a seconda dello stato.
+  .switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 2.1rem;
+    height: 1.2rem;
+    display: inline-block;
+
+    input {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: #ccc;
+      transition: background 0.15s ease;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0.15rem;
+        left: 0.15rem;
+        width: 0.9rem;
+        height: 0.9rem;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        transition: transform 0.15s ease;
       }
+    }
 
-      .sep {
-        color: #888;
-      }
+    input:checked + .slider {
+      background: var(--pn-accent, #3b6fd4);
+    }
 
-      .hours {
-        font-weight: 600;
-        color: #444;
-      }
+    input:checked + .slider::before {
+      transform: translateX(0.9rem);
+    }
 
-      .badge {
-        background: #eaf7ef;
-        color: #1b7a3d;
-        border-radius: 0.25rem;
-        padding: 0.1rem 0.45rem;
-        font-size: 0.75rem;
+    input:focus-visible + .slider {
+      box-shadow: 0 0 0 3px var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+    }
+  }
+}
 
-        &.inactive {
-          background: #f0f0f0;
-          color: #777;
-        }
-      }
+// button[type='button'] del tema globale batte per specificità un semplice
+// .info-btn/.primary-cta/.secondary-cta: stesso motivo per cui i modali e
+// gestione-slot.component.scss usano :host qui.
+:host .fasce-page .info-btn {
+  flex: 0 0 auto;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--pn-accent, #3b6fd4);
+  background: #fff;
+  color: var(--pn-accent, #3b6fd4);
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-style: italic;
+  font-family: Georgia, serif;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+  }
+}
+
+:host .staff-page .primary-cta {
+  flex: 0 0 auto;
+  background: var(--pn-accent, #3b6fd4);
+  color: #fff;
+  border: none;
+  padding: 0.55rem 1.2rem;
+  border-radius: var(--pn-radius-md, 8px);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--pn-accent-dark, #2d5ab0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+:host .staff-page .secondary-cta {
+  flex: 0 0 auto;
+  background: #fff;
+  color: var(--pn-accent, #3b6fd4);
+  border: 1px solid var(--pn-accent, #3b6fd4);
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--pn-radius-md, 8px);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+@media (max-width: 30rem) {
+  .staff-page.fasce-page {
+    .grid-row {
+      grid-template-columns: 4rem 1fr 1fr;
+      padding: 0.5rem;
+    }
+
+    .hours-edit input[type='time'] {
+      width: 5rem;
     }
   }
 }

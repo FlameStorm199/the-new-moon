@@ -65,12 +65,36 @@
             <strong>{{ row.name }} {{ row.surname }}</strong>
             <span class="role">{{ typeLabels[row.typeCode] }}</span>
             <span>{{ row.email }}</span>
-            @if (!row.validated && (row.typeCode === 'customer' || row.typeCode === 'future_customer')) {
+            @if (isPendingValidation(row)) {
               <span class="pending">non validato</span>
             }
           </div>
-          @if (isAdmin()) {
-            <div class="actions">
+          <div class="actions">
+            @if (isPendingValidation(row) && canValidate()) {
+              <button
+                type="button"
+                class="icon-btn accept"
+                [disabled]="actingOnId() === row.id"
+                (click)="validateUser(row)"
+                aria-label="Valida utente"
+                title="Valida"
+              >
+                ✓
+              </button>
+            }
+            @if (isPendingValidation(row) && isAdmin()) {
+              <button
+                type="button"
+                class="icon-btn reject"
+                [disabled]="actingOnId() === row.id"
+                (click)="rejectUser(row)"
+                aria-label="Rifiuta utente"
+                title="Rifiuta"
+              >
+                ✕
+              </button>
+            }
+            @if (isAdmin()) {
               <button
                 type="button"
                 [disabled]="actingOnId() === row.id"
@@ -85,8 +109,8 @@
               >
                 Reset password
               </button>
-            </div>
-          }
+            }
+          </div>
         </li>
       }
     </ul>

@@ -1,0 +1,81 @@
+<div class="staff-calendar" [class.days-3]="daysToShow() === 3">
+  <div class="legend">
+    <span class="legend-item"><span class="swatch free"></span>Libero</span>
+    <span class="legend-item"><span class="swatch occupied"></span>Prenotato</span>
+    <span class="legend-item"><span class="swatch inactive"></span>Disattivo</span>
+    <span class="legend-item"><span class="swatch closed"></span>Chiuso</span>
+  </div>
+
+  <div class="toolbar">
+    <button type="button" class="nav" (click)="previous()" aria-label="Giorni precedenti">‹</button>
+    <span class="range-label">{{ rangeLabel() }}</span>
+    <button type="button" class="nav" (click)="next()" aria-label="Giorni successivi">›</button>
+  </div>
+
+  <div class="grid-header">
+    <span class="gutter"></span>
+    @for (day of days(); track day.date) {
+      <span class="day-head" [class.today]="day.isToday">
+        <span class="weekday">{{ day.weekdayLabel }}</span>
+        <span class="daynum">{{ day.dayLabel }}</span>
+      </span>
+    }
+  </div>
+
+  <div class="grid-body" [style.grid-template-rows]="gridRowsStyle()">
+    @for (line of hourLines(); track line.rowStart) {
+      <span class="hour-label" [style.grid-row-start]="line.rowStart">{{ line.label }}</span>
+      <span class="hour-line" [style.grid-row-start]="line.rowStart"></span>
+    }
+
+    @for (gap of gaps(); track gap.rowStart) {
+      <span
+        class="gap-band"
+        [style.grid-row-start]="gap.rowStart"
+        [style.grid-row-end]="gap.rowStart + gap.rows"
+      >
+        {{ gap.label }}
+      </span>
+    }
+
+    @for (day of days(); track day.date; let dayIndex = $index) {
+      <div
+        class="day-column"
+        [class.today]="day.isToday"
+        [style.grid-column-start]="dayIndex + 2"
+        [style.grid-row]="dayColumnRowStyle()"
+        [style.grid-template-rows]="gridRowsStyle()"
+      >
+        @for (band of day.closedBands; track band.label) {
+          <div
+            class="closed-overlay"
+            [style.grid-row-start]="band.rowStart"
+            [style.grid-row-end]="band.rowEnd"
+          >
+            <span class="closed-label">{{ band.label }}</span>
+            @if (band.reason) {
+              <span class="closed-reason">{{ band.reason }}</span>
+            }
+          </div>
+        }
+
+        @for (item of day.slots; track item.slot.id) {
+          <button
+            type="button"
+            class="slot"
+            [class.occupied]="item.occupied"
+            [class.inactive]="!item.occupied && !item.slot.active"
+            [class.busy]="togglingSlotId === item.slot.id"
+            [disabled]="togglingSlotId === item.slot.id || (!item.occupied && !canToggle)"
+            [style.grid-row-start]="item.rowStart"
+            [style.grid-row-end]="item.rowEnd"
+            (click)="onSlotClick(item)"
+          >
+            <span class="slot-from">{{ item.timeFrom }}</span>
+            <span class="slot-second">{{ item.secondLine }}</span>
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>
