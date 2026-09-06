@@ -118,7 +118,7 @@ export class GestioneLezioniComponent implements OnInit {
       const [lessons, customers, slots] = await Promise.all([
         this.lessonsService.listUpcoming(30),
         this.profileService.listValidatedCustomers(),
-        this.slotsService.listAvailable(30),
+        this.slotsService.listAvailable(),
       ]);
       this.lessons.set(lessons);
       this.customers.set(customers);

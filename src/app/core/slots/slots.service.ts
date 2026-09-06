@@ -63,8 +63,17 @@ export class SlotsService {
     return data ?? [];
   }
 
-  /** Slot liberi (attivi, non occupati) dei prossimi `days` giorni, per la UI di prenotazione. */
-  async listAvailable(days = 14): Promise<SlotRow[]> {
+  /**
+   * Slot liberi (attivi, non occupati) dei prossimi `days` giorni, per la UI
+   * di prenotazione. Default abbondante e non "sincronizzato a mano" con
+   * app_settings.slot_horizon_days: la query filtra per data su righe già
+   * generate, quindi chiedere più giorni di quanti l'orizzonte ne produca
+   * davvero non costa nulla — restituisce solo quello che esiste. Il
+   * problema che questo evita: un valore fisso qui (es. 14) smette di
+   * mostrare gli slot generati appena qualcuno allarga l'orizzonte lato DB,
+   * senza che nulla lo segnali.
+   */
+  async listAvailable(days = 180): Promise<SlotRow[]> {
     const from = toIsoDate(new Date());
     const toDate = new Date();
     toDate.setDate(toDate.getDate() + days - 1);

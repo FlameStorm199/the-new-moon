@@ -80,7 +80,7 @@ export class PrenotaComponent implements OnInit {
     this.errorMessage.set(null);
     try {
       const [slots, settings] = await Promise.all([
-        this.slotsService.listAvailable(14),
+        this.slotsService.listAvailable(),
         this.lessonsService.getBookingSettings(),
       ]);
       this.bookingMinHours.set(settings.bookingMinHoursBefore);
