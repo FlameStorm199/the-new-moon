@@ -1,5 +1,10 @@
 .auth-page.privacy-page {
   max-width: 30rem;
+  // Le altre pagine di autenticazione (login, registrati...) hanno ciascuna
+  // il proprio padding locale sulla card — il tema globale non lo imposta,
+  // solo bordo/ombra/sfondo. Qui mancava del tutto, e il testo finiva a
+  // ridosso dei bordi del rettangolo.
+  padding: 2rem 1.75rem;
 
   p {
     color: #555;

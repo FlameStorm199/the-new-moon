@@ -24,6 +24,18 @@ export class AreaPersonaleComponent implements OnInit {
     return type === 'trainer' || type === 'admin';
   }
 
+  /**
+   * "validated" ha senso solo per un cliente: lo staff non viene mai
+   * validato (in fase di creazione quel campo resta al suo default), quindi
+   * senza questa eccezione un educatore vedrebbe "account in attesa" e
+   * perderebbe i tasti Prenota/Le mie lezioni — stesso controllo già usato
+   * in prenota.component.ts e le-mie-lezioni.component.ts.
+   */
+  get canUsePlatform(): boolean {
+    const p = this.profile();
+    return !!p && (p.validated || this.isStaff);
+  }
+
   async ngOnInit(): Promise<void> {
     this.profile.set(await this.profileService.getMyProfile());
     this.loadingProfile.set(false);
