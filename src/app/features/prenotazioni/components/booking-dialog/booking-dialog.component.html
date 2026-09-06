@@ -7,6 +7,16 @@
     aria-labelledby="booking-dialog-title"
     (click)="$event.stopPropagation()"
   >
+    <button
+      type="button"
+      class="close-x"
+      [disabled]="busy"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
     @if (state === 'confirm') {
       <h2 id="booking-dialog-title">Confermi la prenotazione?</h2>
 
@@ -27,9 +37,6 @@
       }
 
       <div class="actions">
-        <button type="button" class="secondary" [disabled]="busy" (click)="closed.emit()">
-          Annulla
-        </button>
         <button
           #primaryAction
           type="button"
@@ -53,10 +60,9 @@
       <p class="note">Ti abbiamo inviato un'email di conferma.</p>
 
       <div class="actions">
-        <a routerLink="/prenotazioni/le-mie-lezioni" class="link-action">Le mie lezioni</a>
-        <button #primaryAction type="button" class="primary" (click)="closed.emit()">
-          Chiudi
-        </button>
+        <a #primaryAction routerLink="/prenotazioni/le-mie-lezioni" class="link-action">
+          Le mie lezioni
+        </a>
       </div>
     }
   </div>

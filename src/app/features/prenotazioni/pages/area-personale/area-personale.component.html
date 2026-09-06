@@ -1,12 +1,71 @@
-<section class="area-personale">
+<section class="area-personale" [class.staff-view]="isStaffViewer">
   <h1>Area personale</h1>
 
   @if (profile(); as p) {
     <p class="greeting">Ciao <strong>{{ p.name }} {{ p.surname }}</strong>.</p>
 
+    @if (isStaffViewer) {
+      <div class="calendar-hero">
+        @if (calendarError()) {
+          <p class="error">{{ calendarError() }}</p>
+        }
+        @if (loadingCalendar()) {
+          <p>Caricamento calendario…</p>
+        } @else {
+          <app-staff-calendar
+            [slots]="slots()"
+            [lessons]="lessons()"
+            [closedDays]="closedDays()"
+            [togglingSlotId]="togglingSlotId()"
+            [canToggle]="isStaff"
+            (slotToggle)="onSlotToggle($event)"
+            (lessonOpen)="onLessonOpen($event)"
+          />
+        }
+      </div>
+    }
+
+    @if (selectedLesson(); as lesson) {
+      <app-lesson-detail-dialog
+        [lesson]="lesson"
+        [canAct]="isStaff"
+        (closed)="closeLessonDetail()"
+        (moveRequested)="requestMove(lesson)"
+        (cancelRequested)="requestCancel(lesson)"
+      />
+    }
+
+    @if (movingLesson(); as lesson) {
+      <app-move-lesson-dialog
+        [lesson]="lesson"
+        [freeSlots]="freeSlotsForMove()"
+        [state]="moveDialogState()"
+        [busy]="busyId() === lesson.id"
+        [errorMessage]="moveDialogError()"
+        [movedToSlotLabel]="movedToSlotLabel()"
+        (submitted)="confirmMove($event)"
+        (closed)="closeMoveDialog()"
+      />
+    }
+
+    @if (cancellingLesson(); as lesson) {
+      <app-cancel-lesson-dialog
+        [lesson]="lesson"
+        [state]="cancelDialogState()"
+        [busy]="busyId() === lesson.id"
+        [errorMessage]="cancelDialogError()"
+        [withReason]="true"
+        [customerLabel]="customerLabel(lesson)"
+        (confirmed)="confirmCancel($event)"
+        (closed)="closeCancelDialog()"
+      />
+    }
+
     @if (showPendingMessage) {
-      <p class="pending">Il tuo account è in attesa di validazione da parte dello staff.</p>
-    } @else if (canUsePlatform) {
+      <p class="pending">
+        Il tuo account è in attesa di validazione da parte dello staff.
+      </p>
+    } @else if (canUsePlatform && !isStaff) {
       <div class="tile-grid">
         <a routerLink="/prenotazioni/prenota" class="tile">
           <span class="tile-icon">📅</span>
@@ -20,12 +79,7 @@
     }
 
     @if (isStaffViewer) {
-      <h2>Staff</h2>
-      <div class="tile-grid">
-        <a routerLink="/prenotazioni/utenti-da-validare" class="tile">
-          <span class="tile-icon">✅</span>
-          <span class="tile-title">Utenti da validare</span>
-        </a>
+      <div class="tile-grid secondary">
         <a routerLink="/prenotazioni/gestione-lezioni" class="tile">
           <span class="tile-icon">🗓️</span>
           <span class="tile-title">Gestione lezioni</span>
@@ -50,9 +104,19 @@
     <p class="pending">Non è stato possibile caricare il profilo.</p>
   }
 
-  <p class="footer-links">
-    <a routerLink="/prenotazioni/privacy">Privacy e assistenza</a>
-  </p>
+  <div class="bottom-row">
+    <p class="footer-links">
+      <a routerLink="/prenotazioni/privacy">Privacy e assistenza</a>
+    </p>
+    @if (isStaff) {
+      <p class="assisted-link">
+        Area assistito:
+        <a routerLink="/prenotazioni/prenota">Prenota una lezione</a>
+        ·
+        <a routerLink="/prenotazioni/le-mie-lezioni">Le mie lezioni</a>
+      </p>
+    }
+  </div>
 
   <button type="button" class="logout" (click)="logout()">Esci</button>
 </section>

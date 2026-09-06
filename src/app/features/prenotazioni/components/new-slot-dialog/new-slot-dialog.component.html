@@ -7,6 +7,16 @@
     aria-labelledby="new-slot-dialog-title"
     (click)="$event.stopPropagation()"
   >
+    <button
+      type="button"
+      class="close-x"
+      [disabled]="busy"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
     @if (state === 'form') {
       <h2 id="new-slot-dialog-title">Aggiungi slot</h2>
 
@@ -39,9 +49,6 @@
         }
 
         <div class="actions">
-          <button type="button" class="secondary" [disabled]="busy" (click)="closed.emit()">
-            Annulla
-          </button>
           <button #primaryAction type="submit" class="primary" [disabled]="busy">
             {{ busy ? 'Creazione…' : 'Aggiungi' }}
           </button>
@@ -57,12 +64,6 @@
           <span class="date">{{ summaryLabel }}</span>
         </div>
       }
-
-      <div class="actions">
-        <button #primaryAction type="button" class="primary" (click)="closed.emit()">
-          Chiudi
-        </button>
-      </div>
     }
   </div>
 </div>

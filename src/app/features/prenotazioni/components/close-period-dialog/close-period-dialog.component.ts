@@ -9,16 +9,16 @@ export interface ClosePeriodFormValue {
   dateFrom: string;
   dateTo: string;
   scope: ClosePeriodScope;
-  /** true = riapri, false = tieni libero. */
-  active: boolean;
   reason?: string;
 }
 
 /**
- * "Chiudi o riapri un periodo", spostato dalla pagina in un modale: a
- * differenza degli altri, qui non c'è una sola azione da confermare ma due
- * alternative equivalenti (tenere libero o riaprire) sullo stesso intervallo
- * — restano quindi due bottoni nella stessa forma, non un solo "conferma".
+ * "Chiudi campo": chiude un intervallo di date, vicino o lontano. Solo
+ * andata apposta — riaprire una data già chiusa si fa da "Elenco chiusure"
+ * (closed-days-dialog), riga per riga, non da qui: prima conviveva un
+ * secondo bottone "Riapri" nella stessa form, ma un intervallo "dal-al" è
+ * scomodo per riaprire un giorno preciso in mezzo a tante chiusure diverse,
+ * mentre l'elenco le mostra già una per una.
  */
 @Component({
   selector: 'app-close-period-dialog',
@@ -71,7 +71,7 @@ export class ClosePeriodDialogComponent implements AfterViewInit {
     }
   }
 
-  submit(active: boolean): void {
+  submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -86,7 +86,6 @@ export class ClosePeriodDialogComponent implements AfterViewInit {
       dateFrom: value.dateFrom,
       dateTo: value.dateTo || value.dateFrom,
       scope: value.scope,
-      active,
       reason: value.reason || undefined,
     });
   }

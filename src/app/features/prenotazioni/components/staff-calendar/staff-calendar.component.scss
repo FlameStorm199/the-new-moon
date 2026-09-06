@@ -1,0 +1,384 @@
+// Stessa struttura di week-calendar.component.scss (frecce, griglia, righe da
+// 5 minuti), qui senza il tema globale da battere in specificità: questa
+// vista non vive dentro .prenota-page.
+
+$grid-compact-width: 900px;
+$gutter-width: 3.5rem;
+$gutter-width-compact: 2.6rem;
+
+:host {
+  display: block;
+}
+
+.staff-calendar {
+  // Più basso del calendario cliente (7px): qui deve stare, insieme al
+  // resto della pagina, anche su un notebook da 13" senza sembrare enorme.
+  --row-h: 5px;
+  --free: var(--pn-accent, #3b6fd4);
+  --free-hover: #5c8bdc;
+  --occupied: var(--pn-success, #1b7a3d);
+  --inactive-bg: #e4e4e4;
+  --inactive-text: #7a7a7a;
+  --closed: var(--pn-warning, #b06a00);
+  --closed-bg: var(--pn-warning-bg, #fff4e0);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--pn-text-muted, #555);
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .swatch {
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 0.25rem;
+    display: inline-block;
+
+    &.free {
+      background: var(--free);
+    }
+
+    &.occupied {
+      background: var(--occupied);
+    }
+
+    // Bordo in più: il grigio è così chiaro che senza sparirebbe sul bianco della pagina.
+    &.inactive {
+      background: var(--inactive-bg);
+      border: 1px solid #c9c9c9;
+    }
+
+    &.closed {
+      background: var(--closed);
+    }
+  }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin: 0.4rem 0 1rem;
+
+  .range-label {
+    font-weight: 700;
+    font-size: 1rem;
+    min-width: 12rem;
+    text-align: center;
+  }
+}
+
+:host .toolbar .nav {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  line-height: 1;
+  border-radius: 50%;
+  border: 1px solid var(--free);
+  background: #fff;
+  color: var(--free);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(59, 111, 212, 0.08);
+  }
+}
+
+.grid-header,
+.grid-body {
+  grid-template-columns: $gutter-width repeat(7, minmax(0, 1fr));
+}
+
+.grid-header {
+  display: grid;
+  gap: 0 3px;
+  margin-bottom: 0.4rem;
+
+  .day-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+
+    .weekday {
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .daynum {
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    &.today {
+      background: rgba(59, 111, 212, 0.08);
+
+      .weekday,
+      .daynum {
+        color: var(--free);
+      }
+    }
+  }
+}
+
+.grid-body {
+  position: relative;
+  display: grid;
+  gap: 0 3px;
+
+  .hour-label {
+    grid-column: 1;
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+    padding-right: 0.5rem;
+    transform: translateY(-0.5em);
+  }
+
+  .hour-line {
+    grid-column: 2 / -1;
+    border-top: 1px solid #eee;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .gap-band {
+    grid-column: 2 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #aaa;
+    background: repeating-linear-gradient(
+      45deg,
+      #fafafa,
+      #fafafa 6px,
+      #f4f4f4 6px,
+      #f4f4f4 12px
+    );
+    border-top: 1px dashed #e4e4e4;
+    border-bottom: 1px dashed #e4e4e4;
+  }
+
+  .day-column {
+    position: relative;
+    display: grid;
+    border-left: 1px solid #f2f2f2;
+
+    &.today {
+      background: rgba(59, 111, 212, 0.04);
+    }
+  }
+}
+
+// :host in testa (non solo .slot): come da nota in cima a
+// week-calendar.component.scss, il tema globale in styles.scss stila
+// `html body .area-personale button[type='button']` con più specificità di
+// un semplice `.slot` — qui vinceva sullo stato di riposo (bianco/bordo blu
+// invece del blu pieno) perché le varianti con una classe in più
+// (.occupied, .inactive, :disabled) restavano comunque più specifiche e
+// per questo sembravano giuste. :host aggiunge la specificità che manca a
+// TUTTI gli stati, non solo a quelli già "salvi" per un pelo.
+//
+// È un <button>, non più un <div>: reset dei default del browser (bordo,
+// font) prima delle regole vere e proprie.
+:host .slot {
+  margin: 1px 2px;
+  padding: 0.25rem 0.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  overflow: hidden;
+  border: none;
+  font-family: inherit;
+  background: var(--free);
+  color: #fff;
+  border-radius: 0.4rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+
+  .slot-from {
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  .slot-second {
+    font-size: 0.72rem;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    opacity: 0.9;
+  }
+
+  &.occupied {
+    background: var(--occupied);
+  }
+
+  // Slot esistente ma disattivato dallo staff (gestione-slot): grigio molto
+  // chiaro, distinto sia dal libero (blu) sia dal chiuso (arancio, che è
+  // l'assenza di slot su tutta la fascia, non un singolo slot spento). Testo
+  // scuro invece che bianco: su un fondo così chiaro il bianco sparirebbe.
+  &.inactive {
+    background: var(--inactive-bg);
+    color: var(--inactive-text);
+    border: 1px solid #c9c9c9;
+  }
+
+  // Solo sul blu di riposo: un clic qui attiva/disattiva, quindi merita
+  // un feedback proprio, più chiaro dell'originale invece che più scuro
+  // (più scuro, su un blocco già pieno, leggeva come "disabilitato").
+  &:not(.occupied):not(.inactive):hover:not(:disabled) {
+    background: var(--free-hover);
+  }
+
+  // Sola lettura permanente (assistente, canToggle=false): niente da
+  // segnalare, il blocco resta con i suoi colori pieni — l'attributo
+  // disabled basta a bloccare il clic senza doverlo anche intorbidire.
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  // Toggle in corso (temporaneo): qui sì, un'attenuazione visibile mentre
+  // si aspetta la risposta del server.
+  &.busy {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}
+
+// Fascia di chiusura: ancorata alle stesse righe orarie degli slot, sulla
+// parte prima della pausa (mattina chiusa) o dopo (pomeriggio chiuso). Una
+// giornata intera ne mostra due, una sopra l'altra, non un unico overlay:
+// insieme coprono comunque tutta la colonna.
+.closed-overlay {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  margin: 1px 2px;
+  border-radius: 0.4rem;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--closed-bg),
+    var(--closed-bg) 6px,
+    #ffe9c2 6px,
+    #ffe9c2 12px
+  );
+  border: 1px dashed var(--closed);
+  overflow: hidden;
+
+  .closed-label {
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: var(--closed);
+  }
+
+  .closed-reason {
+    font-size: 0.65rem;
+    color: var(--closed);
+    opacity: 0.85;
+    text-align: center;
+    padding: 0 0.3rem;
+  }
+}
+
+@media (max-width: $grid-compact-width) {
+  .staff-calendar {
+    --row-h: 4.5px;
+  }
+
+  .grid-header,
+  .grid-body {
+    grid-template-columns: $gutter-width-compact repeat(7, minmax(0, 1fr));
+    gap: 0 2px;
+  }
+
+  .grid-header .day-head {
+    font-size: 0.7rem;
+
+    .daynum {
+      font-size: 1rem;
+    }
+  }
+
+  .grid-body .hour-label {
+    font-size: 0.68rem;
+    padding-right: 0.35rem;
+  }
+
+  :host .slot {
+    padding: 0.15rem 0.2rem;
+
+    .slot-from {
+      font-size: 0.75rem;
+    }
+
+    .slot-second {
+      font-size: 0.62rem;
+    }
+  }
+
+  .closed-overlay .closed-label {
+    font-size: 0.68rem;
+  }
+}
+
+.staff-calendar.days-3 {
+  --row-h: 5px;
+
+  .grid-header,
+  .grid-body {
+    grid-template-columns: $gutter-width-compact repeat(3, minmax(0, 1fr));
+    gap: 0 4px;
+  }
+
+  .grid-header .day-head {
+    font-size: 0.8rem;
+
+    .daynum {
+      font-size: 1.25rem;
+    }
+  }
+
+  .grid-body .hour-label {
+    font-size: 0.72rem;
+  }
+
+  :host .slot {
+    padding: 0.3rem 0.4rem;
+
+    .slot-from {
+      font-size: 0.95rem;
+    }
+
+    .slot-second {
+      font-size: 0.8rem;
+    }
+  }
+}

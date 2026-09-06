@@ -7,6 +7,16 @@
     aria-labelledby="new-lesson-dialog-title"
     (click)="$event.stopPropagation()"
   >
+    <button
+      type="button"
+      class="close-x"
+      [disabled]="busy"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
     @if (state === 'form') {
       <h2 id="new-lesson-dialog-title">Prenota per un cliente</h2>
 
@@ -51,9 +61,6 @@
         }
 
         <div class="actions">
-          <button type="button" class="secondary" [disabled]="busy" (click)="closed.emit()">
-            Annulla
-          </button>
           <button #primaryAction type="submit" class="primary" [disabled]="busy">
             {{ busy ? 'Prenotazione…' : 'Prenota' }}
           </button>
@@ -70,12 +77,6 @@
       </div>
 
       <p class="note">Il cliente riceve un'email di conferma.</p>
-
-      <div class="actions">
-        <button #primaryAction type="button" class="primary" (click)="closed.emit()">
-          Chiudi
-        </button>
-      </div>
     }
   </div>
 </div>

@@ -7,12 +7,23 @@
     aria-labelledby="close-period-dialog-title"
     (click)="$event.stopPropagation()"
   >
+    <button
+      type="button"
+      class="close-x"
+      [disabled]="busy"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
     @if (state === 'form') {
-      <h2 id="close-period-dialog-title">Chiudi o riapri un periodo</h2>
+      <h2 id="close-period-dialog-title">Chiudi campo</h2>
 
       <p class="note">
         Funziona anche su date lontane, oltre l'orizzonte di generazione (es. Natale segnato ad
-        agosto): se gli slot non esistono ancora, nasceranno già chiusi.
+        agosto): se gli slot non esistono ancora, nasceranno già chiusi. Per riaprire una data già
+        chiusa usa "Elenco chiusure": qui si può solo chiudere.
       </p>
 
       <form [formGroup]="form" novalidate>
@@ -47,20 +58,14 @@
         }
 
         <div class="actions">
-          <button type="button" class="secondary" [disabled]="busy" (click)="closed.emit()">
-            Annulla
-          </button>
-          <button type="button" class="warning" [disabled]="busy" (click)="submit(false)">
-            {{ busy ? 'Attendi…' : 'Tieni libero' }}
-          </button>
           <button
             #primaryAction
             type="button"
-            class="primary"
+            class="warning"
             [disabled]="busy"
-            (click)="submit(true)"
+            (click)="submit()"
           >
-            Riapri
+            {{ busy ? 'Chiusura…' : 'Chiudi campo' }}
           </button>
         </div>
       </form>
@@ -72,12 +77,6 @@
       @if (resultMessage) {
         <p class="note">{{ resultMessage }}</p>
       }
-
-      <div class="actions">
-        <button #primaryAction type="button" class="primary" (click)="closed.emit()">
-          Chiudi
-        </button>
-      </div>
     }
   </div>
 </div>

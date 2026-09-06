@@ -45,6 +45,12 @@ export class GestioneUtentiComponent implements OnInit {
   // mostrargli controlli che gli verrebbero respinti.
   readonly isAdmin = signal(false);
 
+  /** Trainer incluso: può validare (stesso permesso di prima in utenti-da-validare.component.ts). */
+  readonly canValidate = signal(false);
+
+  /** users.id di chi è loggato: serve solo per stampigliare deleted_by nel rifiuto. */
+  private currentUserId: number | null = null;
+
   readonly typeLabels = TYPE_LABELS;
 
   readonly form = this.fb.nonNullable.group({
@@ -67,7 +73,14 @@ export class GestioneUtentiComponent implements OnInit {
 
   private async loadRole(): Promise<void> {
     const profile = await this.profileService.getMyProfile();
+    this.currentUserId = profile?.id ?? null;
     this.isAdmin.set(profile?.typeCode === 'admin');
+    this.canValidate.set(profile?.typeCode === 'trainer' || profile?.typeCode === 'admin');
+  }
+
+  /** Stesso criterio del badge "non validato": solo un customer/future_customer può esserlo. */
+  isPendingValidation(row: AdminUserRow): boolean {
+    return !row.validated && (row.typeCode === 'customer' || row.typeCode === 'future_customer');
   }
 
   async load(): Promise<void> {
@@ -114,6 +127,39 @@ export class GestioneUtentiComponent implements OnInit {
       this.errorMessage.set((err as Error).message || 'Creazione utente fallita.');
     } finally {
       this.creating.set(false);
+    }
+  }
+
+  async validateUser(row: AdminUserRow): Promise<void> {
+    this.actingOnId.set(row.id);
+    this.errorMessage.set(null);
+    this.infoMessage.set(null);
+    try {
+      await this.usersService.validate(row.id);
+      this.users.update((list) =>
+        list.map((u) => (u.id === row.id ? { ...u, validated: true } : u))
+      );
+    } catch (err) {
+      this.errorMessage.set((err as Error).message || 'Validazione non riuscita.');
+    } finally {
+      this.actingOnId.set(null);
+    }
+  }
+
+  async rejectUser(row: AdminUserRow): Promise<void> {
+    if (this.currentUserId === null) {
+      return;
+    }
+    this.actingOnId.set(row.id);
+    this.errorMessage.set(null);
+    this.infoMessage.set(null);
+    try {
+      await this.usersService.rejectPendingUser(row.id, this.currentUserId);
+      this.users.update((list) => list.filter((u) => u.id !== row.id));
+    } catch (err) {
+      this.errorMessage.set((err as Error).message || 'Rifiuto non riuscito.');
+    } finally {
+      this.actingOnId.set(null);
     }
   }
 

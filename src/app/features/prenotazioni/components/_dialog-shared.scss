@@ -54,6 +54,39 @@
   }
 }
 
+// X in alto a destra: presente su ogni modale della sezione, accanto
+// (non al posto di) agli altri modi di chiudere già presenti in fondo al
+// pannello (Annulla, Chiudi, Chiudi finestra…). Serve un genitore con
+// position:relative — .panel già ce l'ha.
+:host .close-x {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #999;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #f2f2f2;
+    color: #333;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
 .tick {
   width: 3rem;
   height: 3rem;

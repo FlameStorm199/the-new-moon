@@ -17,7 +17,7 @@
           Elenco chiusure
         </button>
         <button type="button" class="secondary-cta" (click)="openClosePeriod()">
-          Chiudi/riapri periodo
+          Chiudi campo
         </button>
         <button type="button" class="primary-cta" (click)="openNewSlot()">+ Aggiungi slot</button>
       </div>
@@ -27,9 +27,9 @@
   <p class="hint">
     Gli slot dei prossimi giorni sono generati automaticamente dalle
     <a routerLink="/prenotazioni/fasce-orarie">fasce orarie</a>: modificarle ricalcola subito
-    questa lista. "Chiudi/riapri periodo" chiude o riapre qualunque intervallo di date, vicino o
-    lontano: il sistema decide da solo come applicarlo. "Elenco chiusure" mostra tutte le
-    chiusure registrate finora.
+    questa lista. "Chiudi campo" chiude qualunque intervallo di date, vicino o lontano: il sistema
+    decide da solo come applicarlo. Per riaprire una data già chiusa usa "Elenco chiusure", che le
+    mostra tutte con un "Riapri" accanto a ciascuna.
   </p>
 
   @if (errorMessage()) {

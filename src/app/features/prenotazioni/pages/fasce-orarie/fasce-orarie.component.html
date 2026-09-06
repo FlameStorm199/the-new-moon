@@ -1,15 +1,17 @@
-<section class="staff-page">
+<section class="staff-page fasce-page">
   <app-back-link />
-  <h1>Fasce orarie</h1>
 
-  <p class="hint">
-    Sono gli orari di apertura settimanali da cui vengono generati gli slot.
-    Puoi modificare gli orari o attivare/disattivare una fascia; le fasce
-    stesse (una per giorno, mattina e pomeriggio) sono fisse. Ogni modifica
-    ricalcola immediatamente gli slot futuri: quelli già prenotati restano al
-    loro posto anche se finiscono fuori fascia. Vedi il risultato in
-    <a routerLink="/prenotazioni/gestione-slot">Gestione slot</a>.
-  </p>
+  <div class="title-row">
+    <h1>Fasce orarie</h1>
+    <button
+      type="button"
+      class="info-btn"
+      (click)="infoOpen.set(true)"
+      aria-label="Informazioni su questa pagina"
+    >
+      i
+    </button>
+  </div>
 
   @if (errorMessage()) {
     <p class="error">{{ errorMessage() }}</p>
@@ -21,50 +23,114 @@
   @if (loading()) {
     <p>Caricamento…</p>
   } @else {
-    @for (group of groupedByWeekday(); track group.weekday) {
-      <div class="day-group">
-        <h3>{{ group.label }}</h3>
-
-        @if (group.rules.length === 0) {
-          <p class="empty">Nessuna fascia: giorno chiuso.</p>
-        } @else {
-          <ul>
-            @for (rule of group.rules; track rule.id) {
-              <li [class.inactive]="!rule.active">
-                <span class="part">{{ rule.part_of_day }}</span>
-
-                @if (canAct()) {
-                  <input type="time" #from [value]="rule.time_from.slice(0, 5)" />
-                  <span class="sep">→</span>
-                  <input type="time" #to [value]="rule.time_to.slice(0, 5)" />
-
-                  <button
-                    type="button"
-                    [disabled]="savingId() === rule.id"
-                    (click)="saveHours(rule, from.value, to.value)"
-                  >
-                    Salva
-                  </button>
-                  <button
-                    type="button"
-                    [disabled]="savingId() === rule.id"
-                    (click)="toggleActive(rule)"
-                  >
-                    {{ rule.active ? 'Disattiva' : 'Attiva' }}
-                  </button>
-                } @else {
-                  <span class="hours">
-                    {{ rule.time_from.slice(0, 5) }} → {{ rule.time_to.slice(0, 5) }}
-                  </span>
-                  <span class="badge" [class.inactive]="!rule.active">
-                    {{ rule.active ? 'attiva' : 'disattiva' }}
-                  </span>
-                }
-              </li>
-            }
-          </ul>
-        }
+    @if (canAct() && isDirty()) {
+      <div class="save-bar dirty">
+        <span class="save-bar-count">
+          {{ dirtyCount() }} {{ dirtyCount() === 1 ? 'fascia modificata' : 'fasce modificate' }}
+        </span>
+        <div class="save-bar-actions">
+          <button
+            type="button"
+            class="secondary-cta"
+            [disabled]="saving()"
+            (click)="discardChanges()"
+          >
+            Annulla modifiche
+          </button>
+          <button
+            type="button"
+            class="primary-cta"
+            [disabled]="saving()"
+            (click)="saveAll()"
+          >
+            {{ saving() ? 'Salvataggio…' : 'Salva modifiche' }}
+          </button>
+        </div>
       </div>
     }
+
+    <ng-template #cell let-rule="rule">
+      @if (rule) {
+        <div class="rule-cell" [class.inactive]="!rule.active">
+          @if (canAct()) {
+            <div class="hours-edit">
+              <input
+                type="time"
+                [value]="draftFrom(rule)"
+                (change)="onFromChange(rule, $any($event.target).value)"
+              />
+              <span class="sep">–</span>
+              <input
+                type="time"
+                [value]="draftTo(rule)"
+                (change)="onToChange(rule, $any($event.target).value)"
+              />
+            </div>
+            <label class="switch" [attr.aria-label]="rule.active ? 'Disattiva fascia' : 'Attiva fascia'">
+              <input type="checkbox" [checked]="rule.active" (change)="toggleActive(rule)" />
+              <span class="slider"></span>
+            </label>
+          } @else {
+            <span class="hours">{{ rule.time_from.slice(0, 5) }} – {{ rule.time_to.slice(0, 5) }}</span>
+            <span class="badge" [class.inactive]="!rule.active">
+              {{ rule.active ? 'attiva' : 'disattiva' }}
+            </span>
+          }
+        </div>
+      } @else {
+        <div class="rule-cell empty">—</div>
+      }
+    </ng-template>
+
+    <div class="fasce-grid">
+      <div class="grid-row grid-head">
+        <span></span>
+        <span>Mattina</span>
+        <span>Pomeriggio</span>
+      </div>
+      @for (group of groupedByWeekday(); track group.weekday) {
+        <div class="grid-row">
+          <span class="day-label">{{ group.label }}</span>
+          <ng-container *ngTemplateOutlet="cell; context: { rule: group.mattina }" />
+          <ng-container *ngTemplateOutlet="cell; context: { rule: group.pomeriggio }" />
+        </div>
+      }
+    </div>
+  }
+
+  @if (infoOpen()) {
+    <div class="backdrop" (click)="infoOpen.set(false)">
+      <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+      <div
+        class="panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fasce-info-title"
+        (click)="$event.stopPropagation()"
+      >
+        <button
+          type="button"
+          class="close-x"
+          (click)="infoOpen.set(false)"
+          aria-label="Chiudi"
+        >
+          ✕
+        </button>
+
+        <h2 id="fasce-info-title">Come funzionano le fasce orarie</h2>
+
+        <p class="note">
+          Sono gli orari di apertura settimanali da cui vengono generati gli slot. Puoi modificare
+          gli orari o attivare/disattivare una fascia; le fasce stesse (una per giorno, mattina e
+          pomeriggio) sono fisse. Ogni modifica ricalcola immediatamente gli slot futuri: quelli già
+          prenotati restano al loro posto anche se finiscono fuori fascia.
+        </p>
+
+        <p class="note">
+          Vedi il risultato in
+          <a routerLink="/prenotazioni/gestione-slot" (click)="infoOpen.set(false)">Gestione slot</a>.
+        </p>
+      </div>
+    </div>
   }
 </section>

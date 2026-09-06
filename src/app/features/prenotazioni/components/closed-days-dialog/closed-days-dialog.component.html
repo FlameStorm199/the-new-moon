@@ -7,11 +7,13 @@
     aria-labelledby="closed-days-title"
     (click)="$event.stopPropagation()"
   >
+    <button type="button" class="close-x" (click)="closed.emit()" aria-label="Chiudi">✕</button>
+
     <h2 id="closed-days-title">Chiusure</h2>
 
     <p class="note">
-      Tutte le date tenute libere, vicine e lontane. Per aggiungerne una nuova usa "Chiudi/riapri
-      periodo"; da qui puoi solo consultarle o riaprirle.
+      Tutte le date tenute libere, vicine e lontane. Per aggiungerne una nuova usa "Chiudi campo";
+      da qui puoi solo consultarle o riaprirle.
     </p>
 
     @if (errorMessage()) {
@@ -43,9 +45,5 @@
         }
       </ul>
     }
-
-    <div class="actions">
-      <button type="button" class="primary" (click)="closed.emit()">Chiudi finestra</button>
-    </div>
   </div>
 </div>

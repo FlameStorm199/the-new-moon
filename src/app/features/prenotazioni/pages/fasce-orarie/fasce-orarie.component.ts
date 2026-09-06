@@ -11,7 +11,14 @@ import { UserProfileService } from '../../../../core/users/user-profile.service'
 interface WeekdayGroup {
   weekday: number;
   label: string;
-  rules: TimeSlotRuleRow[];
+  /** Sempre in quest'ordine, non l'ordine di arrivo: la griglia ha una colonna fissa per ciascuna. */
+  mattina: TimeSlotRuleRow | null;
+  pomeriggio: TimeSlotRuleRow | null;
+}
+
+interface DraftHours {
+  timeFrom: string;
+  timeTo: string;
 }
 
 // Convenzione Postgres (0 = domenica), ma mostrata partendo da lunedì, che è
@@ -42,23 +49,37 @@ export class FasceOrarieComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly infoMessage = signal<string | null>(null);
-  readonly savingId = signal<number | null>(null);
+  readonly saving = signal(false);
+  readonly infoOpen = signal(false);
+
+  /**
+   * Orari modificati ma non ancora salvati, per id fascia: prima ogni riga
+   * aveva il suo "Salva" e cambiare più giorni voleva dire premerlo una
+   * volta per riga. Qui invece si scrive quanto si vuole e si salva tutto
+   * insieme con un solo bottone, che compare solo quando c'è davvero
+   * qualcosa da salvare.
+   */
+  private readonly drafts = signal<Map<number, DraftHours>>(new Map());
 
   // Un assistente vede le fasce (RLS is_staff()) ma non può modificarle: la
   // scrittura resta riservata a trainer/admin (RLS tsr_update_staff). Solo
   // per non mostrargli campi e bottoni che verrebbero comunque respinti.
   readonly canAct = signal(false);
 
-  readonly weekdayOrder = WEEKDAY_ORDER;
   readonly weekdayLabels = WEEKDAY_LABELS;
 
-  readonly groupedByWeekday = computed<WeekdayGroup[]>(() =>
-    WEEKDAY_ORDER.map((weekday) => ({
+  readonly groupedByWeekday = computed<WeekdayGroup[]>(() => {
+    const all = this.rules();
+    return WEEKDAY_ORDER.map((weekday) => ({
       weekday,
       label: WEEKDAY_LABELS[weekday],
-      rules: this.rules().filter((r) => r.weekday === weekday),
-    }))
-  );
+      mattina: all.find((r) => r.weekday === weekday && r.part_of_day === 'mattina') ?? null,
+      pomeriggio: all.find((r) => r.weekday === weekday && r.part_of_day === 'pomeriggio') ?? null,
+    }));
+  });
+
+  readonly dirtyCount = computed(() => this.drafts().size);
+  readonly isDirty = computed(() => this.dirtyCount() > 0);
 
   ngOnInit(): void {
     void this.load();
@@ -83,41 +104,93 @@ export class FasceOrarieComponent implements OnInit {
     }
   }
 
+  /** Valore da mostrare nel campo "dalle": la bozza se c'è, altrimenti quello salvato. */
+  draftFrom(rule: TimeSlotRuleRow): string {
+    return this.drafts().get(rule.id)?.timeFrom ?? rule.time_from.slice(0, 5);
+  }
+
+  draftTo(rule: TimeSlotRuleRow): string {
+    return this.drafts().get(rule.id)?.timeTo ?? rule.time_to.slice(0, 5);
+  }
+
+  onFromChange(rule: TimeSlotRuleRow, value: string): void {
+    this.setDraft(rule, { timeFrom: value, timeTo: this.draftTo(rule) });
+  }
+
+  onToChange(rule: TimeSlotRuleRow, value: string): void {
+    this.setDraft(rule, { timeFrom: this.draftFrom(rule), timeTo: value });
+  }
+
+  /** Una bozza uguale ai valori salvati non conta come modifica: evita un bottone "Salva" sempre acceso per un giro a vuoto. */
+  private setDraft(rule: TimeSlotRuleRow, value: DraftHours): void {
+    this.drafts.update((map) => {
+      const next = new Map(map);
+      if (value.timeFrom === rule.time_from.slice(0, 5) && value.timeTo === rule.time_to.slice(0, 5)) {
+        next.delete(rule.id);
+      } else {
+        next.set(rule.id, value);
+      }
+      return next;
+    });
+  }
+
+  discardChanges(): void {
+    this.drafts.set(new Map());
+    this.errorMessage.set(null);
+  }
+
   async toggleActive(rule: TimeSlotRuleRow): Promise<void> {
-    await this.run(rule.id, () => this.rulesService.setActive(rule.id, !rule.active));
-  }
-
-  async saveHours(rule: TimeSlotRuleRow, timeFrom: string, timeTo: string): Promise<void> {
-    if (!timeFrom || !timeTo) {
-      this.errorMessage.set('Indica sia l’orario di inizio sia quello di fine.');
-      return;
-    }
-    if (timeTo <= timeFrom) {
-      this.errorMessage.set('L’orario di fine deve essere successivo a quello di inizio.');
-      return;
-    }
-    await this.run(rule.id, () => this.rulesService.updateHours(rule.id, timeFrom, timeTo));
-  }
-
-  /**
-   * Ogni scrittura sulle fasce fa ricalcolare gli slot futuri lato database:
-   * i messaggi di errore che arrivano da lì (fasce sovrapposte, orari non
-   * validi) sono già scritti per l'utente finale, quindi vengono mostrati
-   * così come sono invece di essere sostituiti da un generico "errore".
-   */
-  private async run(ruleId: number | null, action: () => Promise<void>): Promise<void> {
-    this.savingId.set(ruleId);
     this.errorMessage.set(null);
     this.infoMessage.set(null);
     try {
-      await action();
+      await this.rulesService.setActive(rule.id, !rule.active);
+      await this.load();
+    } catch (err) {
+      this.errorMessage.set(errorText(err) ?? 'Errore nel salvataggio della fascia oraria.');
+    }
+  }
+
+  /**
+   * Un'unica chiamata per tutte le fasce modificate, non una per riga.
+   * Ogni scrittura fa ricalcolare gli slot futuri lato database: farlo una
+   * volta sola per tutto il gruppo invece che per ogni singola fascia.
+   */
+  async saveAll(): Promise<void> {
+    const entries = Array.from(this.drafts().entries());
+    if (entries.length === 0) {
+      return;
+    }
+    for (const [, draft] of entries) {
+      if (!draft.timeFrom || !draft.timeTo) {
+        this.errorMessage.set('Indica sia l’orario di inizio sia quello di fine su ogni riga modificata.');
+        return;
+      }
+      if (draft.timeTo <= draft.timeFrom) {
+        this.errorMessage.set('L’orario di fine deve essere successivo a quello di inizio su ogni riga modificata.');
+        return;
+      }
+    }
+
+    this.saving.set(true);
+    this.errorMessage.set(null);
+    this.infoMessage.set(null);
+    try {
+      await Promise.all(
+        entries.map(([ruleId, draft]) =>
+          this.rulesService.updateHours(ruleId, draft.timeFrom, draft.timeTo)
+        )
+      );
+      this.drafts.set(new Map());
       await this.load();
       this.infoMessage.set('Fasce aggiornate: gli slot futuri sono stati ricalcolati.');
     } catch (err) {
-      const message = (err as { message?: string } | null)?.message;
-      this.errorMessage.set(message || 'Errore nel salvataggio della fascia oraria.');
+      this.errorMessage.set(errorText(err) ?? 'Errore nel salvataggio: riprova.');
     } finally {
-      this.savingId.set(null);
+      this.saving.set(false);
     }
   }
+}
+
+function errorText(err: unknown): string | null {
+  return (err as { message?: string } | null)?.message ?? null;
 }

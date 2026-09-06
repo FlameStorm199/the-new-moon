@@ -1,0 +1,50 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="lesson-detail-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button
+      #closeButton
+      type="button"
+      class="close-x"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
+    <h2 id="lesson-detail-title">Dettaglio lezione</h2>
+
+    <div class="detail">
+      <span class="who">{{ customerLabel }}</span>
+      <span class="date">{{ dateLabel }}</span>
+      <span class="time">{{ timeLabel }}</span>
+    </div>
+
+    <dl class="info-list">
+      <div class="info-row">
+        <dt>Cane</dt>
+        <dd>{{ lesson.customer_dog_name || '—' }}</dd>
+      </div>
+      @if (lesson.description) {
+        <div class="info-row notes">
+          <dt>Note</dt>
+          <dd>{{ lesson.description }}</dd>
+        </div>
+      }
+    </dl>
+
+    @if (canAct) {
+      <div class="actions">
+        <button type="button" class="primary" (click)="moveRequested.emit()">Sposta</button>
+        <button type="button" class="destructive" (click)="cancelRequested.emit()">
+          Cancella lezione
+        </button>
+      </div>
+    }
+  </div>
+</div>

@@ -3,6 +3,13 @@
   margin: 0 auto;
   padding: 1.5rem 1rem;
 
+  // Solo per lo staff: il calendario ha bisogno delle sette colonne del
+  // calendario di prenotazione (vedi prenota.component.scss), la larghezza
+  // stretta a colonna singola delle altre pagine qui non basterebbe.
+  &.staff-view {
+    max-width: 56rem;
+  }
+
   .greeting {
     color: #555;
     margin-bottom: 1rem;
@@ -12,15 +19,29 @@
     color: #666;
   }
 
-  h2 {
-    font-size: 1rem;
-    margin: 1.75rem 0 0.75rem;
+  .calendar-hero {
+    margin: 1rem 0 1.5rem;
+
+    .error {
+      color: #b00020;
+    }
   }
 
   .tile-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
     gap: 0.75rem;
+
+    // Le pagine staff sono qui in secondo piano rispetto al calendario:
+    // stesse card ma più piccole, per non competere visivamente con esso.
+    &.secondary .tile {
+      padding: 0.75rem 0.9rem;
+      font-size: 0.82rem;
+
+      .tile-icon {
+        font-size: 1.1rem;
+      }
+    }
   }
 
   .tile {
@@ -48,8 +69,37 @@
     font-size: 1.3rem;
   }
 
-  .footer-links {
+  // Privacy (a sinistra) e, solo per lo staff, il link all'area assistito
+  // (a destra): stessa riga apposta, non due blocchi separati da scorrere.
+  .bottom-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem 1.5rem;
     margin-top: 2rem;
+  }
+
+  // Stesse due pagine che vede un cliente (Prenota, Le mie lezioni), ma qui
+  // volutamente piccole e a lato: per lo staff sono un'eccezione ("prenoto
+  // per me stesso"), non l'uso principale della pagina — messe alla pari
+  // delle altre tab confondevano chi testava la piattaforma.
+  .assisted-link {
+    font-size: 0.78rem;
+    color: #888;
+    text-align: right;
+
+    a {
+      color: #888;
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: var(--pn-accent);
+    }
+  }
+
+  .footer-links {
     font-size: 0.8rem;
 
     a {

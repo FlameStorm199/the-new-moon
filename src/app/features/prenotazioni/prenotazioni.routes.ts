@@ -48,14 +48,6 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       ),
   },
   {
-    path: 'utenti-da-validare',
-    canActivate: [staffGuard],
-    loadComponent: () =>
-      import('./pages/utenti-da-validare/utenti-da-validare.component').then(
-        (m) => m.UtentiDaValidareComponent
-      ),
-  },
-  {
     path: 'gestione-slot',
     canActivate: [staffGuard],
     loadComponent: () =>
