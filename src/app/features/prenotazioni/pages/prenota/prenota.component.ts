@@ -67,6 +67,19 @@ export class PrenotaComponent implements OnInit {
     return type === 'trainer' || type === 'admin';
   }
 
+  /**
+   * Un assistente non può prenotare (book_lesson lo rifiuta, "Ruolo non
+   * autorizzato a prenotare lezioni") ma non è nemmeno in attesa di
+   * validazione — validated non lo riguarda proprio, è un concetto solo per
+   * customer/future_customer. Serve per scegliere il messaggio giusto
+   * quando canBook è false: "aspetta la validazione" ha senso solo per un
+   * vero cliente, per un assistente sarebbe falso (non gli servirà mai).
+   */
+  get isCustomerType(): boolean {
+    const type = this.profile()?.typeCode;
+    return type === 'customer' || type === 'future_customer';
+  }
+
   async ngOnInit(): Promise<void> {
     this.profile.set(await this.profileService.getMyProfile());
     this.loadingProfile.set(false);

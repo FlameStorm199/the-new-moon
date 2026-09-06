@@ -58,6 +58,17 @@ export class LeMieLezioniComponent implements OnInit {
     return !!p && (p.validated || p.typeCode === 'trainer' || p.typeCode === 'admin');
   }
 
+  /**
+   * Un assistente non ha lezioni proprie (non è un cliente) ma non è
+   * nemmeno "in attesa di validazione" — quel concetto riguarda solo
+   * customer/future_customer. Serve solo a scegliere il messaggio giusto
+   * quando canUsePlatform è false.
+   */
+  get isCustomerType(): boolean {
+    const type = this.profile()?.typeCode;
+    return type === 'customer' || type === 'future_customer';
+  }
+
   async ngOnInit(): Promise<void> {
     const profile = await this.profileService.getMyProfile();
     this.profile.set(profile);

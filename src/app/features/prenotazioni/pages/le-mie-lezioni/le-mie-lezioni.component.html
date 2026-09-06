@@ -5,9 +5,13 @@
   @if (loading()) {
     <p>Caricamento…</p>
   } @else if (!canUsePlatform) {
-    <p class="pending">
-      Il tuo account è in attesa di validazione da parte dello staff.
-    </p>
+    @if (isCustomerType) {
+      <p class="pending">
+        Il tuo account è in attesa di validazione da parte dello staff.
+      </p>
+    } @else {
+      <p class="pending">Questa pagina non è disponibile per il tuo ruolo.</p>
+    }
   } @else {
     @if (errorMessage()) {
       <p class="error">{{ errorMessage() }}</p>

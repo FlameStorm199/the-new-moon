@@ -5,10 +5,14 @@
   @if (loadingProfile()) {
     <p>Caricamento…</p>
   } @else if (!canBook) {
-    <p class="pending">
-      Il tuo account è in attesa di validazione da parte dello staff: potrai prenotare non
-      appena verrà confermato.
-    </p>
+    @if (isCustomerType) {
+      <p class="pending">
+        Il tuo account è in attesa di validazione da parte dello staff: potrai prenotare non
+        appena verrà confermato.
+      </p>
+    } @else {
+      <p class="pending">Il tuo ruolo non può prenotare lezioni da questa pagina.</p>
+    }
   } @else {
     @if (errorMessage()) {
       <p class="error">{{ errorMessage() }}</p>

@@ -30,10 +30,31 @@ export class AreaPersonaleComponent implements OnInit {
    * senza questa eccezione un educatore vedrebbe "account in attesa" e
    * perderebbe i tasti Prenota/Le mie lezioni — stesso controllo già usato
    * in prenota.component.ts e le-mie-lezioni.component.ts.
+   *
+   * isStaff qui è solo trainer/admin, non assistente: un assistente non può
+   * prenotare (book_lesson lo rifiuta) né vede "Gestione lezioni"/fasce/ecc.
+   * (le policy RLS lì sono is_trainer_or_admin(), non is_staff()) — quindi
+   * niente tasti cliente per lui, correttamente.
    */
   get canUsePlatform(): boolean {
     const p = this.profile();
     return !!p && (p.validated || this.isStaff);
+  }
+
+  get isCustomerType(): boolean {
+    const type = this.profile()?.typeCode;
+    return type === 'customer' || type === 'future_customer';
+  }
+
+  /**
+   * Il messaggio "in attesa di validazione" ha senso solo per un vero
+   * cliente non ancora validato — per un assistente sarebbe falso (non gli
+   * servirà mai, validated non lo riguarda), quindi va tenuto zitto invece
+   * che mostrargli un'attesa che non finirà mai.
+   */
+  get showPendingMessage(): boolean {
+    const p = this.profile();
+    return !!p && this.isCustomerType && !p.validated;
   }
 
   async ngOnInit(): Promise<void> {

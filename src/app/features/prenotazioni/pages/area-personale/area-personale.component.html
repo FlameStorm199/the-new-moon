@@ -4,9 +4,9 @@
   @if (profile(); as p) {
     <p class="greeting">Ciao <strong>{{ p.name }} {{ p.surname }}</strong>.</p>
 
-    @if (!canUsePlatform) {
+    @if (showPendingMessage) {
       <p class="pending">Il tuo account è in attesa di validazione da parte dello staff.</p>
-    } @else {
+    } @else if (canUsePlatform) {
       <div class="tile-grid">
         <a routerLink="/prenotazioni/prenota" class="tile">
           <span class="tile-icon">📅</span>
