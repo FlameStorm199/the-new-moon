@@ -65,7 +65,7 @@
             <strong>{{ row.name }} {{ row.surname }}</strong>
             <span class="role">{{ typeLabels[row.typeCode] }}</span>
             <span>{{ row.email }}</span>
-            @if (!row.validated) {
+            @if (!row.validated && (row.typeCode === 'customer' || row.typeCode === 'future_customer')) {
               <span class="pending">non validato</span>
             }
           </div>
