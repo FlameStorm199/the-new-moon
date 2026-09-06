@@ -32,6 +32,14 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       ),
   },
   {
+    // Nessun guard e non in navbar: raggiungibile solo da link diretto (dalla
+    // pagina di registrazione e dall'area personale). Chiunque deve poterla
+    // aprire, anche senza account.
+    path: 'privacy',
+    loadComponent: () =>
+      import('./pages/privacy/privacy.component').then((m) => m.PrivacyComponent),
+  },
+  {
     path: 'area-personale',
     canActivate: [authGuard],
     loadComponent: () =>

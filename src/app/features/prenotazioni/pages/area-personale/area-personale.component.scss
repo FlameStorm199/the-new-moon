@@ -48,7 +48,16 @@
     font-size: 1.3rem;
   }
 
-  .logout {
+  .footer-links {
     margin-top: 2rem;
+    font-size: 0.8rem;
+
+    a {
+      color: #999;
+    }
+  }
+
+  .logout {
+    margin-top: 0.75rem;
   }
 }

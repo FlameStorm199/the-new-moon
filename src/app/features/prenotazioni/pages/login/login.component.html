@@ -1,28 +1,42 @@
-<section class="auth-page">
+<section class="auth-page login-page">
   <app-back-link to="/" label="Torna al sito" />
-  <h1>🐾 Accedi</h1>
 
-  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <label>
-      Email
-      <input type="email" formControlName="email" autocomplete="email" />
-    </label>
+  <div class="login-card">
+    <div class="login-visual">
+      <img src="assets/images/cuccioli.jpeg" alt="" />
+      <div class="visual-caption">
+        <span class="visual-brand">🐾 La Luna Nuova</span>
+        <p>Bentornato nell'area prenotazioni.</p>
+      </div>
+    </div>
 
-    <label>
-      Password
-      <input type="password" formControlName="password" autocomplete="current-password" />
-    </label>
+    <div class="login-form-side">
+      <h1>Accedi</h1>
 
-    @if (errorMessage()) {
-      <p class="error">{{ errorMessage() }}</p>
-    }
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <label>
+          Email
+          <input type="email" formControlName="email" autocomplete="email" />
+        </label>
 
-    <button type="submit" [disabled]="loading()">
-      {{ loading() ? 'Accesso in corso…' : 'Accedi' }}
-    </button>
-  </form>
+        <label>
+          Password
+          <input type="password" formControlName="password" autocomplete="current-password" />
+        </label>
 
-  <p><a routerLink="/prenotazioni/password-dimenticata">Password dimenticata?</a></p>
+        @if (errorMessage()) {
+          <p class="error">{{ errorMessage() }}</p>
+        }
 
-  <p>Non hai un account? <a routerLink="/prenotazioni/registrati">Registrati</a></p>
+        <button type="submit" [disabled]="loading()">
+          {{ loading() ? 'Accesso in corso…' : 'Accedi' }}
+        </button>
+      </form>
+
+      <p class="link-line">
+        <a routerLink="/prenotazioni/password-dimenticata">Password dimenticata?</a>
+      </p>
+      <p class="link-line">Non hai un account? <a routerLink="/prenotazioni/registrati">Registrati</a></p>
+    </div>
+  </div>
 </section>
