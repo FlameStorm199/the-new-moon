@@ -28,6 +28,7 @@ export class RegisterComponent {
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly registered = signal(false);
+  readonly resendState = signal<'idle' | 'sending' | 'sent'>('idle');
 
   async submit(): Promise<void> {
     if (this.form.invalid || this.loading()) {
@@ -66,5 +67,20 @@ export class RegisterComponent {
 
     // Conferma email richiesta: nessuna sessione finché l'utente non conferma.
     this.registered.set(true);
+  }
+
+  /** Per chi non ha ricevuto la prima (finita nello spam, casella lenta). */
+  async resendConfirmation(): Promise<void> {
+    if (this.resendState() === 'sending') {
+      return;
+    }
+    this.resendState.set('sending');
+    try {
+      await this.auth.resendSignupConfirmation(this.form.controls.email.value);
+      this.resendState.set('sent');
+    } catch {
+      this.resendState.set('idle');
+      this.errorMessage.set('Invio non riuscito. Riprova tra qualche minuto.');
+    }
   }
 }

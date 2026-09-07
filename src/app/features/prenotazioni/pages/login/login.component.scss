@@ -92,6 +92,31 @@
   }
 }
 
+// button[type='button'] del tema globale batte per specificità un semplice
+// .resend-link (stesso motivo per cui i modali e le altre pagine usano
+// :host): qui serve un link, non il pulsante outline di default.
+:host .resend-link {
+  align-self: flex-start;
+  margin-top: -0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--pn-accent, #3b6fd4);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    color: var(--pn-accent-dark, #2d5ab0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 // Sotto i 720px la foto sparisce: non c'è spazio per due colonne e
 // un'immagine puramente decorativa non vale il peso extra su una connessione
 // mobile — priorità al form, che resta a piena larghezza.

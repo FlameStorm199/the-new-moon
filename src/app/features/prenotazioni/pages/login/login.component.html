@@ -28,6 +28,21 @@
           <p class="error">{{ errorMessage() }}</p>
         }
 
+        @if (unconfirmedEmail()) {
+          @if (resendState() === 'sent') {
+            <p class="success">Email inviata: controlla la posta (anche lo spam).</p>
+          } @else {
+            <button
+              type="button"
+              class="resend-link"
+              [disabled]="resendState() === 'sending'"
+              (click)="resendConfirmation()"
+            >
+              {{ resendState() === 'sending' ? 'Invio…' : "Invia di nuovo l'email di conferma" }}
+            </button>
+          }
+        }
+
         <button type="submit" [disabled]="loading()">
           {{ loading() ? 'Accesso in corso…' : 'Accedi' }}
         </button>

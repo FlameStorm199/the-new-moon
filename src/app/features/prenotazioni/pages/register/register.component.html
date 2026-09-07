@@ -4,6 +4,26 @@
 
   @if (registered()) {
     <p>Registrazione completata. Controlla la tua email per confermare l'account prima di accedere.</p>
+
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    @if (resendState() === 'sent') {
+      <p class="success">Email inviata di nuovo: controlla la posta (anche lo spam).</p>
+    } @else {
+      <p>
+        Non l'hai ricevuta?
+        <button
+          type="button"
+          class="resend-link"
+          [disabled]="resendState() === 'sending'"
+          (click)="resendConfirmation()"
+        >
+          {{ resendState() === 'sending' ? 'Invio…' : 'Invia di nuovo' }}
+        </button>
+      </p>
+    }
   } @else {
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <label>

@@ -242,6 +242,19 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# Template in italiano, coerenti con lo stile delle email inviate dalle
+# Edge Function (supabase/functions/_shared/password-flows.ts): stesso
+# guscio, stesso bottone verde. Questo file vale solo per `supabase start`
+# in locale: sul progetto remoto va incollato lo stesso HTML a mano in
+# Authentication → Email Templates nel dashboard, che non legge config.toml.
+[auth.email.template.confirmation]
+subject = "Conferma il tuo indirizzo email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.email_change]
+subject = "Conferma il tuo nuovo indirizzo email"
+content_path = "./supabase/templates/email_change.html"
+
 # Uncomment to customize email template
 # [auth.email.template.invite]
 # subject = "You have been invited"

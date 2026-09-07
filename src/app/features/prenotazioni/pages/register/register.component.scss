@@ -30,4 +30,31 @@
     color: #777;
     margin-top: 0.75rem;
   }
+
+  .success {
+    color: #1b7a3d;
+    margin: 0;
+  }
+}
+
+// button[type='button'] del tema globale batte per specificità un semplice
+// .resend-link: stesso motivo per cui login.component.scss usa :host.
+:host .resend-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--pn-accent, #3b6fd4);
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    color: var(--pn-accent-dark, #2d5ab0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }

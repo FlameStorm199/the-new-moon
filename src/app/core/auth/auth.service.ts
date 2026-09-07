@@ -46,6 +46,19 @@ export class AuthService {
     return this.supabase.auth.signInWithPassword({ email, password });
   }
 
+  /**
+   * Rimanda l'email di conferma della registrazione (non una del flusso
+   * password: quella è tutta un'altra cosa, vedi requestPasswordReset).
+   * Serve per chi non l'ha mai ricevuta (finita nello spam, indirizzo
+   * corretto ma casella lenta) o l'ha persa prima di confermare.
+   */
+  async resendSignupConfirmation(email: string): Promise<void> {
+    const { error } = await this.supabase.auth.resend({ type: 'signup', email });
+    if (error) {
+      throw error;
+    }
+  }
+
   signOut() {
     return this.supabase.auth.signOut();
   }
