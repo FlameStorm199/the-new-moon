@@ -313,15 +313,21 @@
 }
 
 // =========================================================
-// Sotto i 34rem: due colonne da 1fr non danno più spazio a due orari
+// Sotto i 48rem: due colonne da 1fr non danno più spazio a due orari
 // affiancati (un input[type=time] nativo ha una larghezza minima che il
 // browser impone comunque, CSS o non CSS) — mattina e pomeriggio, con la
 // loro etichetta, si impilano invece di stare a fianco del giorno.
+//
+// La soglia è volutamente alta (48rem = 768px, non 34rem): con due celle
+// da "10:00–13:00" più interruttore, ciascuna 1fr smette di reggere ben
+// prima dei 34rem — sotto i ~40rem l'ultimo orario del pomeriggio finiva
+// già tagliato fuori dal bordo del pannello. Meglio impilare troppo presto
+// che tagliare.
 // flex-wrap su .rule-cell è la rete di sicurezza finale: se anche così un
 // telefono strettissimo non basta, l'interruttore va a capo invece di
 // restare tagliato fuori dallo schermo.
 // =========================================================
-@media (max-width: 34rem) {
+@media (max-width: 48rem) {
   .staff-page.fasce-page {
     .grid-row.grid-head {
       display: none;
