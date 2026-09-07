@@ -18,7 +18,8 @@
   li {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.6rem;
     border: 1px solid var(--pn-border, #e0e0e0);
     border-radius: 0.5rem;
     padding: 0.5rem 0.75rem;
@@ -34,8 +35,12 @@
       font-size: 0.85rem;
     }
 
+    // flex-basis con min-width, non flex:1 secco: su desktop c'è spazio e
+    // resta in linea con data/ambito, su un telefono stretto va a capo da
+    // sola invece di forzare l'intera riga a scorrere in largo.
     .reason {
-      flex: 1;
+      flex: 1 1 10rem;
+      min-width: 8rem;
       color: #777;
       font-size: 0.85rem;
     }

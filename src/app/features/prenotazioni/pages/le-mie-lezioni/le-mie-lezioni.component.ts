@@ -53,16 +53,20 @@ export class LeMieLezioniComponent implements OnInit {
     this.lessons().filter((l) => !(this.isActive(l) && this.startOf(l).getTime() > Date.now()))
   );
 
+  /** Un assistente può prenotare per sé (vedi prenota.component.ts), quindi ha anche lezioni proprie da vedere qui. */
   get canUsePlatform(): boolean {
     const p = this.profile();
-    return !!p && (p.validated || p.typeCode === 'trainer' || p.typeCode === 'admin');
+    return (
+      !!p &&
+      (p.validated || p.typeCode === 'trainer' || p.typeCode === 'admin' || p.typeCode === 'assistant')
+    );
   }
 
   /**
-   * Un assistente non ha lezioni proprie (non è un cliente) ma non è
-   * nemmeno "in attesa di validazione" — quel concetto riguarda solo
-   * customer/future_customer. Serve solo a scegliere il messaggio giusto
-   * quando canUsePlatform è false.
+   * Conta solo quando canUsePlatform è false: per un assistente non
+   * succede più (vedi sopra), resta rilevante solo per un vero cliente non
+   * ancora validato — "in attesa di validazione" riguarda solo
+   * customer/future_customer.
    */
   get isCustomerType(): boolean {
     const type = this.profile()?.typeCode;

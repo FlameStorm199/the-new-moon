@@ -118,6 +118,13 @@
     font-size: 0.9rem;
   }
 
+  // Sostituisce l'intestazione di colonna "Mattina"/"Pomeriggio" quando lo
+  // spazio non basta più per tenerle come colonne (vedi media query sotto):
+  // nascosta qui, mostrata lì dentro ogni cella.
+  .part-label {
+    display: none;
+  }
+
   .rule-cell {
     display: flex;
     align-items: center;
@@ -305,15 +312,53 @@
   }
 }
 
-@media (max-width: 30rem) {
+// =========================================================
+// Sotto i 34rem: due colonne da 1fr non danno più spazio a due orari
+// affiancati (un input[type=time] nativo ha una larghezza minima che il
+// browser impone comunque, CSS o non CSS) — mattina e pomeriggio, con la
+// loro etichetta, si impilano invece di stare a fianco del giorno.
+// flex-wrap su .rule-cell è la rete di sicurezza finale: se anche così un
+// telefono strettissimo non basta, l'interruttore va a capo invece di
+// restare tagliato fuori dallo schermo.
+// =========================================================
+@media (max-width: 34rem) {
   .staff-page.fasce-page {
+    .grid-row.grid-head {
+      display: none;
+    }
+
     .grid-row {
-      grid-template-columns: 4rem 1fr 1fr;
-      padding: 0.5rem;
+      grid-template-columns: 1fr;
+      row-gap: 0.4rem;
+      padding: 0.6rem 0.5rem;
+    }
+
+    .day-label {
+      font-size: 0.95rem;
+    }
+
+    .rule-cell {
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      row-gap: 0.3rem;
+      column-gap: 0.6rem;
+    }
+
+    .part-label {
+      display: block;
+      flex: 0 0 auto;
+      min-width: 4.2rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #888;
     }
 
     .hours-edit input[type='time'] {
-      width: 5rem;
+      width: 4.6rem;
+      padding: 0.25rem 0.3rem;
+      font-size: 0.8rem;
     }
   }
 }

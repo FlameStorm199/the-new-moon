@@ -65,7 +65,7 @@
       <p class="pending">
         Il tuo account è in attesa di validazione da parte dello staff.
       </p>
-    } @else if (canUsePlatform && !isStaff) {
+    } @else if (canUsePlatform && !isStaffViewer) {
       <div class="tile-grid">
         <a routerLink="/prenotazioni/prenota" class="tile">
           <span class="tile-icon">📅</span>
@@ -108,7 +108,7 @@
     <p class="footer-links">
       <a routerLink="/prenotazioni/privacy">Privacy e assistenza</a>
     </p>
-    @if (isStaff) {
+    @if (isStaffViewer) {
       <p class="assisted-link">
         Area assistito:
         <a routerLink="/prenotazioni/prenota">Prenota una lezione</a>

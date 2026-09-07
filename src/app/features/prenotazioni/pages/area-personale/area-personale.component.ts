@@ -74,7 +74,14 @@ export class AreaPersonaleComponent implements OnInit {
 
   readonly busyId = signal<number | null>(null);
 
-  /** Solo trainer/admin: sono gli unici che possono anche prenotare per sé — usato da canUsePlatform. */
+  /**
+   * Solo trainer/admin: sono gli unici col potere di scrittura vero (toggle
+   * slot, sposta/cancella la lezione di chiunque, validare utenti…) — usato
+   * per gating quelle azioni sul calendario. Prenotare per sé non è più uno
+   * di questi: da database/23_assistant_self_booking.sql lo può fare anche
+   * l'assistente, vedi canUsePlatform sotto (che infatti usa isStaffViewer,
+   * non questo).
+   */
   get isStaff(): boolean {
     const type = this.profile()?.typeCode;
     return type === 'trainer' || type === 'admin';
@@ -95,17 +102,17 @@ export class AreaPersonaleComponent implements OnInit {
   /**
    * "validated" ha senso solo per un cliente: lo staff non viene mai
    * validato (in fase di creazione quel campo resta al suo default), quindi
-   * senza questa eccezione un educatore vedrebbe "account in attesa" e
-   * perderebbe i tasti Prenota/Le mie lezioni — stesso controllo già usato
-   * in prenota.component.ts e le-mie-lezioni.component.ts.
+   * senza questa eccezione perderebbe l'"Area assistito" — stesso controllo
+   * già usato in prenota.component.ts e le-mie-lezioni.component.ts.
    *
-   * isStaff qui è solo trainer/admin, non assistente: un assistente non può
-   * prenotare (book_lesson lo rifiuta), quindi niente tasti cliente per lui,
-   * correttamente — vede invece la sezione Staff tramite isStaffViewer.
+   * isStaffViewer, non isStaff: un assistente ora può prenotare per sé
+   * esattamente come trainer/admin (database/23_assistant_self_booking.sql)
+   * — è l'unica azione concessa anche a lui, per questo qui conta lo stesso
+   * gruppo che vede il calendario, non quello ristretto che può scriverci.
    */
   get canUsePlatform(): boolean {
     const p = this.profile();
-    return !!p && (p.validated || this.isStaff);
+    return !!p && (p.validated || this.isStaffViewer);
   }
 
   get isCustomerType(): boolean {

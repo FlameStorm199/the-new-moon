@@ -49,9 +49,10 @@
       </div>
     }
 
-    <ng-template #cell let-rule="rule">
+    <ng-template #cell let-rule="rule" let-partLabel="partLabel">
       @if (rule) {
         <div class="rule-cell" [class.inactive]="!rule.active">
+          <span class="part-label">{{ partLabel }}</span>
           @if (canAct()) {
             <div class="hours-edit">
               <input
@@ -91,8 +92,12 @@
       @for (group of groupedByWeekday(); track group.weekday) {
         <div class="grid-row">
           <span class="day-label">{{ group.label }}</span>
-          <ng-container *ngTemplateOutlet="cell; context: { rule: group.mattina }" />
-          <ng-container *ngTemplateOutlet="cell; context: { rule: group.pomeriggio }" />
+          <ng-container
+            *ngTemplateOutlet="cell; context: { rule: group.mattina, partLabel: 'Mattina' }"
+          />
+          <ng-container
+            *ngTemplateOutlet="cell; context: { rule: group.pomeriggio, partLabel: 'Pomeriggio' }"
+          />
         </div>
       }
     </div>

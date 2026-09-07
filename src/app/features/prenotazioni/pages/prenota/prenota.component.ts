@@ -54,26 +54,38 @@ export class PrenotaComponent implements OnInit {
       .map((slot) => slot.id)
   );
 
+  /**
+   * Un assistente può prenotare per sé esattamente come un customer
+   * validato (vedi database/23_assistant_self_booking.sql: book_lesson lo
+   * accetta ormai come un customer, solo senza il controllo di validazione
+   * che non lo riguarda). Non può però prenotare per conto di altri: quello
+   * resta riservato a isStaff (trainer/admin), sotto.
+   */
   get canBook(): boolean {
     const p = this.profile();
     if (!p) {
       return false;
     }
-    return p.validated || p.typeCode === 'trainer' || p.typeCode === 'admin';
+    return (
+      p.validated || p.typeCode === 'trainer' || p.typeCode === 'admin' || p.typeCode === 'assistant'
+    );
   }
 
+  /**
+   * Solo trainer/admin: sono gli unici a vedere anche gli slot dentro la
+   * finestra minima e a poter prenotare lì dentro. Un assistente, come un
+   * customer, la finestra la rispetta (stesso vincolo lato RPC).
+   */
   get isStaff(): boolean {
     const type = this.profile()?.typeCode;
     return type === 'trainer' || type === 'admin';
   }
 
   /**
-   * Un assistente non può prenotare (book_lesson lo rifiuta, "Ruolo non
-   * autorizzato a prenotare lezioni") ma non è nemmeno in attesa di
-   * validazione — validated non lo riguarda proprio, è un concetto solo per
-   * customer/future_customer. Serve per scegliere il messaggio giusto
-   * quando canBook è false: "aspetta la validazione" ha senso solo per un
-   * vero cliente, per un assistente sarebbe falso (non gli servirà mai).
+   * Un assistente ormai può prenotare (vedi canBook sopra) quindi questo
+   * conta solo per un vero cliente non validato: "aspetta la validazione"
+   * ha senso solo per customer/future_customer, per un assistente sarebbe
+   * falso (canBook è già true per lui).
    */
   get isCustomerType(): boolean {
     const type = this.profile()?.typeCode;

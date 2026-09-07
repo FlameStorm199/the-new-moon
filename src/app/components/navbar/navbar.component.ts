@@ -90,6 +90,11 @@ export class NavbarComponent {
 
     const profile = this.profile()!;
     const isStaff = profile.typeCode === 'trainer' || profile.typeCode === 'admin';
+    // Assistente incluso: vede le stesse pagine di gestione di trainer/admin
+    // (sola lettura lì, RLS is_staff() — vedi database/21_assistant_read_access.sql).
+    // Diverso da isStaff apposta: quello resta stretto a trainer/admin perché
+    // governa anche le azioni di scrittura vere e proprie sul calendario.
+    const isStaffViewer = isStaff || profile.typeCode === 'assistant';
     const items: NavItem[] = [
       { path: '/prenotazioni/area-personale', label: 'Home', exact: true },
     ];
@@ -107,7 +112,7 @@ export class NavbarComponent {
       );
     }
 
-    if (isStaff) {
+    if (isStaffViewer) {
       items.push(
         { path: '/prenotazioni/gestione-lezioni', label: 'Lezioni' },
         { path: '/prenotazioni/gestione-slot', label: 'Slot' },
