@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { sendEmail } from "./email.ts";
+import { siteUrl } from "./site-url.ts";
 
 // Generazione del link con l'Auth Admin API di Supabase (bypassa RLS, va
 // sempre chiamata con ctx.supabaseAdmin) e invio della relativa email via
@@ -23,14 +24,8 @@ import { sendEmail } from "./email.ts";
 // l'indirizzo di un altro potrebbe far arrivare alla vittima un'email
 // legittima il cui link consegna i token di accesso a un dominio scelto da
 // lui. L'unica destinazione ammessa deve essere configurata lato server.
-// Fallback solo per lo sviluppo locale: IN PRODUZIONE SITE_URL va impostata
-// tra i secret della Edge Function, altrimenti le email di reset/invito
-// manderebbero l'utente su localhost.
-const DEFAULT_SITE_URL = "http://localhost:4200";
-
 function recoveryRedirectUrl(): string {
-  const siteUrl = (Deno.env.get("SITE_URL") ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
-  return `${siteUrl}/prenotazioni/reimposta-password`;
+  return `${siteUrl()}/prenotazioni/reimposta-password`;
 }
 
 export async function generateRecoveryLink(
@@ -49,7 +44,8 @@ export async function generateRecoveryLink(
   return { actionLink: data.properties.action_link as string, error: null };
 }
 
-function emailShell(title: string, bodyHtml: string, actionLink: string, ctaLabel: string): string {
+/** Esportata: la riusano anche le notifiche di validazione (stesso aspetto per ogni email transazionale). */
+export function emailShell(title: string, bodyHtml: string, actionLink: string, ctaLabel: string): string {
   return `
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #222;">
       <h2>${title}</h2>

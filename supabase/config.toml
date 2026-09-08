@@ -452,3 +452,15 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/send-lesson-notification/deno.json"
 entrypoint = "./functions/send-lesson-notification/index.ts"
+
+[functions.notify-staff-pending-validation]
+enabled = true
+verify_jwt = false
+import_map = "./functions/notify-staff-pending-validation/deno.json"
+entrypoint = "./functions/notify-staff-pending-validation/index.ts"
+
+[functions.notify-customer-validated]
+enabled = true
+verify_jwt = false
+import_map = "./functions/notify-customer-validated/deno.json"
+entrypoint = "./functions/notify-customer-validated/index.ts"
