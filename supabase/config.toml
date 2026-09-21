@@ -464,3 +464,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/notify-customer-validated/deno.json"
 entrypoint = "./functions/notify-customer-validated/index.ts"
+
+[functions.request-incontro-conoscitivo]
+enabled = true
+verify_jwt = false
+import_map = "./functions/request-incontro-conoscitivo/deno.json"
+entrypoint = "./functions/request-incontro-conoscitivo/index.ts"
