@@ -10,7 +10,7 @@ import { sendIncontroConoscitivoConfirmationEmail } from "../_shared/email-confi
 // admin-create-user (admin.createUser + service_role), MAI
 // supabase.auth.signUp() lato client: quella via crea sempre e solo customer
 // (vedi database/02_auth_signup_trigger.sql) e non permette di impostare
-// app_metadata.admin_created, che quel trigger legge per farsi da parte.
+// app_metadata.admin_created.
 //
 // auth: ["publishable"] — stesso pattern di manage-user-password per
 // self_reset_request: nessun JWT (il chiamante non è loggato), ma il client
@@ -22,6 +22,17 @@ import { sendIncontroConoscitivoConfirmationEmail } from "../_shared/email-confi
 // l'indirizzo lo scrive il pubblico: va confermato con un click. Vedi
 // _shared/email-confirmation.ts e il trigger trg_auth_user_email_confirmed
 // in database/26_fase2_schema.sql.
+//
+// pending_admin_user_creations: handle_new_auth_user() NON si fa più da
+// parte per gli utenti creati dall'Admin API (versione originale in
+// 02_auth_signup_trigger.sql, superata) — dopo 13_fix_admin_created_trigger.sql
+// e soprattutto 14_pending_admin_user_creations.sql (la definizione
+// ATTUALE), il trigger consulta questa tabella per email PRIMA di decidere:
+// se non trova un annuncio recente, inserisce comunque la riga come
+// customer (type_id=1). Bisogna quindi scrivere l'annuncio qui, PRIMA di
+// createUser(), esattamente come fa admin-create-user — niente insert
+// diretto su public.users dopo la creazione, sarebbe un duplicate key su
+// auth_user_id (riga già creata dal trigger).
 //
 // Nessuna scelta di ruolo esposta al chiamante (a differenza di
 // admin-create-user): qui il type_id è sempre e solo future_customer,
@@ -70,6 +81,23 @@ export default {
       return jsonResponse({ error: "Configurazione ruoli non valida." }, 500);
     }
 
+    // Annuncio per handle_new_auth_user() (14_pending_admin_user_creations.sql):
+    // va scritto PRIMA di creare l'utente Auth, altrimenti il trigger non lo
+    // trova e inserisce la riga come customer.
+    const { error: pendingError } = await ctx.supabaseAdmin
+      .from("pending_admin_user_creations")
+      .upsert({
+        email,
+        type_id: typeRow.id,
+        name,
+        surname,
+        phone,
+        dog_name: dogName,
+      });
+    if (pendingError) {
+      return jsonResponse({ error: pendingError.message }, 400);
+    }
+
     const { data: created, error: createError } = await ctx.supabaseAdmin.auth.admin.createUser({
       email,
       email_confirm: false,
@@ -77,30 +105,51 @@ export default {
       user_metadata: { name, surname, phone, dog_name: dogName },
     });
     if (createError || !created?.user) {
+      // Ripulisce l'annuncio: non deve restare agganciabile da un
+      // self-signup successivo con la stessa email.
+      await ctx.supabaseAdmin.from("pending_admin_user_creations").delete().eq("email", email);
       return jsonResponse(
         { error: createError?.message ?? "Richiesta non riuscita, riprova." },
         400,
       );
     }
 
-    // Il trigger handle_new_auth_user() (02_auth_signup_trigger.sql) si fa
-    // da parte per questo insert (encrypted_password is null): la riga
-    // public.users la creiamo direttamente qui, con il type_id scelto da
-    // questa Edge Function.
-    const { error: insertError } = await ctx.supabaseAdmin.from("users").insert({
-      auth_user_id: created.user.id,
-      type_id: typeRow.id,
-      name,
-      surname,
-      email,
-      phone,
-      dog_name: dogName,
-    });
-    if (insertError) {
-      // Ripulisce l'utente Auth appena creato: non deve restare orfano
-      // (senza riga public.users) se l'insert fallisce.
-      await ctx.supabaseAdmin.auth.admin.deleteUser(created.user.id);
-      return jsonResponse({ error: insertError.message }, 400);
+    // Il trigger ha già inserito public.users usando l'annuncio sopra, nella
+    // stessa transazione dell'INSERT su auth.users. Verifichiamo che sia
+    // successo davvero (difesa in profondità, stesso pattern di
+    // admin-create-user): se per qualsiasi motivo l'annuncio non fosse
+    // stato trovato, il trigger avrebbe comunque creato una riga, ma come
+    // customer — la sistemiamo qui.
+    const { data: insertedRow, error: verifyError } = await ctx.supabaseAdmin
+      .from("users")
+      .select("id, type_id")
+      .eq("auth_user_id", created.user.id)
+      .maybeSingle();
+    if (verifyError) {
+      return jsonResponse({ error: verifyError.message }, 400);
+    }
+    if (!insertedRow) {
+      const { error: fallbackInsertError } = await ctx.supabaseAdmin.from("users").insert({
+        auth_user_id: created.user.id,
+        type_id: typeRow.id,
+        name,
+        surname,
+        email,
+        phone,
+        dog_name: dogName,
+      });
+      if (fallbackInsertError) {
+        await ctx.supabaseAdmin.auth.admin.deleteUser(created.user.id);
+        return jsonResponse({ error: fallbackInsertError.message }, 400);
+      }
+    } else if (insertedRow.type_id !== typeRow.id) {
+      const { error: fixTypeError } = await ctx.supabaseAdmin
+        .from("users")
+        .update({ type_id: typeRow.id })
+        .eq("id", insertedRow.id);
+      if (fixTypeError) {
+        return jsonResponse({ error: fixTypeError.message }, 400);
+      }
     }
 
     const confirmation = await sendIncontroConoscitivoConfirmationEmail(ctx.supabaseAdmin, email);
