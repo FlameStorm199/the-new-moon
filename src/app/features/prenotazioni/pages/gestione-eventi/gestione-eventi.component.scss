@@ -1,0 +1,148 @@
+.staff-page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+
+  .error {
+    color: #b00020;
+  }
+
+  .success {
+    color: #1b7a3d;
+  }
+
+  .empty,
+  .hint {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+
+    h1 {
+      margin-bottom: 0;
+    }
+  }
+
+  .event-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .event-list > li {
+    border: 1px solid var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-lg, 12px);
+    padding: 0.85rem 1rem;
+  }
+
+  .event-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-size: 0.9rem;
+    color: #555;
+
+    strong {
+      font-size: 1rem;
+      color: #222;
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .registrations {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed #eee;
+
+    ul {
+      list-style: none;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.88rem;
+    }
+  }
+}
+
+:host .staff-page .primary-cta {
+  flex: 0 0 auto;
+  background: var(--pn-accent, #3b6fd4);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--pn-radius-md, 8px);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--pn-accent-dark, #2d5ab0);
+  }
+}
+
+:host .staff-page button {
+  border: 1px solid var(--pn-border, #e0e0e0);
+  background: #fff;
+  color: #333;
+  border-radius: var(--pn-radius-md, 8px);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #f6f6f6;
+  }
+
+  &.link-btn {
+    border: none;
+    background: none;
+    color: var(--pn-accent, #3b6fd4);
+    text-decoration: underline;
+    padding: 0.4rem 0.2rem;
+  }
+
+  &.danger {
+    border-color: var(--pn-danger, #b00020);
+    color: var(--pn-danger, #b00020);
+
+    &:hover {
+      background: var(--pn-danger-bg, #fdecea);
+    }
+  }
+
+  &.small {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}

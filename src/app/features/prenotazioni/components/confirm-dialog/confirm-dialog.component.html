@@ -1,0 +1,52 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="confirm-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button
+      type="button"
+      class="close-x"
+      [disabled]="busy"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
+    <h2 id="confirm-dialog-title">{{ title }}</h2>
+
+    @if (message) {
+      <p class="note">{{ message }}</p>
+    }
+
+    @if (withReason) {
+      <label class="field">
+        {{ reasonLabel }}
+        <input #reasonInput type="text" [disabled]="busy" />
+        @if (reasonRequired) {
+          <span class="field-hint">Obbligatorio.</span>
+        }
+      </label>
+    }
+
+    @if (errorMessage) {
+      <p class="error">{{ errorMessage }}</p>
+    }
+
+    <div class="actions">
+      <button
+        #primaryAction
+        type="button"
+        [class]="danger ? 'destructive' : 'primary'"
+        [disabled]="busy"
+        (click)="confirm()"
+      >
+        {{ busy ? busyLabel : confirmLabel }}
+      </button>
+    </div>
+  </div>
+</div>

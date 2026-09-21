@@ -1,0 +1,88 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel wide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="event-form-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button
+      type="button"
+      class="close-x"
+      [disabled]="busy"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
+    @if (state === 'form') {
+      <h2 id="event-form-dialog-title">
+        {{ mode === 'create' ? 'Nuovo evento' : 'Modifica evento' }}
+      </h2>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <label class="field">
+          Titolo
+          <input #firstField type="text" formControlName="title" />
+        </label>
+
+        <label class="field">
+          Luogo
+          <input type="text" formControlName="location" />
+        </label>
+
+        <label class="field">
+          Data
+          <input type="date" formControlName="date" />
+        </label>
+
+        <label class="field">
+          Dalle
+          <input type="time" formControlName="timeFrom" />
+        </label>
+
+        <label class="field">
+          Alle
+          <input type="time" formControlName="timeTo" />
+        </label>
+
+        <label class="field">
+          Posti massimi (vuoto = nessun limite)
+          <input type="number" min="1" formControlName="maxCustomers" />
+        </label>
+
+        <label class="field">
+          Contributo € (facoltativo)
+          <input type="number" min="0" step="0.01" formControlName="price" />
+        </label>
+
+        <label class="field">
+          Descrizione (facoltativa)
+          <textarea formControlName="description"></textarea>
+        </label>
+
+        @if (errorMessage) {
+          <p class="error">{{ errorMessage }}</p>
+        }
+
+        <div class="actions">
+          <button #primaryAction type="submit" class="primary" [disabled]="busy">
+            @if (busy) {
+              {{ mode === 'create' ? 'Creazione…' : 'Salvataggio…' }}
+            } @else {
+              {{ mode === 'create' ? 'Crea evento' : 'Salva modifiche' }}
+            }
+          </button>
+        </div>
+      </form>
+    } @else {
+      <div class="tick" aria-hidden="true">✓</div>
+
+      <h2 id="event-form-dialog-title">
+        {{ mode === 'create' ? 'Evento creato' : 'Evento aggiornato' }}
+      </h2>
+    }
+  </div>
+</div>

@@ -1,0 +1,122 @@
+<section class="staff-page">
+  <app-back-link />
+
+  <div class="page-header">
+    <h1>Gestione eventi</h1>
+    @if (canAct()) {
+      <button type="button" class="primary-cta" (click)="openCreate()">Nuovo evento</button>
+    }
+  </div>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+  @if (infoMessage()) {
+    <p class="success">{{ infoMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <p>Caricamento…</p>
+  } @else if (events().length === 0) {
+    <p class="empty">Nessun evento in programma.</p>
+  } @else {
+    <ul class="event-list">
+      @for (event of events(); track event.id) {
+        <li>
+          <div class="event-row">
+            <div class="info">
+              <strong>{{ event.title }}</strong>
+              <span>{{ formatDate(event.date) }} · {{ event.time_from.slice(0, 5) }}–{{ event.time_to.slice(0, 5) }}</span>
+              <span>{{ event.location }}</span>
+              @if (event.price !== null) {
+                <span>{{ event.price }} €</span>
+              }
+            </div>
+            <div class="actions">
+              <button type="button" class="link-btn" (click)="toggleRegistrations(event)">
+                {{ postiLabel(event) }}
+              </button>
+              @if (canAct()) {
+                <button type="button" (click)="openEdit(event)">Modifica</button>
+                <button type="button" class="danger" (click)="openDelete(event)">Cancella</button>
+              }
+            </div>
+          </div>
+
+          @if (expandedEventId() === event.id) {
+            <div class="registrations">
+              @if (loadingRegistrations()) {
+                <p class="hint">Caricamento iscritti…</p>
+              } @else if (registrationsFor(event.id).length === 0) {
+                <p class="hint">Nessun iscritto.</p>
+              } @else {
+                <ul>
+                  @for (reg of registrationsFor(event.id); track reg.id) {
+                    <li>
+                      <span>{{ customerLabel(reg) }}</span>
+                      @if (canAct()) {
+                        <button type="button" class="danger small" (click)="openRemove(reg)">
+                          Rimuovi
+                        </button>
+                      }
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (formOpen()) {
+    <app-event-form-dialog
+      [mode]="formMode()"
+      [event]="editingEvent()"
+      [state]="formState()"
+      [busy]="formBusy()"
+      [errorMessage]="formError()"
+      (submitted)="submitForm($event)"
+      (closed)="closeForm()"
+    />
+  }
+
+  @if (deletingEvent(); as event) {
+    <app-confirm-dialog
+      title="Cancellare questo evento?"
+      [message]="
+        event.title + ' — ' + formatDate(event.date) +
+        (event.active_registrations > 0
+          ? '. ' + event.active_registrations + ' iscritti riceveranno un\'email di avviso.'
+          : '')
+      "
+      confirmLabel="Cancella evento"
+      busyLabel="Cancellazione…"
+      [danger]="true"
+      [withReason]="event.active_registrations > 0"
+      reasonLabel="Motivo (facoltativo, incluso nell'email agli iscritti)"
+      [busy]="deleteBusy()"
+      [errorMessage]="deleteError()"
+      (confirmed)="confirmDelete($event)"
+      (closed)="closeDelete()"
+    />
+  }
+
+  @if (removingRegistration(); as reg) {
+    <app-confirm-dialog
+      title="Rimuovere questo iscritto?"
+      [message]="customerLabel(reg)"
+      confirmLabel="Rimuovi"
+      busyLabel="Rimozione…"
+      [danger]="true"
+      [withReason]="true"
+      reasonLabel="Motivo della rimozione"
+      [reasonRequired]="true"
+      [busy]="removeBusy()"
+      [errorMessage]="removeError()"
+      (confirmed)="confirmRemove($event)"
+      (closed)="closeRemove()"
+    />
+  }
+</section>

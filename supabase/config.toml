@@ -470,3 +470,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/request-incontro-conoscitivo/deno.json"
 entrypoint = "./functions/request-incontro-conoscitivo/index.ts"
+
+[functions.send-event-notification]
+enabled = true
+verify_jwt = false
+import_map = "./functions/send-event-notification/deno.json"
+entrypoint = "./functions/send-event-notification/index.ts"

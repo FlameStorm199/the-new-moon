@@ -90,6 +90,17 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       ),
   },
   {
+    // Fase 2 — gestione eventi lato staff (assistente in sola lettura,
+    // stesso principio di gestione-lezioni: le RPC respingono comunque chi
+    // non è trainer/admin, staffGuard qui è solo per l'accesso alla pagina).
+    path: 'gestione-eventi',
+    canActivate: [staffGuard],
+    loadComponent: () =>
+      import('./pages/gestione-eventi/gestione-eventi.component').then(
+        (m) => m.GestioneEventiComponent
+      ),
+  },
+  {
     path: 'prenota',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -102,5 +113,14 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       import('./pages/le-mie-lezioni/le-mie-lezioni.component').then(
         (m) => m.LeMieLezioniComponent
       ),
+  },
+  {
+    // Fase 2 — lista eventi + iscrizione/cancellazione self-service, stessi
+    // diritti del Customer per assistant/future_customer (vedi
+    // eventi.component.ts). Nessun gate di validazione: authGuard basta,
+    // niente equivalente di canUsePlatform da controllare qui.
+    path: 'eventi',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/eventi/eventi.component').then((m) => m.EventiComponent),
   },
 ];

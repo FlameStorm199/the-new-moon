@@ -1,0 +1,77 @@
+<section class="eventi-page">
+  <app-back-link />
+  <h1>Eventi</h1>
+
+  @if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <p>Caricamento…</p>
+  } @else if (events().length === 0) {
+    <p class="empty">Nessun evento in programma.</p>
+  } @else {
+    <ul class="event-list">
+      @for (event of events(); track event.id) {
+        <li>
+          <div class="info">
+            <div class="title-row">
+              <strong>{{ event.title }}</strong>
+              @if (event.my_registration_id) {
+                <span class="badge">Iscritto/a</span>
+              }
+            </div>
+            <span>{{ formatDate(event.date) }} · {{ event.time_from.slice(0, 5) }}–{{ event.time_to.slice(0, 5) }}</span>
+            <span>{{ event.location }}</span>
+            @if (event.description) {
+              <p class="description">{{ event.description }}</p>
+            }
+            <span class="meta">
+              @if (event.price !== null) {
+                {{ event.price }} €
+              }
+              @if (postiLabel(event); as label) {
+                · {{ label }}
+              }
+            </span>
+          </div>
+
+          @if (canRegister) {
+            <div class="actions">
+              @if (event.my_registration_id) {
+                <button type="button" class="danger" (click)="openCancel(event)">
+                  Cancella iscrizione
+                </button>
+              } @else if (isFull(event)) {
+                <span class="hint">Posti esauriti</span>
+              } @else {
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="registeringId() === event.id"
+                  (click)="register(event)"
+                >
+                  {{ registeringId() === event.id ? 'Iscrizione…' : 'Iscriviti' }}
+                </button>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @if (cancellingEvent(); as event) {
+    <app-confirm-dialog
+      title="Cancellare la tua iscrizione?"
+      [message]="event.title"
+      confirmLabel="Cancella iscrizione"
+      busyLabel="Cancellazione…"
+      [danger]="true"
+      [busy]="cancelBusy()"
+      [errorMessage]="cancelError()"
+      (confirmed)="confirmCancel()"
+      (closed)="closeCancel()"
+    />
+  }
+</section>
