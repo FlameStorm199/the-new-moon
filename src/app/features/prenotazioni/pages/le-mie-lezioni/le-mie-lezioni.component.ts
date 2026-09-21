@@ -53,12 +53,21 @@ export class LeMieLezioniComponent implements OnInit {
     this.lessons().filter((l) => !(this.isActive(l) && this.startOf(l).getTime() > Date.now()))
   );
 
-  /** Un assistente può prenotare per sé (vedi prenota.component.ts), quindi ha anche lezioni proprie da vedere qui. */
+  /**
+   * Un assistente può prenotare per sé (vedi prenota.component.ts), quindi ha
+   * anche lezioni proprie da vedere qui. future_customer allo stesso modo:
+   * stesso motivo di canBook/canUsePlatform nelle altre due pagine — non è
+   * mai "validated" prima dell'Incontro Conoscitivo.
+   */
   get canUsePlatform(): boolean {
     const p = this.profile();
     return (
       !!p &&
-      (p.validated || p.typeCode === 'trainer' || p.typeCode === 'admin' || p.typeCode === 'assistant')
+      (p.validated ||
+        p.typeCode === 'trainer' ||
+        p.typeCode === 'admin' ||
+        p.typeCode === 'assistant' ||
+        p.typeCode === 'future_customer')
     );
   }
 

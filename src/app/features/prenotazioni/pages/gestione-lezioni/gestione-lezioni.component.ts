@@ -25,6 +25,11 @@ import {
   NewLessonFormValue,
   NewLessonSummary,
 } from '../../components/new-lesson-dialog/new-lesson-dialog.component';
+import {
+  RespondIncontroDialogComponent,
+  RespondIncontroDialogState,
+  RespondIncontroMode,
+} from '../../components/respond-incontro-dialog/respond-incontro-dialog.component';
 
 interface DayGroup {
   date: string;
@@ -42,6 +47,7 @@ const ACTIVE_STATUSES = new Set(['pending', 'confirmed']);
     NewLessonDialogComponent,
     MoveLessonDialogComponent,
     CancelLessonDialogComponent,
+    RespondIncontroDialogComponent,
   ],
   templateUrl: './gestione-lezioni.component.html',
   styleUrl: './gestione-lezioni.component.scss',
@@ -89,6 +95,12 @@ export class GestioneLezioniComponent implements OnInit {
   readonly cancellingLesson = signal<LessonRow | null>(null);
   readonly cancelDialogState = signal<CancelDialogState>('confirm');
   readonly cancelDialogError = signal<string | null>(null);
+
+  // --- Modale "Accetta/Rifiuta Incontro Conoscitivo" ---
+  readonly respondingLesson = signal<LessonRow | null>(null);
+  readonly respondMode = signal<RespondIncontroMode>('accept');
+  readonly respondDialogState = signal<RespondIncontroDialogState>('confirm');
+  readonly respondDialogError = signal<string | null>(null);
 
   readonly groupedByDate = computed<DayGroup[]>(() => {
     const groups = new Map<string, LessonRow[]>();
@@ -149,6 +161,11 @@ export class GestioneLezioniComponent implements OnInit {
 
   isCancellable(lesson: LessonRow): boolean {
     return lesson.status !== 'cancelled' && lesson.status !== 'rejected';
+  }
+
+  /** Incontro Conoscitivo ancora in attesa di risposta: mostra Accetta/Rifiuta invece di Sposta. */
+  isPendingIncontro(lesson: LessonRow): boolean {
+    return lesson.lesson_type === 'incontro_conoscitivo' && lesson.status === 'pending';
   }
 
   // --- Menu azioni per riga ---
@@ -278,6 +295,42 @@ export class GestioneLezioniComponent implements OnInit {
       this.cancelDialogState.set('success');
     } catch (err) {
       this.cancelDialogError.set(errorText(err) ?? 'Cancellazione non riuscita.');
+    } finally {
+      this.busyId.set(null);
+    }
+  }
+
+  // --- "Accetta/Rifiuta Incontro Conoscitivo" ---
+
+  openRespond(lesson: LessonRow, mode: RespondIncontroMode): void {
+    this.openActionsFor.set(null);
+    this.respondingLesson.set(lesson);
+    this.respondMode.set(mode);
+    this.respondDialogState.set('confirm');
+    this.respondDialogError.set(null);
+  }
+
+  closeRespondDialog(): void {
+    this.respondingLesson.set(null);
+  }
+
+  async confirmRespond(reason: string): Promise<void> {
+    const lesson = this.respondingLesson();
+    if (!lesson) {
+      return;
+    }
+    const accept = this.respondMode() === 'accept';
+
+    this.busyId.set(lesson.id);
+    this.respondDialogError.set(null);
+    try {
+      await this.lessonsService.respondIncontroConoscitivo(lesson.id, accept, reason);
+      this.respondDialogState.set('success');
+      await this.load();
+    } catch (err) {
+      this.respondDialogError.set(
+        errorText(err) ?? (accept ? 'Conferma non riuscita.' : 'Rifiuto non riuscito.')
+      );
     } finally {
       this.busyId.set(null);
     }

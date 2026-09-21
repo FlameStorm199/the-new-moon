@@ -67,10 +67,22 @@
                   </button>
                   @if (openActionsFor() === lesson.id) {
                     <div class="actions-menu" (click)="$event.stopPropagation()">
-                      <button type="button" (click)="openMove(lesson)">Sposta</button>
-                      <button type="button" class="danger" (click)="openCancel(lesson)">
-                        Cancella
-                      </button>
+                      @if (isPendingIncontro(lesson)) {
+                        <!-- In attesa di risposta: Accetta/Rifiuta la sostituiscono, non
+                             Sposta/Cancella — quelle hanno senso solo una volta che la
+                             lezione esiste davvero (confermata), non su una richiesta. -->
+                        <button type="button" (click)="openRespond(lesson, 'accept')">
+                          Accetta
+                        </button>
+                        <button type="button" class="danger" (click)="openRespond(lesson, 'reject')">
+                          Rifiuta
+                        </button>
+                      } @else {
+                        <button type="button" (click)="openMove(lesson)">Sposta</button>
+                        <button type="button" class="danger" (click)="openCancel(lesson)">
+                          Cancella
+                        </button>
+                      }
                     </div>
                   }
                 }
@@ -122,6 +134,18 @@
       [customerLabel]="customerLabel(lesson)"
       (confirmed)="confirmCancel($event)"
       (closed)="closeCancelDialog()"
+    />
+  }
+
+  @if (respondingLesson(); as lesson) {
+    <app-respond-incontro-dialog
+      [lesson]="lesson"
+      [mode]="respondMode()"
+      [state]="respondDialogState()"
+      [busy]="busyId() === lesson.id"
+      [errorMessage]="respondDialogError()"
+      (confirmed)="confirmRespond($event)"
+      (closed)="closeRespondDialog()"
     />
   }
 </section>

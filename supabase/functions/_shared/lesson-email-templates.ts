@@ -15,6 +15,8 @@ export interface LessonDetail {
   cancellation_reason: string | null;
   /** Nota lasciata alla prenotazione — dal cliente stesso, o dallo staff se ha prenotato per lui. */
   description: string | null;
+  status: string;
+  lesson_type: string;
 }
 
 export interface PreviousSlot {
@@ -76,20 +78,53 @@ export interface EmailContent {
 }
 
 export function customerEmailFor(
-  event: 'booked' | 'rescheduled' | 'cancelled' | 'reminder_24h',
+  event: 'booked' | 'rescheduled' | 'cancelled' | 'reminder_24h' | 'accepted' | 'rejected',
   lesson: LessonDetail,
   previous: PreviousSlot | null
 ): EmailContent {
   const dogName = lesson.customer_dog_name ? ` con ${lesson.customer_dog_name}` : '';
+  const isIncontro = lesson.lesson_type === 'incontro_conoscitivo';
 
   switch (event) {
     case 'booked':
+      // Un Incontro Conoscitivo nasce 'pending' (richiede risposta
+      // dell'educatore, vedi respond_incontro_conoscitivo in
+      // database/28_fase2_incontro_conoscitivo_booking.sql): niente "confermata"
+      // finché non lo è davvero, altrimenti l'email contraddirebbe l'app.
+      if (isIncontro && lesson.status === 'pending') {
+        return {
+          subject: 'Richiesta di Incontro Conoscitivo ricevuta',
+          html: shell(`
+            <h2>Richiesta ricevuta${dogName}</h2>
+            <p>Abbiamo ricevuto la tua richiesta di Incontro Conoscitivo per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>. Ti scriviamo appena confermato dallo staff.</p>
+            ${noteBlock(lesson.description)}
+          `),
+        };
+      }
       return {
-        subject: 'Lezione confermata',
+        subject: isIncontro ? 'Incontro Conoscitivo confermato' : 'Lezione confermata',
         html: shell(`
-          <h2>Lezione confermata${dogName}</h2>
-          <p>La tua lezione è confermata per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
+          <h2>${isIncontro ? 'Incontro Conoscitivo confermato' : 'Lezione confermata'}${dogName}</h2>
+          <p>${isIncontro ? "Il tuo Incontro Conoscitivo è confermato" : 'La tua lezione è confermata'} per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
           ${noteBlock(lesson.description)}
+        `),
+      };
+    case 'accepted':
+      return {
+        subject: 'Incontro Conoscitivo confermato',
+        html: shell(`
+          <h2>Incontro Conoscitivo confermato${dogName}</h2>
+          <p>Il tuo Incontro Conoscitivo per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong> è confermato. Ti aspettiamo!</p>
+        `),
+      };
+    case 'rejected':
+      return {
+        subject: 'Incontro Conoscitivo non confermato',
+        html: shell(`
+          <h2>Incontro Conoscitivo non confermato${dogName}</h2>
+          <p>Purtroppo non possiamo confermare l'Incontro Conoscitivo richiesto per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
+          ${reasonBlock(lesson.cancellation_reason)}
+          <p>Contatta il centro per concordare un'altra data.</p>
         `),
       };
     case 'rescheduled':
@@ -126,21 +161,49 @@ export function customerEmailFor(
 }
 
 export function trainerEmailFor(
-  event: 'booked' | 'rescheduled' | 'cancelled',
+  event: 'booked' | 'rescheduled' | 'cancelled' | 'accepted' | 'rejected',
   lesson: LessonDetail,
   previous: PreviousSlot | null
 ): EmailContent {
   const customer = `${lesson.customer_name} ${lesson.customer_surname}`;
   const dogName = lesson.customer_dog_name ? ` (${lesson.customer_dog_name})` : '';
+  const isIncontro = lesson.lesson_type === 'incontro_conoscitivo';
 
   switch (event) {
     case 'booked':
+      if (isIncontro && lesson.status === 'pending') {
+        return {
+          subject: 'Nuova richiesta di Incontro Conoscitivo',
+          html: shell(`
+            <h2>Nuova richiesta di Incontro Conoscitivo</h2>
+            <p><strong>${customer}</strong>${dogName} ha richiesto un Incontro Conoscitivo per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>, in attesa di conferma da "Gestione lezioni".</p>
+            ${noteBlock(lesson.description)}
+          `),
+        };
+      }
       return {
-        subject: 'Nuova prenotazione',
+        subject: isIncontro ? 'Incontro Conoscitivo confermato' : 'Nuova prenotazione',
         html: shell(`
-          <h2>Nuova prenotazione</h2>
-          <p><strong>${customer}</strong>${dogName} ha prenotato per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
+          <h2>${isIncontro ? 'Incontro Conoscitivo confermato' : 'Nuova prenotazione'}</h2>
+          <p><strong>${customer}</strong>${dogName}${isIncontro ? ' — Incontro Conoscitivo' : ''} per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
           ${noteBlock(lesson.description)}
+        `),
+      };
+    case 'accepted':
+      return {
+        subject: 'Incontro Conoscitivo confermato',
+        html: shell(`
+          <h2>Incontro Conoscitivo confermato</h2>
+          <p>L'Incontro Conoscitivo di <strong>${customer}</strong>${dogName} per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong> è stato confermato.</p>
+        `),
+      };
+    case 'rejected':
+      return {
+        subject: 'Incontro Conoscitivo rifiutato',
+        html: shell(`
+          <h2>Incontro Conoscitivo rifiutato</h2>
+          <p>L'Incontro Conoscitivo di <strong>${customer}</strong>${dogName} per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong> è stato rifiutato.</p>
+          ${reasonBlock(lesson.cancellation_reason)}
         `),
       };
     case 'rescheduled':

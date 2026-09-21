@@ -19,7 +19,13 @@ import {
 // controllo chiunque conoscesse l'URL della function potrebbe far partire
 // email a piacere: niente a che vedere con RLS o con le chiavi Supabase.
 
-type LessonEvent = "booked" | "rescheduled" | "cancelled" | "reminder_24h";
+type LessonEvent =
+  | "booked"
+  | "rescheduled"
+  | "cancelled"
+  | "reminder_24h"
+  | "accepted"
+  | "rejected";
 
 interface NotifyRequest {
   lesson_id: number;
@@ -45,7 +51,7 @@ export default {
     const { data: lesson, error: lessonError } = await ctx.supabaseAdmin
       .from("v_lessons_detail")
       .select(
-        "id, customer_name, customer_surname, customer_dog_name, customer_email, date, time_from, time_to, cancellation_reason, description"
+        "id, customer_name, customer_surname, customer_dog_name, customer_email, date, time_from, time_to, cancellation_reason, description, status, lesson_type"
       )
       .eq("id", body.lesson_id)
       .maybeSingle();

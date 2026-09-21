@@ -99,6 +99,27 @@ export class LessonsService {
     }
   }
 
+  /**
+   * Accettazione/rifiuto di un Incontro Conoscitivo in attesa (solo
+   * trainer/admin — enforced dalla RPC, non qui). `reason` obbligatorio solo
+   * per il rifiuto, la RPC lo richiede e lo mette nell'email al cliente.
+   */
+  async respondIncontroConoscitivo(
+    lessonId: number,
+    accept: boolean,
+    reason?: string
+  ): Promise<void> {
+    const trimmed = reason?.trim();
+    const { error } = await this.supabase.rpc('respond_incontro_conoscitivo', {
+      p_lesson_id: lessonId,
+      p_accept: accept,
+      p_reason: trimmed ? trimmed : null,
+    });
+    if (error) {
+      throw error;
+    }
+  }
+
   /** Sposta la lezione su un altro slot (solo staff). */
   async moveToSlot(lessonId: number, slotId: number, bypassWeeklyLimit = false): Promise<void> {
     const { error } = await this.supabase.rpc('update_lesson', {

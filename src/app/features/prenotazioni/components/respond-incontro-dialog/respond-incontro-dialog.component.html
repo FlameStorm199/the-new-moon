@@ -1,0 +1,78 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="respond-incontro-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button
+      type="button"
+      class="close-x"
+      [disabled]="busy"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
+    @if (state === 'confirm') {
+      <h2 id="respond-incontro-title">
+        {{ mode === 'accept' ? 'Confermare questo Incontro Conoscitivo?' : 'Rifiutare questo Incontro Conoscitivo?' }}
+      </h2>
+
+      <div class="detail">
+        <span class="who">{{ customerLabel }}</span>
+        <span class="date">{{ dateLabel }}</span>
+        <span class="time">{{ timeLabel }}</span>
+      </div>
+
+      @if (mode === 'accept') {
+        <p class="note">Il cliente riceve un'email di conferma.</p>
+      } @else {
+        <label class="field">
+          Motivo del rifiuto
+          <input #reasonInput type="text" [disabled]="busy" />
+          <span class="field-hint">Obbligatorio: verrà incluso nell'email al cliente.</span>
+        </label>
+      }
+
+      @if (errorMessage) {
+        <p class="error">{{ errorMessage }}</p>
+      }
+
+      <div class="actions">
+        <button
+          #primaryAction
+          type="button"
+          [class]="mode === 'accept' ? 'primary' : 'destructive'"
+          [disabled]="busy"
+          (click)="confirm()"
+        >
+          @if (busy) {
+            {{ mode === 'accept' ? 'Conferma…' : 'Rifiuto…' }}
+          } @else {
+            {{ mode === 'accept' ? 'Conferma' : 'Rifiuta' }}
+          }
+        </button>
+      </div>
+    } @else {
+      <div class="tick" [class.neutral]="mode === 'reject'" aria-hidden="true">
+        {{ mode === 'accept' ? '✓' : '✕' }}
+      </div>
+
+      <h2 id="respond-incontro-title">
+        {{ mode === 'accept' ? 'Incontro Conoscitivo confermato' : 'Incontro Conoscitivo rifiutato' }}
+      </h2>
+
+      <div class="detail">
+        <span class="who">{{ customerLabel }}</span>
+        <span class="date">{{ dateLabel }}</span>
+        <span class="time">{{ timeLabel }}</span>
+      </div>
+
+      <p class="note">Il cliente ha ricevuto un'email di avviso.</p>
+    }
+  </div>
+</div>
