@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnDestroy, Output, computed, signal } from '@angular/core';
 import { ClosedDay, PartOfDay, SlotRow } from '../../../../core/slots/slots.service';
 import { LessonRow } from '../../../../core/lessons/lessons.service';
+import { EventRow } from '../../../../core/events/events.service';
 
 interface PositionedSlot {
   slot: SlotRow;
@@ -23,6 +24,13 @@ interface ClosedBand {
   reason: string | null;
 }
 
+/** Evento (Fase 2) posizionato sulle stesse righe orarie degli slot, colore a parte. */
+interface PositionedEvent {
+  event: EventRow;
+  rowStart: number;
+  rowEnd: number;
+}
+
 interface CalendarDay {
   date: string;
   weekdayLabel: string;
@@ -31,6 +39,7 @@ interface CalendarDay {
   /** Al più due (mattina e/o pomeriggio): per una giornata intera compaiono entrambe. */
   closedBands: ClosedBand[];
   slots: PositionedSlot[];
+  events: PositionedEvent[];
 }
 
 interface HourLine {
@@ -93,6 +102,7 @@ export class StaffCalendarComponent implements OnDestroy {
   private readonly allSlots = signal<SlotRow[]>([]);
   private readonly allLessons = signal<LessonRow[]>([]);
   private readonly allClosedDays = signal<ClosedDay[]>([]);
+  private readonly allEvents = signal<EventRow[]>([]);
 
   readonly daysToShow = signal(DAYS_WIDE);
   private readonly rangeStart = signal<Date>(startOfWeek(new Date()));
@@ -132,6 +142,12 @@ export class StaffCalendarComponent implements OnDestroy {
     this.allClosedDays.set(value ?? []);
   }
 
+  /** Eventi (Fase 2): stesso calendario, righe orarie proprie, colore diverso — vedi legenda nel template. */
+  @Input()
+  set events(value: EventRow[]) {
+    this.allEvents.set(value ?? []);
+  }
+
   /** Slot il cui toggle attivo/disattivo è in corso: disabilitato mentre risponde al server. */
   @Input() togglingSlotId: number | null = null;
 
@@ -147,6 +163,8 @@ export class StaffCalendarComponent implements OnDestroy {
   @Output() readonly slotToggle = new EventEmitter<SlotRow>();
   /** Slot occupato cliccato: la lezione da mostrare, per aprirne il dettaglio. */
   @Output() readonly lessonOpen = new EventEmitter<LessonRow>();
+  /** Evento cliccato: chi usa il componente decide cosa farne (es. andare a Gestione eventi). */
+  @Output() readonly eventOpen = new EventEmitter<EventRow>();
 
   private readonly slotsByDate = computed(() => {
     const map = new Map<string, SlotRow[]>();
@@ -169,6 +187,21 @@ export class StaffCalendarComponent implements OnDestroy {
     return map;
   });
 
+  private readonly eventsByDate = computed(() => {
+    const map = new Map<string, EventRow[]>();
+    for (const event of this.allEvents()) {
+      const list = map.get(event.date) ?? [];
+      list.push(event);
+      map.set(event.date, list);
+    }
+    return map;
+  });
+
+  private readonly eventsInRange = computed(() => {
+    const byDate = this.eventsByDate();
+    return this.visibleDates().flatMap((date) => byDate.get(toIsoDate(date)) ?? []);
+  });
+
   private readonly closedByDate = computed(() => {
     const map = new Map<string, ClosedDay[]>();
     for (const day of this.allClosedDays()) {
@@ -189,7 +222,7 @@ export class StaffCalendarComponent implements OnDestroy {
     return this.visibleDates().flatMap((date) => byDate.get(toIsoDate(date)) ?? []);
   });
 
-  private readonly layout = computed(() => buildLayout(this.slotsInRange()));
+  private readonly layout = computed(() => buildLayout(this.slotsInRange(), this.eventsInRange()));
 
   readonly hourLines = computed(() => this.layout().hourLines);
   readonly gaps = computed(() => this.layout().gaps);
@@ -201,6 +234,7 @@ export class StaffCalendarComponent implements OnDestroy {
     const byDate = this.slotsByDate();
     const lessonBySlot = this.lessonBySlotId();
     const closedByDate = this.closedByDate();
+    const eventsByDate = this.eventsByDate();
     const { rowByHour, totalRows, morningEndRow, afternoonStartRow } = this.layout();
 
     // Confine fra "prima" e "dopo" la pausa: dove finiscono davvero le ore
@@ -260,6 +294,11 @@ export class StaffCalendarComponent implements OnDestroy {
                 : 'Disattivo',
           };
         }),
+        events: (eventsByDate.get(iso) ?? []).map((event) => ({
+          event,
+          rowStart: startRow(toMinutes(event.time_from), rowByHour),
+          rowEnd: endRow(toMinutes(event.time_to), rowByHour),
+        })),
       };
     });
   });
@@ -307,6 +346,10 @@ export class StaffCalendarComponent implements OnDestroy {
     }
   }
 
+  onEventClick(item: PositionedEvent): void {
+    this.eventOpen.emit(item.event);
+  }
+
   private applyViewport(isNarrow: boolean): void {
     const count = isNarrow ? DAYS_NARROW : DAYS_WIDE;
     if (count === this.daysToShow()) {
@@ -328,7 +371,10 @@ function bookingLabel(lesson: LessonRow | null): string | null {
   return lesson.customer_dog_name || lesson.customer_name;
 }
 
-function buildLayout(slots: SlotRow[]): {
+function buildLayout(
+  slots: SlotRow[],
+  events: EventRow[]
+): {
   rowByHour: Map<number, number>;
   hourLines: HourLine[];
   gaps: GapBand[];
@@ -348,6 +394,18 @@ function buildLayout(slots: SlotRow[]): {
       if (!partByHour.has(h)) {
         partByHour.set(h, slot.part_of_day);
       }
+    }
+  }
+  // Un evento (Fase 2) può cadere fuori dall'orario coperto dagli slot (es.
+  // giornata senza lezioni, o evento serale): le sue ore vanno comunque
+  // incluse nell'asse orario, altrimenti non avrebbe righe su cui stare —
+  // solo l'estensione dell'asse, mai la banda mattina/pomeriggio (quella
+  // resta un concetto solo degli slot, per le fasce di chiusura).
+  for (const event of events) {
+    const from = toMinutes(event.time_from);
+    const to = toMinutes(event.time_to);
+    for (let h = Math.floor(from / 60); h <= Math.floor((to - 1) / 60); h++) {
+      hours.add(h);
     }
   }
   const sorted = hours.size > 0 ? Array.from(hours).sort((a, b) => a - b) : FALLBACK_HOURS;

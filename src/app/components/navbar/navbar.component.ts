@@ -105,10 +105,17 @@ export class NavbarComponent {
     // di gestione confondevano chi testava la piattaforma (sembravano "le
     // stesse tab dei clienti"). Restano raggiungibili dal link piccolo
     // "Area assistito" in area-personale, non dalla navbar.
-    if (profile.validated && !isStaff) {
+    //
+    // future_customer (Fase 2): stesso motivo già corretto in
+    // canBook/canUsePlatform (prenota/area-personale/le-mie-lezioni) — non è
+    // mai "validated" prima dell'Incontro Conoscitivo, "profile.validated"
+    // da solo lo escluderebbe qui esattamente come li escludeva lì.
+    const canUseBookingArea = profile.validated || profile.typeCode === 'future_customer';
+    if (canUseBookingArea && !isStaff) {
       items.push(
         { path: '/prenotazioni/prenota', label: 'Prenota' },
-        { path: '/prenotazioni/le-mie-lezioni', label: 'Le mie lezioni' }
+        { path: '/prenotazioni/le-mie-lezioni', label: 'Le mie lezioni' },
+        { path: '/prenotazioni/eventi', label: 'Eventi' }
       );
     }
 
@@ -117,7 +124,8 @@ export class NavbarComponent {
         { path: '/prenotazioni/gestione-lezioni', label: 'Lezioni' },
         { path: '/prenotazioni/gestione-slot', label: 'Slot' },
         { path: '/prenotazioni/fasce-orarie', label: 'Fasce orarie' },
-        { path: '/prenotazioni/gestione-utenti', label: 'Utenti' }
+        { path: '/prenotazioni/gestione-utenti', label: 'Utenti' },
+        { path: '/prenotazioni/gestione-eventi', label: 'Eventi' }
       );
     }
 

@@ -16,10 +16,12 @@
             [slots]="slots()"
             [lessons]="lessons()"
             [closedDays]="closedDays()"
+            [events]="events()"
             [togglingSlotId]="togglingSlotId()"
             [canToggle]="isStaff"
             (slotToggle)="onSlotToggle($event)"
             (lessonOpen)="onLessonOpen($event)"
+            (eventOpen)="onEventOpen()"
           />
         }
       </div>

@@ -20,6 +20,11 @@ const TYPE_LABELS: Record<UserTypeCode | '', string> = {
 
 const REQUIRES_PHONE_AND_DOG = new Set<UserTypeCode>(['customer', 'future_customer']);
 
+export type RoleFilter = UserTypeCode | 'all';
+
+/** Stesso ordine di TYPE_LABELS, per il filtro ruolo. */
+const ALL_ROLES: UserTypeCode[] = ['customer', 'future_customer', 'assistant', 'trainer', 'admin'];
+
 @Component({
   selector: 'app-gestione-utenti',
   standalone: true,
@@ -52,6 +57,26 @@ export class GestioneUtentiComponent implements OnInit {
   private currentUserId: number | null = null;
 
   readonly typeLabels = TYPE_LABELS;
+  readonly allRoles = ALL_ROLES;
+
+  /** Nome/cognome/email, case-insensitive: gli stessi campi mostrati in ogni riga. */
+  readonly searchTerm = signal('');
+  readonly roleFilter = signal<RoleFilter>('all');
+
+  readonly filteredUsers = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    const role = this.roleFilter();
+    return this.users().filter((row) => {
+      if (role !== 'all' && row.typeCode !== role) {
+        return false;
+      }
+      if (!term) {
+        return true;
+      }
+      const haystack = `${row.name} ${row.surname} ${row.email ?? ''}`.toLowerCase();
+      return haystack.includes(term);
+    });
+  });
 
   readonly form = this.fb.nonNullable.group({
     type_code: this.fb.nonNullable.control<UserTypeCode>('assistant', Validators.required),

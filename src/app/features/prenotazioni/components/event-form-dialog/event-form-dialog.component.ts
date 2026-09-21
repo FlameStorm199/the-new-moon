@@ -39,8 +39,12 @@ export class EventFormDialogComponent implements OnInit, AfterViewInit {
     date: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     timeFrom: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     timeTo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    maxCustomers: new FormControl('', { nonNullable: true }),
-    price: new FormControl('', { nonNullable: true }),
+    // number, non stringa: <input type="number"> usa il NumberValueAccessor
+    // di Angular, che converte da solo in number|null (vuoto -> null) — un
+    // FormControl('', {nonNullable:true}) qui è sbagliato, il valore non è
+    // mai davvero una stringa nonostante il default che suggerirebbe.
+    maxCustomers: new FormControl<number | null>(null),
+    price: new FormControl<number | null>(null),
     description: new FormControl('', { nonNullable: true }),
   });
 
@@ -53,8 +57,8 @@ export class EventFormDialogComponent implements OnInit, AfterViewInit {
         date: e.date,
         timeFrom: e.time_from.slice(0, 5),
         timeTo: e.time_to.slice(0, 5),
-        maxCustomers: e.max_customers !== null ? String(e.max_customers) : '',
-        price: e.price !== null ? String(e.price) : '',
+        maxCustomers: e.max_customers,
+        price: e.price,
         description: e.description ?? '',
       });
     }
@@ -89,8 +93,8 @@ export class EventFormDialogComponent implements OnInit, AfterViewInit {
       date: value.date,
       timeFrom: value.timeFrom,
       timeTo: value.timeTo,
-      maxCustomers: value.maxCustomers.trim() ? Number(value.maxCustomers) : null,
-      price: value.price.trim() ? Number(value.price) : null,
+      maxCustomers: value.maxCustomers,
+      price: value.price,
       description: value.description.trim() || null,
     });
   }

@@ -55,11 +55,34 @@
   }
 
   <h2>Utenti esistenti</h2>
+
+  <div class="filters">
+    <input
+      type="search"
+      class="search-input"
+      placeholder="Cerca per nome, cognome o email…"
+      [value]="searchTerm()"
+      (input)="searchTerm.set($any($event.target).value)"
+    />
+    <select
+      class="role-select"
+      [value]="roleFilter()"
+      (change)="roleFilter.set($any($event.target).value)"
+    >
+      <option value="all">Tutti i ruoli</option>
+      @for (role of allRoles; track role) {
+        <option [value]="role">{{ typeLabels[role] }}</option>
+      }
+    </select>
+  </div>
+
   @if (loading()) {
     <p>Caricamento…</p>
+  } @else if (filteredUsers().length === 0) {
+    <p class="empty">Nessun utente corrisponde alla ricerca.</p>
   } @else {
     <ul class="user-list">
-      @for (row of users(); track row.id) {
+      @for (row of filteredUsers(); track row.id) {
         <li>
           <div class="info">
             <strong>{{ row.name }} {{ row.surname }}</strong>

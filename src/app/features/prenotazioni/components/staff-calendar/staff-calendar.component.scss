@@ -21,6 +21,12 @@ $gutter-width-compact: 2.6rem;
   --inactive-text: #7a7a7a;
   --closed: var(--pn-warning, #b06a00);
   --closed-bg: var(--pn-warning-bg, #fff4e0);
+  // Fase 2: viola, colore non ancora usato da nessun altro blocco del
+  // calendario (blu=libero, verde=prenotato, grigio=disattivo,
+  // arancio=chiuso) — un evento deve distinguersi a colpo d'occhio da tutto
+  // il resto, richiesta esplicita.
+  --event: #7c4dff;
+  --event-hover: #6a3fd9;
 }
 
 .legend {
@@ -59,6 +65,10 @@ $gutter-width-compact: 2.6rem;
 
     &.closed {
       background: var(--closed);
+    }
+
+    &.event {
+      background: var(--event);
     }
   }
 }
@@ -267,6 +277,50 @@ $gutter-width-compact: 2.6rem;
   &.busy {
     opacity: 0.6;
     cursor: wait;
+  }
+}
+
+// Evento (Fase 2): stesso ingombro/posizionamento di .slot (stesse righe
+// orarie), ma z-index sopra — un evento può sovrapporsi a uno slot libero
+// che occupa lo stesso orario (lo slot resta comunque prenotabile se
+// l'evento non l'ha disattivato, es. copre solo parte della fascia) e deve
+// restare cliccabile sopra di esso, non nascosto sotto.
+:host .event-block {
+  z-index: 2;
+  margin: 1px 2px;
+  padding: 0.25rem 0.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  overflow: hidden;
+  border: none;
+  font-family: inherit;
+  background: var(--event);
+  color: #fff;
+  border-radius: 0.4rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+
+  .event-icon {
+    font-size: 0.85rem;
+    line-height: 1;
+  }
+
+  .event-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  &:hover {
+    background: var(--event-hover);
   }
 }
 

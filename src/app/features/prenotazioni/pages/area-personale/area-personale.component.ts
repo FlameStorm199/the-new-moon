@@ -5,6 +5,7 @@ import { AuthService } from '../../../../core/auth/auth.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
 import { ClosedDay, SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { LessonRow, LessonsService } from '../../../../core/lessons/lessons.service';
+import { EventRow, EventsService } from '../../../../core/events/events.service';
 import { StaffCalendarComponent } from '../../components/staff-calendar/staff-calendar.component';
 import { formatShortDate } from '../../components/date-format';
 import { LessonDetailDialogComponent } from '../../components/lesson-detail-dialog/lesson-detail-dialog.component';
@@ -41,6 +42,7 @@ export class AreaPersonaleComponent implements OnInit {
   private readonly profileService = inject(UserProfileService);
   private readonly slotsService = inject(SlotsService);
   private readonly lessonsService = inject(LessonsService);
+  private readonly eventsService = inject(EventsService);
 
   readonly profile = signal<UserProfile | null>(null);
   readonly loadingProfile = signal(true);
@@ -53,6 +55,8 @@ export class AreaPersonaleComponent implements OnInit {
   readonly slots = signal<SlotRow[]>([]);
   readonly lessons = signal<LessonRow[]>([]);
   readonly closedDays = signal<ClosedDay[]>([]);
+  /** Fase 2: eventi da oggi in avanti, stessa scelta di listUpcoming() ovunque nella feature eventi. */
+  readonly events = signal<EventRow[]>([]);
   readonly togglingSlotId = signal<number | null>(null);
 
   /** Slot su cui aprire "Sposta lezione": liberi, attivi, non quello occupato dalla lezione stessa. */
@@ -149,19 +153,26 @@ export class AreaPersonaleComponent implements OnInit {
     this.loadingCalendar.set(true);
     this.calendarError.set(null);
     try {
-      const [slots, lessons, closedDays] = await Promise.all([
+      const [slots, lessons, closedDays, events] = await Promise.all([
         this.slotsService.listUpcoming(HORIZON_DAYS),
         this.lessonsService.listUpcoming(HORIZON_DAYS),
         this.slotsService.listClosedDays(),
+        this.eventsService.listUpcoming(),
       ]);
       this.slots.set(slots);
       this.lessons.set(lessons);
       this.closedDays.set(closedDays);
+      this.events.set(events);
     } catch {
       this.calendarError.set('Errore nel caricamento del calendario.');
     } finally {
       this.loadingCalendar.set(false);
     }
+  }
+
+  /** Clic su un evento nel calendario: apre Gestione eventi, unico posto dove gestirlo davvero. */
+  onEventOpen(): void {
+    this.router.navigateByUrl('/prenotazioni/gestione-eventi');
   }
 
   /** Clic su uno slot libero o disattivato: ne inverte l'attivazione (stesso RPC di gestione-slot). */
