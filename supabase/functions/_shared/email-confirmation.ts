@@ -23,15 +23,19 @@ import { siteUrl } from "./site-url.ts";
 // password (generateRecoveryLink in password-flows.ts) — stesso meccanismo
 // collaudato, redirect diverso.
 //
-// APERTO per il giorno 3: la pagina di destinazione. Per ora punta alla
-// route base prenotazioni — da sostituire con la pagina dedicata quando
-// esiste (form pubblico + vista slot per future_customer). Da tenere a
-// mente: il click stabilisce comunque una sessione di recovery (stesso
-// comportamento del link di invito password) — non è "solo" una conferma
-// email silenziosa, l'utente atterra loggato sulla pagina di redirect.
+// Giorno 3: punta alla pagina di atterraggio dedicata
+// (incontro-conoscitivo-confermato.component.ts), NON ad area-personale —
+// quella route ha authGuard, e lo stesso codebase evita apposta di mettere
+// un guard su una pagina raggiunta da link email coi token nel frammento
+// dell'URL (vedi la nota su reimposta-password.component.ts): un guard lì
+// rischia di rimbalzare l'utente al login prima che supabase-js abbia letto
+// i token e stabilito la sessione. La pagina di atterraggio verifica la
+// sessione da sé e da lì linka a /prenotazioni/prenota (canUsePlatform in
+// area-personale.component.ts ora include future_customer, stesso motivo di
+// canBook in prenota.component.ts).
 
 function confirmationRedirectUrl(): string {
-  return `${siteUrl()}/prenotazioni`;
+  return `${siteUrl()}/prenotazioni/incontro-conoscitivo-confermato`;
 }
 
 export async function sendIncontroConoscitivoConfirmationEmail(

@@ -60,6 +60,15 @@ export class PrenotaComponent implements OnInit {
    * accetta ormai come un customer, solo senza il controllo di validazione
    * che non lo riguarda). Non può però prenotare per conto di altri: quello
    * resta riservato a isStaff (trainer/admin), sotto.
+   *
+   * future_customer (Fase 2, vedi handoff_fase2.md): stesso motivo —
+   * "validated" è un timbro che lo staff mette DOPO l'Incontro Conoscitivo,
+   * richiederlo PRIMA per prenotare proprio quell'incontro sarebbe un
+   * blocco permanente, non temporaneo. book_lesson/cancel_lesson lato DB
+   * vanno ancora aggiornati per accettare questo ruolo (giorno 4): fino ad
+   * allora questa pagina mostra il calendario ma la prenotazione vera fallisce
+   * lato server con "Ruolo non autorizzato" — comportamento sicuro (nessuna
+   * riga scritta con dati sbagliati), solo non ancora funzionante end-to-end.
    */
   get canBook(): boolean {
     const p = this.profile();
@@ -67,7 +76,11 @@ export class PrenotaComponent implements OnInit {
       return false;
     }
     return (
-      p.validated || p.typeCode === 'trainer' || p.typeCode === 'admin' || p.typeCode === 'assistant'
+      p.validated ||
+      p.typeCode === 'trainer' ||
+      p.typeCode === 'admin' ||
+      p.typeCode === 'assistant' ||
+      p.typeCode === 'future_customer'
     );
   }
 

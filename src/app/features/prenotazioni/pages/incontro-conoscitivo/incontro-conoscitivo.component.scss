@@ -1,0 +1,43 @@
+.ic-page {
+  max-width: 24rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+
+  .intro {
+    color: #555;
+    margin: 0 0 1rem;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  input {
+    padding: 0.5rem;
+    font-size: 1rem;
+  }
+
+  .error {
+    color: #b00020;
+    margin: 0;
+  }
+
+  .success {
+    color: #1b7a3d;
+    margin: 0;
+  }
+
+  .privacy-note {
+    font-size: 0.8rem;
+    color: #777;
+    margin-top: 0.75rem;
+  }
+}

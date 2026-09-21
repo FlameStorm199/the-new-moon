@@ -1,0 +1,18 @@
+<section class="icc-page">
+  @if (checkingSession()) {
+    <p>Verifica in corso…</p>
+  } @else if (confirmed()) {
+    <h1>✅ Email confermata</h1>
+    <p>Ora puoi scegliere data e orario per il tuo Incontro Conoscitivo.</p>
+    <a routerLink="/prenotazioni/prenota" class="cta">Prenota l'incontro</a>
+    <p class="secondary">
+      <a routerLink="/prenotazioni/area-personale">Vai all'area personale</a>
+    </p>
+  } @else {
+    <h1>Link non valido</h1>
+    <p>
+      Questo link di conferma non è più valido (scaduto o già usato). Contatta il centro se hai
+      bisogno di una nuova email.
+    </p>
+  }
+</section>

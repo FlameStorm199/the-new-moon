@@ -109,10 +109,16 @@ export class AreaPersonaleComponent implements OnInit {
    * esattamente come trainer/admin (database/23_assistant_self_booking.sql)
    * — è l'unica azione concessa anche a lui, per questo qui conta lo stesso
    * gruppo che vede il calendario, non quello ristretto che può scriverci.
+   *
+   * future_customer (Fase 2): stesso motivo di prenota.component.ts — non
+   * viene mai "validated" prima dell'Incontro Conoscitivo, richiederlo qui
+   * lo bloccherebbe per sempre in questa pagina, che è proprio dove atterra
+   * dopo aver confermato l'email (vedi supabase/functions/_shared/
+   * email-confirmation.ts).
    */
   get canUsePlatform(): boolean {
     const p = this.profile();
-    return !!p && (p.validated || this.isStaffViewer);
+    return !!p && (p.validated || this.isStaffViewer || p.typeCode === 'future_customer');
   }
 
   get isCustomerType(): boolean {

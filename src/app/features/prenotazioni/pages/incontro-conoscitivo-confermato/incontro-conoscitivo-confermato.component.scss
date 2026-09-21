@@ -1,0 +1,22 @@
+.icc-page {
+  max-width: 24rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  text-align: center;
+
+  .cta {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.65rem 1.25rem;
+    border-radius: 0.4rem;
+    background: var(--pn-accent, #3b6fd4);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .secondary {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+  }
+}

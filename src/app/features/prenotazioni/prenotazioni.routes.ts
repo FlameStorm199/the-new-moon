@@ -40,6 +40,16 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       import('./pages/privacy/privacy.component').then((m) => m.PrivacyComponent),
   },
   {
+    // Atterraggio del link di conferma email dell'Incontro Conoscitivo
+    // (Fase 2) — stesso motivo di reimposta-password: nessun guard, vedi
+    // incontro-conoscitivo-confermato.component.ts.
+    path: 'incontro-conoscitivo-confermato',
+    loadComponent: () =>
+      import(
+        './pages/incontro-conoscitivo-confermato/incontro-conoscitivo-confermato.component'
+      ).then((m) => m.IncontroConoscitivoConfermatoComponent),
+  },
+  {
     path: 'area-personale',
     canActivate: [authGuard],
     loadComponent: () =>

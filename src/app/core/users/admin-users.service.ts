@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../supabase/supabase.service';
+import { extractFunctionErrorMessage } from '../supabase/edge-function-error';
 
 export type UserTypeCode = 'customer' | 'future_customer' | 'assistant' | 'trainer' | 'admin';
 
@@ -106,7 +107,7 @@ export class AdminUsersService {
       body: input,
     });
     if (error) {
-      throw new Error(await this.extractFunctionErrorMessage(error));
+      throw new Error(await extractFunctionErrorMessage(error));
     }
     if (data?.error) {
       throw new Error(data.error);
@@ -130,31 +131,10 @@ export class AdminUsersService {
       body: { action, target_user_id: targetUserId },
     });
     if (error) {
-      throw new Error(await this.extractFunctionErrorMessage(error));
+      throw new Error(await extractFunctionErrorMessage(error));
     }
     if (data?.error) {
       throw new Error(data.error);
     }
-  }
-
-  /**
-   * FunctionsHttpError non espone il body della risposta nel messaggio
-   * (solo "Edge Function returned a non-2xx status code"): il messaggio
-   * vero che le nostre funzioni scrivono in { error: "..." } sta nel body
-   * della risposta originale, che il SDK espone come .context (una Response).
-   */
-  private async extractFunctionErrorMessage(error: {
-    message?: string;
-    context?: Response;
-  }): Promise<string> {
-    try {
-      const body = await error.context?.clone().json();
-      if (body?.error) {
-        return body.error as string;
-      }
-    } catch {
-      // body non-JSON o già consumato: si usa il messaggio generico sotto.
-    }
-    return error.message ?? 'Richiesta fallita.';
   }
 }

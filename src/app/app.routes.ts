@@ -18,5 +18,16 @@ export const routes: Routes = [
     loadChildren: () =>
       import('./features/prenotazioni/prenotazioni.routes').then((m) => m.PRENOTAZIONI_ROUTES),
   },
+  {
+    // Fuori da /prenotazioni e fuori navbar (Fase 2, decisione del centro):
+    // pubblica, raggiungibile solo da URL diretto. Vive comunque dentro la
+    // feature prenotazioni (componenti/servizi condivisi), solo l'URL è
+    // top-level come da handoff_fase2.md.
+    path: 'incontro-conoscitivo',
+    loadComponent: () =>
+      import('./features/prenotazioni/pages/incontro-conoscitivo/incontro-conoscitivo.component').then(
+        (m) => m.IncontroConoscitivoComponent
+      ),
+  },
   { path: '**', redirectTo: '' }
 ];
