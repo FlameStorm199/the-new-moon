@@ -70,7 +70,7 @@
             }
           </div>
           <div class="actions">
-            @if (isPendingValidation(row) && canValidate()) {
+            @if (canManuallyValidate(row) && canValidate()) {
               <button
                 type="button"
                 class="icon-btn accept"

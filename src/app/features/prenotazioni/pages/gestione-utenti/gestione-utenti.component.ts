@@ -83,6 +83,20 @@ export class GestioneUtentiComponent implements OnInit {
     return !row.validated && (row.typeCode === 'customer' || row.typeCode === 'future_customer');
   }
 
+  /**
+   * Il bottone "Valida" (✓) manuale resta solo per customer: per un
+   * future_customer la validazione non è mai una scelta manuale, avviene da
+   * sola quando imposta la password dopo l'invito (trg_auth_user_password_set,
+   * database/26_fase2_schema.sql) — mostrare qui un "Valida" che imposta solo
+   * validated=true senza promuoverlo a customer sarebbe un'azione fuorviante,
+   * un vicolo cieco. "Rifiuta" invece resta utile per entrambi: scartare una
+   * richiesta di Incontro Conoscitivo mai seguita da nulla è un'azione
+   * indipendente dalla validazione.
+   */
+  canManuallyValidate(row: AdminUserRow): boolean {
+    return this.isPendingValidation(row) && row.typeCode === 'customer';
+  }
+
   async load(): Promise<void> {
     this.loading.set(true);
     this.errorMessage.set(null);

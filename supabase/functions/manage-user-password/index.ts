@@ -85,6 +85,22 @@ async function handleAdminInvite(ctx: any, body: ManagePasswordRequest): Promise
     return jsonResponse({ error: "Utente destinatario non trovato." }, 404);
   }
 
+  // Fase 2: chi ha effettivamente inviato l'email di invito — per un
+  // future_customer, il trigger trg_auth_user_password_set
+  // (database/26_fase2_schema.sql) lo legge al primo login per valorizzare
+  // validated_by, distinto da chi ha accettato l'incontro
+  // (respond_incontro_conoscitivo, può essere un altro membro dello staff).
+  // Scritto per QUALSIASI invito, non solo future_customer: innocuo per gli
+  // altri ruoli (quel trigger guarda solo le righe future_customer), più
+  // semplice che distinguere qui il tipo del target.
+  const { error: invitedByError } = await ctx.supabaseAdmin
+    .from("users")
+    .update({ invited_by: admin.id })
+    .eq("id", target.id);
+  if (invitedByError) {
+    return jsonResponse({ error: invitedByError.message }, 400);
+  }
+
   const result = await sendInviteEmail(ctx.supabaseAdmin, target.email);
   if (!result.ok) {
     return jsonResponse({ error: result.error }, 502);
