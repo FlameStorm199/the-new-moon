@@ -247,7 +247,7 @@ export class AreaPersonaleComponent implements OnInit {
     this.router.navigateByUrl('/prenotazioni/gestione-eventi');
   }
 
-  /** Clic su uno slot libero o disattivato: ne inverte l'attivazione (stesso RPC di gestione-slot). */
+  /** Clic su uno slot libero o disattivato: ne inverte l'attivazione (SlotsService.setActive). */
   async onSlotToggle(slot: SlotRow): Promise<void> {
     this.togglingSlotId.set(slot.id);
     this.calendarError.set(null);

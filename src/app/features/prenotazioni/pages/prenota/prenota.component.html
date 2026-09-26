@@ -13,6 +13,10 @@
         <p class="lead">
           Scegli un orario libero nel calendario. Puoi prenotare una lezione a settimana, fino a
           {{ minHours }} ore prima dell'inizio.
+          @if (events().length > 0) {
+            In viola trovi anche gli eventi del centro: tocca un evento per i dettagli e
+            l'iscrizione.
+          }
         </p>
       }
     }
@@ -45,19 +49,23 @@
       </p>
     }
 
-    @if (myUpcoming().length > 0) {
-      <div class="upcoming" aria-label="Le tue prossime lezioni">
+    @if (upcomingItems().length > 0) {
+      <div class="upcoming" aria-label="Già in programma">
         <p class="upcoming-label">Già in programma</p>
         <ul>
-          @for (lesson of myUpcoming(); track lesson.id) {
+          @for (item of upcomingItems(); track item.key) {
             <li>
               <span class="upcoming-when">
-                {{ formatLongDate(lesson.date) }} ·
-                {{ formatTimeRange(lesson.time_from, lesson.time_to) }}
+                {{ formatLongDate(item.date) }} ·
+                {{ formatTimeRange(item.timeFrom, item.timeTo) }}
               </span>
-              <span class="status-badge" [class]="'status-badge status-' + lesson.status">
-                {{ statusLabels[lesson.status] }}
-              </span>
+              @if (item.status) {
+                <span class="status-badge" [class]="'status-badge status-' + item.status">
+                  Lezione {{ statusLabels[item.status] }}
+                </span>
+              } @else {
+                <span class="status-badge status-event">Evento · {{ item.title }}</span>
+              }
             </li>
           }
         </ul>
@@ -69,7 +77,7 @@
         <span class="sk sk-toolbar"></span>
         <span class="sk sk-calendar"></span>
       </div>
-    } @else if (slots().length === 0 && !errorMessage()) {
+    } @else if (slots().length === 0 && events().length === 0 && !errorMessage()) {
       <div class="empty-state">
         <p class="empty-title">Nessun orario libero al momento</p>
         <p class="empty-text">
@@ -77,9 +85,11 @@
           giorno.
         </p>
       </div>
-    } @else if (slots().length > 0) {
+    } @else if (slots().length > 0 || events().length > 0) {
       <app-week-calendar
         [slots]="slots()"
+        [events]="events()"
+        (eventSelected)="openEvent($event)"
         [flaggedSlotIds]="flaggedSlotIds()"
         [flaggedLabel]="flaggedLabel()"
         [busySlotId]="bookingId()"
@@ -96,6 +106,18 @@
       [errorMessage]="dialogError()"
       (confirmed)="confirmBooking($event)"
       (closed)="closeDialog()"
+    />
+  }
+
+  @if (dialogEvent(); as event) {
+    <app-event-detail-dialog
+      [event]="event"
+      [state]="eventDialogState()"
+      [busy]="eventBusy()"
+      [errorMessage]="eventError()"
+      (registerRequested)="registerEvent()"
+      (cancelConfirmed)="cancelEventRegistration()"
+      (closed)="closeEventDialog()"
     />
   }
 </section>

@@ -1,14 +1,49 @@
-<div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #222;">
-  <h2>Conferma il tuo indirizzo email</h2>
-  <p>Grazie per esserti registrato/a su ASD Cinofila "La Luna Nuova". Clicca il link qui sotto per confermare il tuo indirizzo email e completare la registrazione.</p>
-  <p style="margin: 1.5rem 0;">
-    <a href="{{ .ConfirmationURL }}"
-       style="background:#2c6e49; color:#fff; padding:0.75rem 1.25rem; border-radius:0.4rem; text-decoration:none;">
-      Conferma email
-    </a>
-  </p>
-  <p style="font-size:0.8rem; color:#777;">
-    Se non hai creato tu questo account, puoi ignorare questa email in sicurezza.
-  </p>
-  <p style="font-size:0.8rem; color:#777;">ASD Cinofila "La Luna Nuova"</p>
-</div>
+<!-- Generato dal layout condiviso delle email (supabase/functions/_shared/email-layout.ts):
+     conferma email alla registrazione. In locale lo usa `supabase start` (config.toml); sul progetto remoto va
+     incollato a mano in Authentication → Email Templates. -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Conferma il tuo indirizzo email</title>
+</head>
+<body style="margin:0; padding:0; background:#f3f4f7;">
+<div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">Conferma il tuo indirizzo per completare la registrazione.&#8199;&#65279;&#847;&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f4f7" style="background:#f3f4f7;">
+  <tr><td align="center" style="padding:28px 12px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
+      <tr><td bgcolor="#ffffff" style="background:#ffffff; border-radius:14px; border-top:4px solid #3b6fd4; padding:22px 30px 14px;">
+        <!-- Logo dentro la card: ha lo sfondo bianco, sul grigio della pagina sembrerebbe un adesivo. -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px; border-bottom:1px solid #eceef2;">
+          <tr><td align="center" style="padding:0 0 16px;">
+            <a href="{{ .SiteURL }}" target="_blank" style="text-decoration:none;">
+              <img src="{{ .SiteURL }}/assets/images/email-logo.png" width="104" height="86" alt="ASD Cinofila La Luna Nuova" style="display:block; border:0; width:104px; height:auto; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; font-weight:700; color:#1f2328;">
+            </a>
+          </td></tr>
+        </table>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;">
+    <tr><td style="background:#eef3fc; color:#3b6fd4; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; font-weight:700; letter-spacing:0.02em; padding:4px 10px; border-radius:6px;">Account</td></tr>
+  </table>
+        <h1 style="margin:0 0 16px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:22px; line-height:1.3; font-weight:700; color:#1f2328;">Conferma il tuo indirizzo email</h1>
+        <p style="margin:0 0 16px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:15px; line-height:1.6; color:#1f2328;">Grazie per esserti registrato/a all'area prenotazioni di ASD Cinofila "La Luna Nuova".</p><p style="margin:0 0 16px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:15px; line-height:1.6; color:#1f2328;">Conferma il tuo indirizzo email per completare la registrazione: poi lo staff validerà il tuo account.</p>
+        
+        
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 22px;">
+    <tr><td align="center" bgcolor="#3b6fd4" style="border-radius:8px;">
+      <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block; padding:13px 26px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:15px; font-weight:700; color:#ffffff; text-decoration:none; border-radius:8px;">Conferma email</a>
+    </td></tr>
+  </table>
+        <p style="margin:0 0 8px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:1.5; color:#5f6670;">Se il bottone non funziona, copia questo indirizzo nel browser:<br><a href="{{ .ConfirmationURL }}" style="color:#3b6fd4; word-break:break-all;">{{ .ConfirmationURL }}</a></p><p style="margin:0 0 8px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:1.5; color:#5f6670;">Se non hai creato tu questo account, puoi ignorare questa email in sicurezza.</p>
+      </td></tr>
+      <tr><td align="center" style="padding:20px 12px 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:1.6; color:#8a9099;">
+        ASD Cinofila "La Luna Nuova" · Ponzano Veneto<br>
+        <a href="{{ .SiteURL }}/prenotazioni/area-personale" target="_blank" style="color:#8a9099; text-decoration:underline;">Area personale</a>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>

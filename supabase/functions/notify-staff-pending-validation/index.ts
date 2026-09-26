@@ -3,7 +3,8 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import { jsonResponse } from "../_shared/auth-helpers.ts";
 import { sendEmail } from "../_shared/email.ts";
-import { emailShell } from "../_shared/password-flows.ts";
+import { escapeHtml } from "../_shared/email-layout.ts";
+import { actionEmail } from "../_shared/password-flows.ts";
 import { siteUrl } from "../_shared/site-url.ts";
 
 // Chiamata SOLO dal database (trigger trg_users_notify_validation, vedi
@@ -74,13 +75,18 @@ export default {
       return jsonResponse({ error: staffError.message }, 400);
     }
 
-    const dog = pending.dog_name ? ` (${pending.dog_name})` : "";
-    const html = emailShell(
-      SUBJECT,
-      `<p><strong>${pending.name} ${pending.surname}</strong>${dog} si è registrato/a e attende la validazione per poter prenotare lezioni.</p>`,
-      `${siteUrl()}/prenotazioni/gestione-utenti`,
-      "Vai a Gestione utenti",
-    );
+    const dog = pending.dog_name ? ` con ${escapeHtml(pending.dog_name)}` : "";
+    const html = actionEmail({
+      preheader: `${pending.name} ${pending.surname} attende la validazione.`,
+      badge: "Nuovo utente",
+      title: "Un nuovo utente attende la validazione",
+      paragraphs: [
+        `<strong>${escapeHtml(`${pending.name} ${pending.surname}`)}</strong>${dog} si è registrato/a e non può prenotare finché non viene validato/a.`,
+      ],
+      actionLink: `${siteUrl()}/prenotazioni/gestione-utenti`,
+      ctaLabel: "Apri Gestione utenti",
+      ignoreHint: "",
+    });
 
     const results: Array<{ to: string; ok: boolean; error: string | null }> = [];
     for (const member of staff ?? []) {

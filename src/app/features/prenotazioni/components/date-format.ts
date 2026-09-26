@@ -69,3 +69,23 @@ export function dateBlockParts(isoDate: string): { weekday: string; day: number;
     month: MONTHS_SHORT[date.getMonth()],
   };
 }
+
+/**
+ * Intervallo di date compatto: "10–24 agosto 2026", "28 luglio – 3 agosto
+ * 2026", o per esteso se cambia anche l'anno. Per un giorno solo, la data
+ * per esteso come formatLongDate.
+ */
+export function formatDateRange(fromIso: string, toIso: string): string {
+  if (fromIso === toIso) {
+    return formatLongDate(fromIso);
+  }
+  const [fy, fm, fd] = fromIso.split('-').map(Number);
+  const [ty, tm, td] = toIso.split('-').map(Number);
+  if (fy === ty && fm === tm) {
+    return `${fd}–${td} ${MONTHS[tm - 1]} ${ty}`;
+  }
+  if (fy === ty) {
+    return `${fd} ${MONTHS[fm - 1]} – ${td} ${MONTHS[tm - 1]} ${ty}`;
+  }
+  return `${fd} ${MONTHS[fm - 1]} ${fy} – ${td} ${MONTHS[tm - 1]} ${ty}`;
+}

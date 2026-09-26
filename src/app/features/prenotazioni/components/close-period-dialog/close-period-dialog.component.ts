@@ -14,11 +14,10 @@ export interface ClosePeriodFormValue {
 
 /**
  * "Chiudi campo": chiude un intervallo di date, vicino o lontano. Solo
- * andata apposta — riaprire una data già chiusa si fa da "Elenco chiusure"
- * (closed-days-dialog), riga per riga, non da qui: prima conviveva un
- * secondo bottone "Riapri" nella stessa form, ma un intervallo "dal-al" è
+ * andata apposta — riaprire si fa dalla lista di Gestione chiusure, per
+ * chiusura intera o giorno per giorno, non da qui: un intervallo "dal-al" è
  * scomodo per riaprire un giorno preciso in mezzo a tante chiusure diverse,
- * mentre l'elenco le mostra già una per una.
+ * mentre la lista le mostra già una per una.
  */
 @Component({
   selector: 'app-close-period-dialog',

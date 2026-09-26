@@ -5,7 +5,14 @@ import {
   TimeSlotRuleRow,
   TimeSlotRulesService,
 } from '../../../../core/slots/time-slot-rules.service';
+import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
+import { formatLongDate, formatShortDate, formatTimeRange } from '../../components/date-format';
+import {
+  NewSlotDialogComponent,
+  NewSlotDialogState,
+  NewSlotFormValue,
+} from '../../components/new-slot-dialog/new-slot-dialog.component';
 import { UserProfileService } from '../../../../core/users/user-profile.service';
 
 interface WeekdayGroup {
@@ -34,23 +41,44 @@ const WEEKDAY_LABELS: Record<number, string> = {
 };
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
+/** Quanto avanti guardare per elencare gli slot extra già creati. */
+const EXTRA_SLOTS_HORIZON_DAYS = 90;
+
 @Component({
   selector: 'app-fasce-orarie',
   standalone: true,
-  imports: [CommonModule, RouterLink, BackLinkComponent],
+  imports: [CommonModule, RouterLink, BackLinkComponent, NewSlotDialogComponent],
   templateUrl: './fasce-orarie.component.html',
   styleUrl: './fasce-orarie.component.scss',
 })
 export class FasceOrarieComponent implements OnInit {
   private readonly rulesService = inject(TimeSlotRulesService);
   private readonly profileService = inject(UserProfileService);
+  private readonly slotsService = inject(SlotsService);
+
+  readonly formatLongDate = formatLongDate;
+  readonly formatTimeRange = formatTimeRange;
 
   readonly rules = signal<TimeSlotRuleRow[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly infoMessage = signal<string | null>(null);
   readonly saving = signal(false);
-  readonly infoOpen = signal(false);
+
+  /**
+   * Slot aggiunti a mano (fuori dalle fasce) nei prossimi mesi. Stanno qui
+   * perché sono l'eccezione agli orari settimanali: chi li crea deve vedere
+   * accanto sia la regola sia le eccezioni già fatte.
+   */
+  readonly extraSlots = signal<SlotRow[]>([]);
+  readonly loadingExtra = signal(true);
+
+  // --- "Aggiungi slot" ---
+  readonly newSlotOpen = signal(false);
+  readonly newSlotState = signal<NewSlotDialogState>('form');
+  readonly newSlotBusy = signal(false);
+  readonly newSlotError = signal<string | null>(null);
+  readonly newSlotSummary = signal<string | null>(null);
 
   /**
    * Orari modificati ma non ancora salvati, per id fascia: prima ogni riga
@@ -78,12 +106,58 @@ export class FasceOrarieComponent implements OnInit {
     }));
   });
 
+  readonly activeCount = computed(() => this.rules().filter((r) => r.active).length);
+
   readonly dirtyCount = computed(() => this.drafts().size);
   readonly isDirty = computed(() => this.dirtyCount() > 0);
 
   ngOnInit(): void {
     void this.load();
     void this.loadRole();
+    void this.loadExtraSlots();
+  }
+
+  private async loadExtraSlots(): Promise<void> {
+    this.loadingExtra.set(true);
+    try {
+      const slots = await this.slotsService.listUpcoming(EXTRA_SLOTS_HORIZON_DAYS);
+      this.extraSlots.set(slots.filter((s) => s.source === 'manual'));
+    } catch {
+      // Solo un promemoria: se non si carica, la creazione funziona lo stesso.
+      this.extraSlots.set([]);
+    } finally {
+      this.loadingExtra.set(false);
+    }
+  }
+
+  // --- "Aggiungi slot" ---
+
+  openNewSlot(): void {
+    this.newSlotState.set('form');
+    this.newSlotError.set(null);
+    this.newSlotSummary.set(null);
+    this.newSlotOpen.set(true);
+  }
+
+  closeNewSlotDialog(): void {
+    this.newSlotOpen.set(false);
+  }
+
+  async submitNewSlot(value: NewSlotFormValue): Promise<void> {
+    this.newSlotBusy.set(true);
+    this.newSlotError.set(null);
+    try {
+      await this.slotsService.createSlot(value);
+      this.newSlotSummary.set(`${formatShortDate(value.date)} ${value.timeFrom}–${value.timeTo}`);
+      this.newSlotState.set('success');
+      await this.loadExtraSlots();
+    } catch {
+      this.newSlotError.set(
+        'Errore nella creazione dello slot (controlla che non si sovrapponga a un altro).'
+      );
+    } finally {
+      this.newSlotBusy.set(false);
+    }
   }
 
   private async loadRole(): Promise<void> {

@@ -1,31 +1,187 @@
-// Il modale di info riusa lo stile condiviso dei modali (backdrop, panel,
-// close-x, note): stessa "voce" del resto della sezione anche per un
-// popup che qui vive dentro una pagina, non dentro un altro componente.
-@use '../../components/dialog-shared' as *;
-
+// Due sezioni: gli orari settimanali (la regola) e gli slot extra (le
+// eccezioni una tantum), che prima stavano in "Gestione slot".
 .staff-page.fasce-page {
   max-width: 42rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 1.5rem 1rem 2.5rem;
 
-  .error {
-    color: #b00020;
-  }
-
-  .success {
-    color: #1b7a3d;
-  }
-
-  .title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem;
+  .page-header {
     margin-bottom: 1.25rem;
 
     h1 {
+      margin-bottom: 0.4rem;
+    }
+  }
+
+  // La spiegazione sta in chiaro sotto il titolo: prima era dietro una "i"
+  // da 18px che quasi nessuno apriva.
+  .lead {
+    font-size: 0.92rem;
+    color: #555;
+    line-height: 1.55;
+    max-width: 64ch;
+    text-wrap: pretty;
+  }
+
+  .error,
+  .success {
+    padding: 0.7rem 0.9rem;
+    margin-bottom: 1rem;
+    border-radius: var(--pn-radius-md, 8px);
+    font-size: 0.9rem;
+  }
+
+  .error {
+    background: var(--pn-danger-bg, #fdecea);
+    color: var(--pn-danger, #b00020);
+  }
+
+  .success {
+    background: var(--pn-success-bg, #eaf7ef);
+    color: var(--pn-success, #1b7a3d);
+  }
+
+  .section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-bottom: 0.75rem;
+
+    h2 {
+      font-size: 1.05rem;
       margin: 0;
     }
+  }
+
+  .section-meta {
+    font-size: 0.82rem;
+    color: #777;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .section-desc {
+    margin-top: 0.2rem;
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  // =========================================================
+  // Slot extra
+  // =========================================================
+
+  .extra {
+    margin-top: 2.25rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eceef2;
+
+    .section-head {
+      align-items: center;
+    }
+  }
+
+  .extra-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-md, 8px);
+    overflow: hidden;
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.3rem 0.75rem;
+      padding: 0.6rem 0.85rem;
+      border-bottom: 1px solid #eceef2;
+      box-shadow: none;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &.inactive .extra-when {
+        opacity: 0.55;
+      }
+    }
+  }
+
+  .extra-when {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.6rem;
+    font-size: 0.9rem;
+
+    .extra-date {
+      font-weight: 600;
+
+      &::first-letter {
+        text-transform: uppercase;
+      }
+    }
+
+    .extra-time {
+      color: #666;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .tag {
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f0f0f0;
+    color: #666;
+
+    &.tag-free {
+      background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+      color: var(--pn-accent, #3b6fd4);
+    }
+
+    &.tag-booked {
+      background: #e6f4ea;
+      color: #1b7a3d;
+    }
+  }
+
+  .extra-empty,
+  .extra-note {
+    font-size: 0.85rem;
+    color: #777;
+  }
+
+  .extra-note {
+    margin-top: 0.6rem;
+  }
+
+  // =========================================================
+  // Caricamento
+  // =========================================================
+
+  .grid-skeleton,
+  .extra-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    .sk {
+      display: block;
+      height: 2.9rem;
+      border-radius: var(--pn-radius-md, 8px);
+      background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 50%, #eef0f4 100%);
+      background-size: 200% 100%;
+      animation: fo-shimmer 1.3s ease-in-out infinite;
+    }
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
   }
 
   // =========================================================
@@ -245,29 +401,8 @@
 }
 
 // button[type='button'] del tema globale batte per specificità un semplice
-// .info-btn/.primary-cta/.secondary-cta: stesso motivo per cui i modali e
-// gestione-slot.component.scss usano :host qui.
-:host .fasce-page .info-btn {
-  flex: 0 0 auto;
-  width: 1.15rem;
-  height: 1.15rem;
-  padding: 0;
-  border-radius: 50%;
-  border: 1px solid var(--pn-accent, #3b6fd4);
-  background: #fff;
-  color: var(--pn-accent, #3b6fd4);
-  font-size: 0.65rem;
-  font-weight: 700;
-  font-style: italic;
-  font-family: Georgia, serif;
-  line-height: 1;
-  cursor: pointer;
-
-  &:hover {
-    background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
-  }
-}
-
+// .primary-cta/.secondary-cta: stesso motivo per cui i modali e le pagine
+// di gestione usano :host qui.
 :host .staff-page .primary-cta {
   flex: 0 0 auto;
   background: var(--pn-accent, #3b6fd4);
@@ -287,6 +422,19 @@
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  &.add-slot {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.5rem;
+    font-size: 0.88rem;
+
+    span {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
   }
 }
 
@@ -366,5 +514,16 @@
       padding: 0.25rem 0.3rem;
       font-size: 0.8rem;
     }
+  }
+}
+
+@keyframes fo-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staff-page.fasce-page .sk {
+    animation: none;
   }
 }

@@ -3,7 +3,8 @@ import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import { jsonResponse } from "../_shared/auth-helpers.ts";
 import { sendEmail } from "../_shared/email.ts";
-import { emailShell } from "../_shared/password-flows.ts";
+import { escapeHtml } from "../_shared/email-layout.ts";
+import { actionEmail } from "../_shared/password-flows.ts";
 import { siteUrl } from "../_shared/site-url.ts";
 
 // Chiamata SOLO dal database (trigger trg_users_notify_validation, vedi
@@ -48,12 +49,19 @@ export default {
       return jsonResponse({ skipped: "utente non trovato o senza email" });
     }
 
-    const html = emailShell(
-      SUBJECT,
-      `<p>Ciao ${customer.name}, il tuo account su ASD Cinofila "La Luna Nuova" è stato validato: puoi accedere e prenotare le tue lezioni.</p>`,
-      `${siteUrl()}/prenotazioni/login`,
-      "Accedi",
-    );
+    const html = actionEmail({
+      preheader: "Da ora puoi prenotare le tue lezioni.",
+      badge: "Account",
+      tone: "success",
+      title: "Il tuo account è attivo",
+      paragraphs: [
+        `Ciao ${escapeHtml(customer.name)},`,
+        "lo staff ha validato il tuo account: da ora puoi prenotare le lezioni e iscriverti agli eventi dall'area personale.",
+      ],
+      actionLink: `${siteUrl()}/prenotazioni/login`,
+      ctaLabel: "Accedi e prenota",
+      ignoreHint: "",
+    });
 
     const result = await sendEmail({ to: customer.email, subject: SUBJECT, html });
 

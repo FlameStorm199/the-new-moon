@@ -122,7 +122,7 @@ export class NavbarComponent {
     if (isStaffViewer) {
       items.push(
         { path: '/prenotazioni/gestione-lezioni', label: 'Lezioni' },
-        { path: '/prenotazioni/gestione-slot', label: 'Slot' },
+        { path: '/prenotazioni/gestione-chiusure', label: 'Chiusure' },
         { path: '/prenotazioni/fasce-orarie', label: 'Fasce orarie' },
         { path: '/prenotazioni/gestione-utenti', label: 'Utenti' },
         { path: '/prenotazioni/gestione-eventi', label: 'Eventi' }

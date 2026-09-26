@@ -8,9 +8,20 @@ import {
   computed,
   signal,
 } from '@angular/core';
+import { EventRow } from '../../../../core/events/events.service';
 import { SlotRow } from '../../../../core/slots/slots.service';
 
-interface PositionedSlot {
+/**
+ * Posizione orizzontale dentro la colonna del giorno, quando due blocchi si
+ * sovrappongono nel tempo (tipicamente un evento sopra uno slot): null se il
+ * blocco è solo e prende tutta la larghezza.
+ */
+interface LanePosition {
+  width: string | null;
+  offset: string | null;
+}
+
+interface PositionedSlot extends LanePosition {
   slot: SlotRow;
   rowStart: number;
   rowEnd: number;
@@ -20,12 +31,22 @@ interface PositionedSlot {
   timeTo: string;
 }
 
+interface PositionedEvent extends LanePosition {
+  event: EventRow;
+  rowStart: number;
+  rowEnd: number;
+  timeFrom: string;
+  registered: boolean;
+  full: boolean;
+}
+
 interface CalendarDay {
   date: string;
   weekdayLabel: string;
   dayLabel: string;
   isToday: boolean;
   slots: PositionedSlot[];
+  events: PositionedEvent[];
 }
 
 interface HourLine {
@@ -84,6 +105,10 @@ const DAYS_NARROW = 3;
  * toglie quelli sotto la finestra minima per i clienti): qui dentro non
  * vivono regole di business, solo posizionamento e navigazione.
  *
+ * Facoltativamente mostra anche gli eventi (blocchi viola, cliccabili per
+ * dettagli e iscrizione): chi non passa l'input `events` vede il calendario
+ * di soli slot di sempre.
+ *
  * Le ore in cui non esiste alcuno slot nei giorni mostrati non vengono
  * disegnate a grandezza naturale ma compresse in una banda: con apertura
  * mattutina e serale, un asse continuo 9→20 sarebbe per metà vuoto.
@@ -97,6 +122,7 @@ const DAYS_NARROW = 3;
 })
 export class WeekCalendarComponent implements OnDestroy {
   private readonly allSlots = signal<SlotRow[]>([]);
+  private readonly allEvents = signal<EventRow[]>([]);
   private readonly flaggedIds = signal<ReadonlySet<number>>(new Set());
 
   /** 7 su schermo largo, 3 su schermo stretto. */
@@ -143,6 +169,15 @@ export class WeekCalendarComponent implements OnDestroy {
     this.flaggedIds.set(new Set(value ?? []));
   }
 
+  @Input()
+  set events(value: EventRow[]) {
+    this.allEvents.set(value ?? []);
+    this.ensureRangeWithSlots();
+  }
+
+  /** Per mostrare la legenda solo quando nel calendario c'è più di un tipo di blocco. */
+  readonly hasEvents = computed(() => this.allEvents().length > 0);
+
   /** Tenuta corta: nel blocco convive con l'orario, in pochi pixel. */
   @Input() flaggedLabel = '< finestra';
 
@@ -150,6 +185,7 @@ export class WeekCalendarComponent implements OnDestroy {
   @Input() busySlotId: number | null = null;
 
   @Output() readonly slotSelected = new EventEmitter<SlotRow>();
+  @Output() readonly eventSelected = new EventEmitter<EventRow>();
 
   private readonly slotsByDate = computed(() => {
     const map = new Map<string, SlotRow[]>();
@@ -161,14 +197,29 @@ export class WeekCalendarComponent implements OnDestroy {
     return map;
   });
 
+  private readonly eventsByDate = computed(() => {
+    const map = new Map<string, EventRow[]>();
+    for (const event of this.allEvents()) {
+      const list = map.get(event.date) ?? [];
+      list.push(event);
+      map.set(event.date, list);
+    }
+    return map;
+  });
+
   private readonly visibleDates = computed(() => {
     const start = this.rangeStart();
     return Array.from({ length: this.daysToShow() }, (_, i) => addDays(start, i));
   });
 
-  private readonly slotsInRange = computed(() => {
-    const byDate = this.slotsByDate();
-    return this.visibleDates().flatMap((date) => byDate.get(toIsoDate(date)) ?? []);
+  /** Slot ed eventi dei giorni mostrati: per l'asse orario servono solo gli orari. */
+  private readonly itemsInRange = computed(() => {
+    const slots = this.slotsByDate();
+    const events = this.eventsByDate();
+    return this.visibleDates().flatMap((date) => {
+      const iso = toIsoDate(date);
+      return [...(slots.get(iso) ?? []), ...(events.get(iso) ?? [])];
+    });
   });
 
   /**
@@ -179,9 +230,9 @@ export class WeekCalendarComponent implements OnDestroy {
    */
   private readonly layout = computed(() => {
     const hours = new Set<number>();
-    for (const slot of this.slotsInRange()) {
-      const from = toMinutes(slot.time_from);
-      const to = toMinutes(slot.time_to);
+    for (const item of this.itemsInRange()) {
+      const from = toMinutes(item.time_from);
+      const to = toMinutes(item.time_to);
       // -1 sul minuto finale: uno slot che termina alle 12:00 occupa fino
       // alle 11, non introduce l'ora delle 12.
       for (let h = Math.floor(from / 60); h <= Math.floor((to - 1) / 60); h++) {
@@ -229,14 +280,15 @@ export class WeekCalendarComponent implements OnDestroy {
   readonly days = computed<CalendarDay[]>(() => {
     const todayIso = toIsoDate(new Date());
     const byDate = this.slotsByDate();
+    const eventsByDate = this.eventsByDate();
     const flagged = this.flaggedIds();
     const { rowByHour } = this.layout();
 
     return this.visibleDates().map((date) => {
       const iso = toIsoDate(date);
-      const daySlots = (byDate.get(iso) ?? [])
-        .slice()
-        .sort((a, b) => a.time_from.localeCompare(b.time_from));
+      const daySlots = byDate.get(iso) ?? [];
+      const dayEvents = eventsByDate.get(iso) ?? [];
+      const lanes = assignLanes([...daySlots, ...dayEvents]);
 
       return {
         date: iso,
@@ -250,6 +302,16 @@ export class WeekCalendarComponent implements OnDestroy {
           flagged: flagged.has(slot.id),
           timeFrom: slot.time_from.slice(0, 5),
           timeTo: slot.time_to.slice(0, 5),
+          ...lanes.get(slot)!,
+        })),
+        events: dayEvents.map((event) => ({
+          event,
+          rowStart: startRow(toMinutes(event.time_from), rowByHour),
+          rowEnd: endRow(toMinutes(event.time_to), rowByHour),
+          timeFrom: event.time_from.slice(0, 5),
+          registered: event.my_registration_id !== null,
+          full: event.max_customers !== null && event.active_registrations >= event.max_customers,
+          ...lanes.get(event)!,
         })),
       };
     });
@@ -267,10 +329,13 @@ export class WeekCalendarComponent implements OnDestroy {
     return `${start.getDate()} ${startMonth} – ${end.getDate()} ${endMonth} ${end.getFullYear()}`;
   });
 
-  readonly hasSlotsInRange = computed(() => this.slotsInRange().length > 0);
+  readonly hasSlotsInRange = computed(() => this.itemsInRange().length > 0);
 
+  /** Giorni con qualcosa da mostrare (slot o eventi): guidano la navigazione. */
   private readonly slotDates = computed(() =>
-    Array.from(new Set(this.allSlots().map((slot) => slot.date))).sort()
+    Array.from(
+      new Set([...this.allSlots(), ...this.allEvents()].map((item) => item.date))
+    ).sort()
   );
 
   readonly canGoPrevious = computed(() => {
@@ -298,6 +363,10 @@ export class WeekCalendarComponent implements OnDestroy {
 
   select(slot: SlotRow): void {
     this.slotSelected.emit(slot);
+  }
+
+  selectEvent(event: EventRow): void {
+    this.eventSelected.emit(event);
   }
 
   private applyViewport(isNarrow: boolean): void {
@@ -331,6 +400,63 @@ export class WeekCalendarComponent implements OnDestroy {
     const target = dates.find((date) => date >= currentIso) ?? dates[0];
     this.rangeStart.set(this.alignStart(parseIsoDate(target)));
   }
+}
+
+/**
+ * Affianca i blocchi dello stesso giorno che si sovrappongono nel tempo.
+ * Raggruppa quelli che si toccano (anche a catena) e dentro ogni gruppo dà
+ * a ciascuno la prima corsia libera: larghezza e scostamento dipendono dal
+ * gruppo, così un evento sovrapposto a uno slot stringe solo quei due e non
+ * tutta la giornata.
+ */
+function assignLanes<T extends { time_from: string; time_to: string }>(
+  items: T[]
+): Map<T, LanePosition> {
+  const result = new Map<T, LanePosition>();
+  const sorted = items
+    .slice()
+    .sort((a, b) => toMinutes(a.time_from) - toMinutes(b.time_from));
+
+  let group: { item: T; lane: number }[] = [];
+  let laneEnds: number[] = [];
+  let groupEnd = -1;
+
+  const flush = () => {
+    const lanes = laneEnds.length;
+    for (const { item, lane } of group) {
+      result.set(
+        item,
+        lanes > 1
+          ? {
+              width: `calc(${100 / lanes}% - 4px)`,
+              offset: `calc(${(lane * 100) / lanes}% + 2px)`,
+            }
+          : { width: null, offset: null }
+      );
+    }
+    group = [];
+    laneEnds = [];
+  };
+
+  for (const item of sorted) {
+    const from = toMinutes(item.time_from);
+    const to = toMinutes(item.time_to);
+    if (from >= groupEnd) {
+      flush();
+    }
+    let lane = laneEnds.findIndex((end) => end <= from);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(to);
+    } else {
+      laneEnds[lane] = to;
+    }
+    group.push({ item, lane });
+    groupEnd = Math.max(groupEnd, to);
+  }
+  flush();
+
+  return result;
 }
 
 function pad(value: number): string {

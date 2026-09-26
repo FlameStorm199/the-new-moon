@@ -1,27 +1,35 @@
 <section class="staff-page fasce-page">
   <app-back-link />
 
-  <div class="title-row">
+  <header class="page-header">
     <h1>Fasce orarie</h1>
-    <button
-      type="button"
-      class="info-btn"
-      (click)="infoOpen.set(true)"
-      aria-label="Informazioni su questa pagina"
-    >
-      i
-    </button>
-  </div>
+    <p class="lead">
+      Gli orari di apertura di ogni settimana: da qui nascono gli slot prenotabili. Ogni modifica
+      ricalcola subito gli slot futuri, quelli già prenotati restano al loro posto. Per ferie e
+      festivi usa <a routerLink="/prenotazioni/gestione-chiusure">Gestione chiusure</a>.
+    </p>
+  </header>
 
   @if (errorMessage()) {
-    <p class="error">{{ errorMessage() }}</p>
+    <p class="error" role="alert">{{ errorMessage() }}</p>
   }
   @if (infoMessage()) {
-    <p class="success">{{ infoMessage() }}</p>
+    <p class="success" role="status">{{ infoMessage() }}</p>
   }
 
+  <div class="section-head">
+    <h2>Orari settimanali</h2>
+    @if (!loading()) {
+      <span class="section-meta">{{ activeCount() }} fasce attive su {{ rules().length }}</span>
+    }
+  </div>
+
   @if (loading()) {
-    <p>Caricamento…</p>
+    <div class="grid-skeleton" aria-busy="true" aria-label="Caricamento">
+      @for (i of [1, 2, 3, 4, 5, 6, 7]; track i) {
+        <span class="sk"></span>
+      }
+    </div>
   } @else {
     @if (canAct() && isDirty()) {
       <div class="save-bar dirty">
@@ -103,39 +111,61 @@
     </div>
   }
 
-  @if (infoOpen()) {
-    <div class="backdrop" (click)="infoOpen.set(false)">
-      <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
-      <div
-        class="panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="fasce-info-title"
-        (click)="$event.stopPropagation()"
-      >
-        <button
-          type="button"
-          class="close-x"
-          (click)="infoOpen.set(false)"
-          aria-label="Chiudi"
-        >
-          ✕
-        </button>
-
-        <h2 id="fasce-info-title">Come funzionano le fasce orarie</h2>
-
-        <p class="note">
-          Sono gli orari di apertura settimanali da cui vengono generati gli slot. Puoi modificare
-          gli orari o attivare/disattivare una fascia; le fasce stesse (una per giorno, mattina e
-          pomeriggio) sono fisse. Ogni modifica ricalcola immediatamente gli slot futuri: quelli già
-          prenotati restano al loro posto anche se finiscono fuori fascia.
-        </p>
-
-        <p class="note">
-          Vedi il risultato in
-          <a routerLink="/prenotazioni/gestione-slot" (click)="infoOpen.set(false)">Gestione slot</a>.
+  <section class="extra" aria-labelledby="extra-title">
+    <div class="section-head">
+      <div>
+        <h2 id="extra-title">Slot extra</h2>
+        <p class="section-desc">
+          Un orario una tantum fuori dalle fasce, per esempio un recupero di sabato.
         </p>
       </div>
+      @if (canAct()) {
+        <button type="button" class="primary-cta add-slot" (click)="openNewSlot()">
+          <span aria-hidden="true">+</span> Aggiungi slot
+        </button>
+      }
     </div>
+
+    @if (loadingExtra()) {
+      <div class="extra-skeleton" aria-busy="true" aria-label="Caricamento slot extra">
+        <span class="sk"></span>
+        <span class="sk"></span>
+      </div>
+    } @else if (extraSlots().length === 0) {
+      <p class="extra-empty">Nessuno slot extra nei prossimi mesi.</p>
+    } @else {
+      <ul class="extra-list">
+        @for (slot of extraSlots(); track slot.id) {
+          <li [class.inactive]="!slot.active">
+            <span class="extra-when">
+              <span class="extra-date">{{ formatLongDate(slot.date) }}</span>
+              <span class="extra-time">{{ formatTimeRange(slot.time_from, slot.time_to) }}</span>
+            </span>
+            @if (slot.occupied) {
+              <span class="tag tag-booked">prenotato</span>
+            } @else if (!slot.active) {
+              <span class="tag">disattivato</span>
+            } @else {
+              <span class="tag tag-free">libero</span>
+            }
+          </li>
+        }
+      </ul>
+      <p class="extra-note">
+        Per disattivarli o riattivarli clicca lo slot nel calendario della
+        <a routerLink="/prenotazioni/area-personale">home</a>.
+      </p>
+    }
+  </section>
+
+  @if (newSlotOpen()) {
+    <app-new-slot-dialog
+      [state]="newSlotState()"
+      [busy]="newSlotBusy()"
+      [errorMessage]="newSlotError()"
+      [summaryLabel]="newSlotSummary()"
+      (submitted)="submitNewSlot($event)"
+      (closed)="closeNewSlotDialog()"
+    />
   }
 </section>

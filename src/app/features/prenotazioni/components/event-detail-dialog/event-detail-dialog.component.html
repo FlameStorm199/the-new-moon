@@ -1,0 +1,116 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel wide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="event-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button
+      type="button"
+      class="close-x"
+      [disabled]="busy"
+      (click)="closed.emit()"
+      aria-label="Chiudi"
+    >
+      ✕
+    </button>
+
+    @if (state === 'view') {
+      <p class="eyebrow">Evento</p>
+      <h2 id="event-dialog-title">{{ event.title }}</h2>
+
+      <div class="detail event-detail">
+        <span class="date">{{ dateLabel }}</span>
+        <span class="time">{{ timeLabel }} · {{ event.location }}</span>
+      </div>
+
+      @if (priceLabel || seatsLabel || registered) {
+        <div class="tags">
+          @if (registered) {
+            <span class="tag tag-registered">✓ Sei iscritto/a</span>
+          }
+          @if (priceLabel) {
+            <span class="tag">{{ priceLabel }}</span>
+          }
+          @if (seatsLabel) {
+            <span class="tag" [class.tag-full]="full">{{ seatsLabel }}</span>
+          }
+        </div>
+      }
+
+      @if (event.description) {
+        <p class="description">{{ event.description }}</p>
+      }
+
+      @if (errorMessage) {
+        <p class="error">{{ errorMessage }}</p>
+      }
+
+      <div class="actions">
+        @if (registered) {
+          @if (askingCancel) {
+            <p class="confirm-question">Vuoi davvero cancellare la tua iscrizione?</p>
+            <button type="button" class="secondary" [disabled]="busy" (click)="askingCancel = false">
+              No
+            </button>
+            <button
+              #primaryAction
+              type="button"
+              class="destructive"
+              [disabled]="busy"
+              (click)="cancelConfirmed.emit()"
+            >
+              {{ busy ? 'Cancellazione…' : 'Sì, cancella' }}
+            </button>
+          } @else {
+            <button #primaryAction type="button" class="secondary" (click)="askingCancel = true">
+              Cancella iscrizione
+            </button>
+          }
+        } @else if (full) {
+          <button #primaryAction type="button" class="secondary" (click)="closed.emit()">
+            Chiudi
+          </button>
+        } @else {
+          <button
+            #primaryAction
+            type="button"
+            class="primary"
+            [disabled]="busy"
+            (click)="registerRequested.emit()"
+          >
+            {{ busy ? 'Iscrizione…' : 'Iscriviti' }}
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="tick" [class.neutral]="state === 'cancelled'" aria-hidden="true">
+        {{ state === 'registered' ? '✓' : '–' }}
+      </div>
+      <h2 id="event-dialog-title">
+        {{ state === 'registered' ? 'Iscrizione confermata' : 'Iscrizione cancellata' }}
+      </h2>
+
+      <div class="detail event-detail">
+        <span class="who">{{ event.title }}</span>
+        <span class="date">{{ dateLabel }}</span>
+        <span class="time">{{ timeLabel }}</span>
+      </div>
+
+      <p class="note">
+        {{
+          state === 'registered'
+            ? "Ti abbiamo inviato un'email di riepilogo."
+            : "Ti abbiamo inviato un'email di conferma della cancellazione."
+        }}
+      </p>
+
+      <div class="actions">
+        <a #primaryAction routerLink="/prenotazioni/eventi" class="link-action">Tutti gli eventi</a>
+        <button type="button" class="secondary" (click)="closed.emit()">Chiudi</button>
+      </div>
+    }
+  </div>
+</div>

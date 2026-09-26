@@ -32,6 +32,39 @@ $gutter-width-compact: 2.6rem;
   --accent-dark: var(--pn-accent-dark, #2d5ab0);
   --accent-soft: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
   --border: var(--pn-border, #e0e0e0);
+  // Stesso viola degli eventi nel calendario staff e nelle pagine eventi.
+  --event: #7c4dff;
+  --event-dark: #6336e6;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.25rem;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--pn-text-muted, #555);
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .swatch {
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 0.25rem;
+
+    &.slot-swatch {
+      background: var(--accent);
+    }
+
+    &.event-swatch {
+      background: var(--event);
+    }
+  }
 }
 
 .toolbar {
@@ -196,6 +229,16 @@ $gutter-width-compact: 2.6rem;
   }
 }
 
+// Colonna esplicita: senza, due blocchi sovrapposti nel tempo verrebbero
+// spinti dall'auto-placement in una colonna implicita in più. L'affiancamento
+// lo decide il componente (width/margin-left inline, vedi assignLanes).
+:host .slot,
+:host .event-block {
+  grid-column: 1;
+  justify-self: start;
+  width: calc(100% - 4px);
+}
+
 :host .slot {
   margin: 1px 2px;
   padding: 0.25rem 0.35rem;
@@ -266,6 +309,81 @@ $gutter-width-compact: 2.6rem;
   }
 }
 
+// Evento: stessa forma di uno slot ma viola, col titolo al posto dell'orario
+// di fine. Il titolo si tronca: quello intero è nel modale.
+:host .event-block {
+  margin: 1px 2px;
+  padding: 0.25rem 0.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--event);
+  color: #fff;
+  border: none;
+  border-radius: 0.4rem;
+  line-height: 1.15;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+
+  .event-time {
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .event-name {
+    max-width: 100%;
+    font-size: 0.72rem;
+    font-weight: 600;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+
+  .event-flag {
+    font-size: 0.62rem;
+    white-space: nowrap;
+    opacity: 0.9;
+  }
+
+  &:hover {
+    background: var(--event-dark);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(124, 77, 255, 0.45);
+    outline-offset: 2px;
+  }
+
+  // Già iscritto/a: pieno ma con bordo, si distingue dagli altri eventi.
+  &.registered {
+    background: #fff;
+    color: var(--event);
+    box-shadow: inset 0 0 0 2px var(--event);
+
+    &:hover {
+      background: #f1ecff;
+    }
+  }
+
+  // Completo: resta cliccabile per leggere i dettagli, ma spento.
+  &.full {
+    background: #b9a6f0;
+  }
+}
+
 // =========================================================
 // Griglia compatta (tablet, telefono in orizzontale)
 // =========================================================
@@ -293,6 +411,22 @@ $gutter-width-compact: 2.6rem;
   .grid-body .hour-label {
     font-size: 0.68rem;
     padding-right: 0.35rem;
+  }
+
+  :host .event-block {
+    padding: 0.15rem 0.2rem;
+
+    .event-time {
+      font-size: 0.75rem;
+    }
+
+    .event-name {
+      font-size: 0.62rem;
+    }
+
+    .event-flag {
+      font-size: 0.55rem;
+    }
   }
 
   :host .slot {

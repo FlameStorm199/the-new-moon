@@ -1,0 +1,349 @@
+// Stessa impostazione di gestione eventi (intestazione con CTA, card con
+// foglietto di calendario), in ambra: il colore "cautela" già usato per
+// "Chiudi campo" — una chiusura toglie orari, non è né un errore né una
+// normale disponibilità.
+.staff-page {
+  --closure: #b06a00;
+  --closure-soft: #fff4e0;
+
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2.5rem;
+
+  .hint {
+    font-size: 0.88rem;
+    color: #666;
+    line-height: 1.55;
+    max-width: 64ch;
+    margin-bottom: 1.25rem;
+  }
+
+  .error,
+  .success {
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--pn-radius-md, 8px);
+    font-size: 0.9rem;
+  }
+
+  .error {
+    background: var(--pn-danger-bg, #fdecea);
+    color: var(--pn-danger, #b00020);
+  }
+
+  .success {
+    background: var(--pn-success-bg, #eaf7ef);
+    color: var(--pn-success, #1b7a3d);
+  }
+
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+
+    h1 {
+      margin-bottom: 0.35rem;
+    }
+  }
+
+  .summary {
+    font-size: 0.88rem;
+    color: #666;
+
+    strong {
+      color: var(--pn-text, #222);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // =========================================================
+  // Card chiusura
+  // =========================================================
+
+  .closure-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    &.past {
+      margin-top: 0.75rem;
+    }
+  }
+
+  .closure-card {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-lg, 12px);
+
+    // In corso: è quella che sta togliendo orari proprio adesso.
+    &.ongoing {
+      border-color: transparent;
+      background: var(--closure-soft);
+      box-shadow: none;
+
+      .date-block {
+        background: var(--closure);
+        color: #fff;
+      }
+    }
+
+    &.past {
+      opacity: 0.7;
+      box-shadow: none;
+    }
+  }
+
+  .closure-main {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .date-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 3.6rem;
+    padding: 0.4rem 0 0.45rem;
+    border-radius: var(--pn-radius-md, 8px);
+    background: var(--closure-soft);
+    color: var(--closure);
+    line-height: 1.1;
+
+    .date-weekday,
+    .date-month {
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .date-day {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .closure-info {
+    min-width: 0;
+  }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--closure);
+    margin-bottom: 0.15rem;
+  }
+
+  .closure-title {
+    font-size: 1.05rem;
+    margin: 0 0 0.15rem;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .closure-when {
+    font-size: 0.9rem;
+    color: #555;
+    font-variant-numeric: tabular-nums;
+
+    &::first-letter {
+      text-transform: uppercase;
+    }
+  }
+
+  .closure-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+
+  .tag {
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #eef2f6;
+    color: #33475b;
+
+    &.tag-partial {
+      background: var(--closure-soft);
+      color: var(--closure);
+    }
+  }
+
+  .chevron {
+    display: inline-block;
+    margin-left: 0.2rem;
+    transition: transform 0.2s ease;
+
+    &.open {
+      transform: rotate(180deg);
+    }
+  }
+
+  .day-list {
+    list-style: none;
+    padding: 0.4rem 0.85rem;
+    margin: 0.85rem 0 0;
+    border-radius: var(--pn-radius-md, 8px);
+    background: #f8f9fb;
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.4rem 0.75rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid #eceef2;
+      box-shadow: none;
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .day-date {
+      font-size: 0.88rem;
+
+      &::first-letter {
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  // =========================================================
+  // Caricamento e lista vuota
+  // =========================================================
+
+  .list-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .sk {
+      display: block;
+      height: 6rem;
+      border-radius: var(--pn-radius-lg, 12px);
+      background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 50%, #eef0f4 100%);
+      background-size: 200% 100%;
+      animation: gc-shimmer 1.3s ease-in-out infinite;
+    }
+  }
+
+  .empty-state {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-lg, 12px);
+
+    .empty-title {
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .empty-text {
+      font-size: 0.9rem;
+      color: #666;
+      max-width: 42ch;
+      margin: 0 auto;
+    }
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+// Su telefono l'azione scende sotto il testo invece di stringerlo.
+@media (max-width: 560px) {
+  .staff-page .closure-main {
+    grid-template-columns: auto 1fr;
+  }
+
+  .staff-page .closure-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+// Bottoni: :host per battere in specificità il tema globale
+// (html body .staff-page button[type='button']), come nelle altre pagine staff.
+
+:host .staff-page .primary-cta {
+  border: none;
+  padding: 0.65rem 1.4rem;
+  background: var(--closure);
+  color: #fff;
+
+  &:hover {
+    background: #8a5400;
+  }
+}
+
+:host .staff-page .btn-quiet {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.82rem;
+  border-radius: 0.4rem;
+  border: 1px solid #d5d8de;
+  background: #fff;
+  color: #444;
+
+  &:hover:not(:disabled) {
+    border-color: var(--pn-accent, #3b6fd4);
+    color: var(--pn-accent, #3b6fd4);
+    background: #fff;
+  }
+
+  &.small {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.78rem;
+  }
+}
+
+:host .staff-page .days-toggle,
+:host .staff-page .past-toggle {
+  padding: 0.15rem 0.45rem;
+  border: none;
+  background: transparent;
+  color: var(--pn-text, #222);
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  &:hover {
+    background: #f1f3f6;
+    color: var(--pn-text, #222);
+  }
+}
+
+:host .staff-page .past-toggle {
+  margin-top: 1.25rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.88rem;
+  color: #555;
+}
+
+@keyframes gc-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staff-page .list-skeleton .sk {
+    animation: none;
+  }
+
+  .staff-page .chevron {
+    transition: none;
+  }
+}

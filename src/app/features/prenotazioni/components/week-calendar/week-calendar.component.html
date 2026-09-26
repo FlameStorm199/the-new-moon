@@ -1,4 +1,11 @@
 <div class="week-calendar" [class.days-3]="daysToShow() === 3">
+  @if (hasEvents()) {
+    <div class="legend">
+      <span class="legend-item"><span class="swatch slot-swatch"></span>Lezione disponibile</span>
+      <span class="legend-item"><span class="swatch event-swatch"></span>Evento</span>
+    </div>
+  }
+
   <div class="toolbar">
     <button
       type="button"
@@ -23,7 +30,7 @@
 
   @if (!hasSlotsInRange()) {
     <p class="empty-range">
-      Nessun orario libero in questi giorni.
+      {{ hasEvents() ? 'Niente in programma in questi giorni.' : 'Nessun orario libero in questi giorni.' }}
       @if (canGoNext()) {
         Prova più avanti.
       }
@@ -71,6 +78,8 @@
             [class.flagged]="item.flagged"
             [style.grid-row-start]="item.rowStart"
             [style.grid-row-end]="item.rowEnd"
+            [style.width]="item.width"
+            [style.margin-left]="item.offset"
             [disabled]="busySlotId === item.slot.id"
             (click)="select(item.slot)"
           >
@@ -78,6 +87,29 @@
             <span class="slot-to">{{ item.timeTo }}</span>
             @if (item.flagged) {
               <span class="slot-flag">{{ flaggedLabel }}</span>
+            }
+          </button>
+        }
+
+        @for (item of day.events; track item.event.id) {
+          <button
+            type="button"
+            class="event-block"
+            [class.registered]="item.registered"
+            [class.full]="item.full && !item.registered"
+            [style.grid-row-start]="item.rowStart"
+            [style.grid-row-end]="item.rowEnd"
+            [style.width]="item.width"
+            [style.margin-left]="item.offset"
+            [attr.aria-label]="'Evento: ' + item.event.title + ', ore ' + item.timeFrom"
+            (click)="selectEvent(item.event)"
+          >
+            <span class="event-time">{{ item.timeFrom }}</span>
+            <span class="event-name">{{ item.event.title }}</span>
+            @if (item.registered) {
+              <span class="event-flag">✓ iscritto/a</span>
+            } @else if (item.full) {
+              <span class="event-flag">completo</span>
             }
           </button>
         }

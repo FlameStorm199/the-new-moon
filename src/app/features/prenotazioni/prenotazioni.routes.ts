@@ -59,13 +59,16 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       ),
   },
   {
-    path: 'gestione-slot',
+    path: 'gestione-chiusure',
     canActivate: [staffGuard],
     loadComponent: () =>
-      import('./pages/gestione-slot/gestione-slot.component').then(
-        (m) => m.GestioneSlotComponent
+      import('./pages/gestione-chiusure/gestione-chiusure.component').then(
+        (m) => m.GestioneChiusureComponent
       ),
   },
+  // La vecchia "Gestione slot" è stata sostituita dal calendario della home
+  // (slot) e da Gestione chiusure: il redirect tiene vivi link e segnalibri.
+  { path: 'gestione-slot', redirectTo: 'gestione-chiusure' },
   {
     path: 'fasce-orarie',
     canActivate: [staffGuard],

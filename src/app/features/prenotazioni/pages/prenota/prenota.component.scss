@@ -94,6 +94,15 @@
       background: #e6f4ea;
       color: #1b7a3d;
     }
+
+    &.status-event {
+      background: #f1ecff;
+      color: #6336e6;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   // =========================================================

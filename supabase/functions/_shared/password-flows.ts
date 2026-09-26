@@ -1,5 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { sendEmail } from "./email.ts";
+import { escapeHtml, renderEmail, type Tone } from "./email-layout.ts";
 import { siteUrl } from "./site-url.ts";
 
 // Generazione del link con l'Auth Admin API di Supabase (bypassa RLS, va
@@ -44,24 +45,32 @@ export async function generateRecoveryLink(
   return { actionLink: data.properties.action_link as string, error: null };
 }
 
-/** Esportata: la riusano anche le notifiche di validazione (stesso aspetto per ogni email transazionale). */
-export function emailShell(title: string, bodyHtml: string, actionLink: string, ctaLabel: string): string {
-  return `
-    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #222;">
-      <h2>${title}</h2>
-      ${bodyHtml}
-      <p style="margin: 1.5rem 0;">
-        <a href="${actionLink}"
-           style="background:#2c6e49; color:#fff; padding:0.75rem 1.25rem; border-radius:0.4rem; text-decoration:none;">
-          ${ctaLabel}
-        </a>
-      </p>
-      <p style="font-size:0.8rem; color:#777;">
-        Se non hai richiesto tu questa email, puoi ignorarla in sicurezza.
-      </p>
-      <p style="font-size:0.8rem; color:#777;">ASD Cinofila "La Luna Nuova"</p>
-    </div>
-  `;
+/**
+ * Email con un solo link d'azione (password, conferme, validazione):
+ * stesso aspetto di tutte le altre (email-layout.ts), più il link scritto
+ * per esteso sotto il bottone per chi ha un client che blocca i bottoni.
+ */
+export function actionEmail(opts: {
+  preheader: string;
+  title: string;
+  paragraphs: string[];
+  actionLink: string;
+  ctaLabel: string;
+  tone?: Tone;
+  badge?: string;
+  ignoreHint?: string;
+}): string {
+  return renderEmail({
+    preheader: opts.preheader,
+    badge: opts.badge ? { text: opts.badge, tone: opts.tone ?? "lesson" } : undefined,
+    title: opts.title,
+    paragraphs: opts.paragraphs,
+    cta: { url: opts.actionLink, label: opts.ctaLabel },
+    smallPrint: [
+      `Se il bottone non funziona, copia questo indirizzo nel browser:<br><a href="${escapeHtml(opts.actionLink)}" style="color:#3b6fd4; word-break:break-all;">${escapeHtml(opts.actionLink)}</a>`,
+      ...(opts.ignoreHint === "" ? [] : [opts.ignoreHint ?? "Se non hai richiesto tu questa email, puoi ignorarla in sicurezza."]),
+    ],
+  });
 }
 
 export async function sendInviteEmail(
@@ -75,12 +84,18 @@ export async function sendInviteEmail(
   return sendEmail({
     to: email,
     subject: "Benvenuto/a: imposta la tua password",
-    html: emailShell(
-      "Il tuo account è pronto",
-      "<p>Un amministratore ha creato per te un account su ASD Cinofila \"La Luna Nuova\". Imposta la tua password per accedere:</p>",
-      link.actionLink,
-      "Imposta password",
-    ),
+    html: actionEmail({
+      preheader: "Il tuo account è pronto: scegli una password per accedere.",
+      badge: "Account",
+      title: "Benvenuto/a in La Luna Nuova",
+      paragraphs: [
+        "Lo staff ha creato il tuo account nell'area prenotazioni di ASD Cinofila \"La Luna Nuova\".",
+        "Scegli una password e potrai prenotare lezioni e iscriverti agli eventi.",
+      ],
+      actionLink: link.actionLink,
+      ctaLabel: "Imposta la password",
+      ignoreHint: "Se non ti aspettavi questa email, puoi ignorarla: senza password l'account resta inutilizzato.",
+    }),
   });
 }
 
@@ -95,12 +110,14 @@ export async function sendForcedResetEmail(
   return sendEmail({
     to: email,
     subject: "Reimposta la tua password",
-    html: emailShell(
-      "Reimpostazione password richiesta",
-      "<p>Un amministratore ha richiesto la reimpostazione della password del tuo account. Scegline una nuova:</p>",
-      link.actionLink,
-      "Reimposta password",
-    ),
+    html: actionEmail({
+      preheader: "Lo staff ha richiesto una nuova password per il tuo account.",
+      badge: "Account",
+      title: "Scegli una nuova password",
+      paragraphs: ["Lo staff ha richiesto la reimpostazione della password del tuo account. Scegline una nuova dal bottone qui sotto."],
+      actionLink: link.actionLink,
+      ctaLabel: "Reimposta la password",
+    }),
   });
 }
 
@@ -115,11 +132,14 @@ export async function sendSelfResetEmail(
   return sendEmail({
     to: email,
     subject: "Reimposta la tua password",
-    html: emailShell(
-      "Hai richiesto di reimpostare la password",
-      "<p>Clicca qui sotto per scegliere una nuova password:</p>",
-      link.actionLink,
-      "Reimposta password",
-    ),
+    html: actionEmail({
+      preheader: "Il link per scegliere una nuova password.",
+      badge: "Account",
+      title: "Reimposta la tua password",
+      paragraphs: ["Hai chiesto di reimpostare la password. Il link qui sotto vale per poco tempo e si può usare una volta sola."],
+      actionLink: link.actionLink,
+      ctaLabel: "Scegli una nuova password",
+      ignoreHint: "Se non l'hai chiesto tu, ignora questa email: la tua password resta quella di prima.",
+    }),
   });
 }

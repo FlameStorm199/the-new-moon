@@ -1,0 +1,89 @@
+@use '../dialog-shared' as *;
+
+// Il riquadro data/ora in viola: lo stesso colore del blocco evento che si è
+// appena cliccato nel calendario.
+.panel {
+  --event: #7c4dff;
+  --event-soft: #f1ecff;
+}
+
+.eyebrow {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--event);
+  margin-bottom: 0.25rem;
+}
+
+.panel.wide h2 {
+  text-wrap: balance;
+}
+
+.event-detail {
+  background: var(--event-soft);
+  text-align: center;
+
+  .date::first-letter {
+    text-transform: uppercase;
+  }
+
+  .who {
+    font-weight: 600;
+    color: var(--event);
+  }
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+
+.tag {
+  padding: 0.15rem 0.55rem;
+  border-radius: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #eef2f6;
+  color: #33475b;
+
+  &.tag-registered {
+    background: var(--event);
+    color: #fff;
+  }
+
+  &.tag-full {
+    background: #fde8e8;
+    color: #b00020;
+  }
+}
+
+// Descrizione intera, con gli a capo scritti dallo staff.
+.description {
+  margin-top: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #444;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  flex-wrap: wrap;
+}
+
+.confirm-question {
+  flex-basis: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--pn-danger, #b00020);
+}
+
+:host .actions button:focus-visible,
+.actions a:focus-visible {
+  outline: 3px solid rgba(59, 111, 212, 0.45);
+  outline-offset: 2px;
+}

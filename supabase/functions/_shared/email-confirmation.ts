@@ -1,5 +1,5 @@
 import { sendEmail } from "./email.ts";
-import { emailShell } from "./password-flows.ts";
+import { actionEmail } from "./password-flows.ts";
 import { siteUrl } from "./site-url.ts";
 
 // Mail di conferma dell'Incontro Conoscitivo, inviata DOPO che il
@@ -25,11 +25,18 @@ export async function sendIncontroConoscitivoConfirmationEmail(
   return sendEmail({
     to: email,
     subject: "Conferma la tua email — Incontro Conoscitivo",
-    html: emailShell(
-      "Conferma la tua richiesta",
-      "<p>Grazie per aver prenotato un Incontro Conoscitivo con ASD Cinofila \"La Luna Nuova\". Conferma il tuo indirizzo email: solo dopo la richiesta arriva all'educatore.</p>",
-      confirmationUrl(token),
-      "Conferma email",
-    ),
+    html: actionEmail({
+      preheader: "Un ultimo passo: conferma l'email e la richiesta arriva all'educatore.",
+      badge: "Incontro Conoscitivo",
+      tone: "incontro",
+      title: "Conferma la tua richiesta",
+      paragraphs: [
+        "Grazie per aver prenotato un Incontro Conoscitivo con ASD Cinofila \"La Luna Nuova\".",
+        "Manca un ultimo passo: conferma il tuo indirizzo email. Solo dopo la richiesta arriva all'educatore.",
+      ],
+      actionLink: confirmationUrl(token),
+      ctaLabel: "Conferma la mia email",
+      ignoreHint: "Se non hai richiesto tu un Incontro Conoscitivo, ignora questa email: senza conferma la richiesta non viene inoltrata.",
+    }),
   });
 }

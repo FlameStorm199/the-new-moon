@@ -40,6 +40,7 @@
 
     @if (isStaffViewer) {
       <div class="calendar-hero">
+
         @if (calendarError()) {
           <p class="error">{{ calendarError() }}</p>
         }
@@ -193,11 +194,11 @@
             <span class="manage-desc">Nuovi eventi e iscritti</span>
           </span>
         </a>
-        <a routerLink="/prenotazioni/gestione-slot" class="manage-item">
-          <span class="manage-icon" aria-hidden="true">🕐</span>
+        <a routerLink="/prenotazioni/gestione-chiusure" class="manage-item">
+          <span class="manage-icon" aria-hidden="true">🔒</span>
           <span class="manage-text">
-            <span class="manage-title">Slot</span>
-            <span class="manage-desc">Aprire, chiudere e aggiungere orari</span>
+            <span class="manage-title">Chiusure</span>
+            <span class="manage-desc">Ferie, festivi e giornate senza lezioni</span>
           </span>
         </a>
         <a routerLink="/prenotazioni/fasce-orarie" class="manage-item">

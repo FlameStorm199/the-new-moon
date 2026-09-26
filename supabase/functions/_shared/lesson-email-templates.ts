@@ -1,7 +1,18 @@
-// deno-lint-ignore-file no-explicit-any
-// Testi delle email di lezione (prenotata/spostata/cancellata/promemoria).
-// Tenuti qui, separati dalla logica di orchestrazione in index.ts, per poter
-// ritoccare il testo senza toccare query o instradamento.
+// Testi delle email di lezione (prenotata/spostata/cancellata/promemoria,
+// e risposta all'Incontro Conoscitivo). Tenuti qui, separati dalla logica di
+// orchestrazione in index.ts, per poter ritoccare il testo senza toccare
+// query o instradamento. L'aspetto sta in email-layout.ts.
+
+import {
+  type DetailBlock,
+  type DetailRow,
+  escapeHtml,
+  formatLongDateIt,
+  formatTimeRangeIt,
+  renderEmail,
+  type Tone,
+} from "./email-layout.ts";
+import { siteUrl } from "./site-url.ts";
 
 export interface LessonDetail {
   id: number;
@@ -25,208 +36,294 @@ export interface PreviousSlot {
   time_to: string;
 }
 
-function formatDateIt(isoDate: string): string {
-  const [y, m, d] = isoDate.split('-');
-  return `${d}/${m}/${y}`;
-}
-
-function formatTime(time: string): string {
-  return time.slice(0, 5);
-}
-
-function when(date: string, timeFrom: string, timeTo: string): string {
-  return `${formatDateIt(date)} dalle ${formatTime(timeFrom)} alle ${formatTime(timeTo)}`;
-}
-
-// La motivazione è testo libero scritto dallo staff e finisce dentro l'HTML
-// dell'email: va escapata, altrimenti un semplice "<" o "&" nel testo
-// romperebbe il markup del messaggio.
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function reasonBlock(reason: string | null): string {
-  if (!reason) return '';
-  return `<p style="border-left:3px solid #ddd; padding-left:0.75rem; color:#555;">
-    <strong>Motivo:</strong> ${escapeHtml(reason)}
-  </p>`;
-}
-
-function noteBlock(description: string | null): string {
-  if (!description) return '';
-  return `<p style="border-left:3px solid #ddd; padding-left:0.75rem; color:#555;">
-    <strong>Nota:</strong> ${escapeHtml(description)}
-  </p>`;
-}
-
-function shell(bodyHtml: string): string {
-  return `
-    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; color: #222;">
-      ${bodyHtml}
-      <p style="font-size:0.8rem; color:#777; margin-top:2rem;">ASD Cinofila "La Luna Nuova"</p>
-    </div>
-  `;
-}
-
 export interface EmailContent {
   subject: string;
   html: string;
 }
 
-export function customerEmailFor(
-  event: 'booked' | 'rescheduled' | 'cancelled' | 'reminder_24h' | 'accepted' | 'rejected',
+function isIncontro(lesson: LessonDetail): boolean {
+  return lesson.lesson_type === "incontro_conoscitivo";
+}
+
+function kindLabel(lesson: LessonDetail): string {
+  return isIncontro(lesson) ? "Incontro Conoscitivo" : "Lezione";
+}
+
+/** Accordo di genere: "lezione cancellata" ma "incontro cancellato". */
+function kindWithParticiple(lesson: LessonDetail, feminine: string, masculine: string): string {
+  return isIncontro(lesson) ? `Incontro Conoscitivo ${masculine}` : `Lezione ${feminine}`;
+}
+
+function kindTone(lesson: LessonDetail): Tone {
+  return isIncontro(lesson) ? "incontro" : "lesson";
+}
+
+/** Riquadro data/orario (+ cane, + cliente per lo staff). */
+function whenBlock(
   lesson: LessonDetail,
-  previous: PreviousSlot | null
+  opts: { withCustomer?: boolean; tone?: Tone; heading?: string } = {},
+): DetailBlock {
+  const rows: DetailRow[] = [];
+  if (opts.withCustomer) {
+    rows.push({ label: "Cliente", value: `${lesson.customer_name} ${lesson.customer_surname}` });
+  }
+  if (lesson.customer_dog_name) {
+    rows.push({ label: "Cane", value: lesson.customer_dog_name });
+  }
+  rows.push(
+    { label: "Data", value: formatLongDateIt(lesson.date) },
+    { label: "Orario", value: formatTimeRangeIt(lesson.time_from, lesson.time_to) },
+  );
+  return { rows, tone: opts.tone ?? kindTone(lesson), heading: opts.heading };
+}
+
+function previousBlock(previous: PreviousSlot): DetailBlock {
+  return {
+    heading: "Prima",
+    muted: true,
+    rows: [
+      { label: "Data", value: formatLongDateIt(previous.date) },
+      { label: "Orario", value: formatTimeRangeIt(previous.time_from, previous.time_to) },
+    ],
+  };
+}
+
+function noteOf(description: string | null): { label: string; text: string } | undefined {
+  return description ? { label: "Nota alla prenotazione", text: description } : undefined;
+}
+
+function reasonOf(reason: string | null): { label: string; text: string } | undefined {
+  return reason ? { label: "Motivo", text: reason } : undefined;
+}
+
+function myLessonsCta(): { url: string; label: string } {
+  return { url: `${siteUrl()}/prenotazioni/le-mie-lezioni`, label: "Vai alle mie lezioni" };
+}
+
+function staffLessonsCta(): { url: string; label: string } {
+  return { url: `${siteUrl()}/prenotazioni/gestione-lezioni`, label: "Apri Gestione lezioni" };
+}
+
+function greeting(lesson: LessonDetail): string {
+  return `Ciao ${escapeHtml(lesson.customer_name)},`;
+}
+
+function shortWhen(lesson: { date: string; time_from: string }): string {
+  return `${formatLongDateIt(lesson.date)}, ore ${lesson.time_from.slice(0, 5)}`;
+}
+
+export function customerEmailFor(
+  event: "booked" | "rescheduled" | "cancelled" | "reminder_24h" | "accepted" | "rejected",
+  lesson: LessonDetail,
+  previous: PreviousSlot | null,
 ): EmailContent {
-  const dogName = lesson.customer_dog_name ? ` con ${lesson.customer_dog_name}` : '';
-  const isIncontro = lesson.lesson_type === 'incontro_conoscitivo';
+  const kind = kindLabel(lesson);
+  const badge = { text: kind, tone: kindTone(lesson) };
 
   switch (event) {
-    case 'booked':
+    case "booked":
       // Un Incontro Conoscitivo nasce 'pending' (richiede risposta
       // dell'educatore, vedi respond_incontro_conoscitivo in
-      // database/28_fase2_incontro_conoscitivo_booking.sql): niente "confermata"
+      // database/28_fase2_incontro_conoscitivo_booking.sql): niente "confermato"
       // finché non lo è davvero, altrimenti l'email contraddirebbe l'app.
-      if (isIncontro && lesson.status === 'pending') {
+      if (isIncontro(lesson) && lesson.status === "pending") {
         return {
-          subject: 'Richiesta di Incontro Conoscitivo ricevuta',
-          html: shell(`
-            <h2>Richiesta ricevuta${dogName}</h2>
-            <p>Abbiamo ricevuto la tua richiesta di Incontro Conoscitivo per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>. Ti scriviamo appena confermato dallo staff.</p>
-            ${noteBlock(lesson.description)}
-          `),
+          subject: "Richiesta di Incontro Conoscitivo ricevuta",
+          html: renderEmail({
+            preheader: `Richiesta per ${shortWhen(lesson)}: ti scriviamo appena l'educatore conferma.`,
+            badge,
+            title: "Abbiamo ricevuto la tua richiesta",
+            paragraphs: [
+              greeting(lesson),
+              "grazie per aver scelto di conoscerci. L'educatore controlla la tua richiesta e ti scriviamo appena è confermata.",
+            ],
+            details: [whenBlock(lesson)],
+            note: noteOf(lesson.description),
+          }),
         };
       }
       return {
-        subject: isIncontro ? 'Incontro Conoscitivo confermato' : 'Lezione confermata',
-        html: shell(`
-          <h2>${isIncontro ? 'Incontro Conoscitivo confermato' : 'Lezione confermata'}${dogName}</h2>
-          <p>${isIncontro ? "Il tuo Incontro Conoscitivo è confermato" : 'La tua lezione è confermata'} per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
-          ${noteBlock(lesson.description)}
-        `),
+        subject: isIncontro(lesson) ? "Incontro Conoscitivo confermato" : "Lezione confermata",
+        html: renderEmail({
+          preheader: `${kindWithParticiple(lesson, "confermata", "confermato")}: ${shortWhen(lesson)}.`,
+          badge,
+          title: isIncontro(lesson) ? "Il tuo Incontro Conoscitivo è confermato" : "La tua lezione è confermata",
+          paragraphs: [greeting(lesson), "ecco il riepilogo. Ti aspettiamo al campo."],
+          details: [whenBlock(lesson)],
+          note: noteOf(lesson.description),
+          cta: myLessonsCta(),
+          smallPrint: ["Se non puoi più venire, puoi cancellare dall'area personale entro i tempi previsti."],
+        }),
       };
-    case 'accepted':
+
+    case "accepted":
       return {
-        subject: 'Incontro Conoscitivo confermato',
-        html: shell(`
-          <h2>Incontro Conoscitivo confermato${dogName}</h2>
-          <p>Il tuo Incontro Conoscitivo per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong> è confermato. Ti aspettiamo!</p>
-        `),
+        subject: "Incontro Conoscitivo confermato",
+        html: renderEmail({
+          preheader: `Confermato: ${shortWhen(lesson)}. Ti aspettiamo.`,
+          badge,
+          title: "Il tuo Incontro Conoscitivo è confermato",
+          paragraphs: [greeting(lesson), "l'educatore ha confermato il tuo Incontro Conoscitivo. Ti aspettiamo al campo."],
+          details: [whenBlock(lesson)],
+        }),
       };
-    case 'rejected':
+
+    case "rejected":
       return {
-        subject: 'Incontro Conoscitivo non confermato',
-        html: shell(`
-          <h2>Incontro Conoscitivo non confermato${dogName}</h2>
-          <p>Purtroppo non possiamo confermare l'Incontro Conoscitivo richiesto per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
-          ${reasonBlock(lesson.cancellation_reason)}
-          <p>Contatta il centro per concordare un'altra data.</p>
-        `),
+        subject: "Incontro Conoscitivo non confermato",
+        html: renderEmail({
+          preheader: "Non possiamo confermare la data richiesta: contattaci per sceglierne un'altra.",
+          badge: { text: kind, tone: "danger" },
+          title: "Non possiamo confermare il tuo Incontro Conoscitivo",
+          paragraphs: [greeting(lesson), "purtroppo la data che hai richiesto non è disponibile."],
+          details: [whenBlock(lesson, { tone: "neutral" })],
+          note: reasonOf(lesson.cancellation_reason),
+          smallPrint: ["Contatta il centro per concordare un'altra data: saremo felici di conoscerti."],
+        }),
       };
-    case 'rescheduled':
+
+    case "rescheduled":
       return {
-        subject: 'Lezione spostata',
-        html: shell(`
-          <h2>Lezione spostata${dogName}</h2>
-          ${
-            previous
-              ? `<p>La tua lezione del <strong>${when(previous.date, previous.time_from, previous.time_to)}</strong> è stata spostata.</p>`
-              : '<p>La tua lezione è stata spostata.</p>'
-          }
-          <p>Nuovo orario: <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
-        `),
+        subject: "Lezione spostata",
+        html: renderEmail({
+          preheader: `Nuovo orario: ${shortWhen(lesson)}.`,
+          badge,
+          title: "La tua lezione è stata spostata",
+          paragraphs: [greeting(lesson), "lo staff ha spostato la tua lezione. Ecco il nuovo orario."],
+          details: [
+            ...(previous ? [previousBlock(previous)] : []),
+            whenBlock(lesson, { heading: previous ? "Ora" : undefined }),
+          ],
+          cta: myLessonsCta(),
+        }),
       };
-    case 'cancelled':
+
+    case "cancelled":
       return {
-        subject: 'Lezione cancellata',
-        html: shell(`
-          <h2>Lezione cancellata${dogName}</h2>
-          <p>La lezione del <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong> è stata cancellata.</p>
-          ${reasonBlock(lesson.cancellation_reason)}
-        `),
+        subject: kindWithParticiple(lesson, "cancellata", "cancellato"),
+        html: renderEmail({
+          preheader: `${kindWithParticiple(lesson, "cancellata", "cancellato")}: ${shortWhen(lesson)}.`,
+          badge: { text: kind, tone: "danger" },
+          title: isIncontro(lesson) ? "Il tuo Incontro Conoscitivo è stato cancellato" : "La tua lezione è stata cancellata",
+          paragraphs: [greeting(lesson), "ti confermiamo la cancellazione di questo appuntamento."],
+          details: [whenBlock(lesson, { tone: "neutral" })],
+          note: reasonOf(lesson.cancellation_reason),
+          cta: isIncontro(lesson)
+            ? undefined
+            : { url: `${siteUrl()}/prenotazioni/prenota`, label: "Prenota un'altra lezione" },
+        }),
       };
-    case 'reminder_24h':
+
+    case "reminder_24h":
       return {
-        subject: 'Promemoria: lezione domani',
-        html: shell(`
-          <h2>La tua lezione è domani${dogName}</h2>
-          <p>Ti aspettiamo <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
-        `),
+        subject: "Promemoria: lezione domani",
+        html: renderEmail({
+          preheader: `Domani alle ${lesson.time_from.slice(0, 5)}: ti aspettiamo.`,
+          badge,
+          title: "Ci vediamo domani",
+          paragraphs: [greeting(lesson), "ti ricordiamo l'appuntamento di domani."],
+          details: [whenBlock(lesson)],
+          cta: myLessonsCta(),
+        }),
       };
   }
 }
 
 export function trainerEmailFor(
-  event: 'booked' | 'rescheduled' | 'cancelled' | 'accepted' | 'rejected',
+  event: "booked" | "rescheduled" | "cancelled" | "accepted" | "rejected",
   lesson: LessonDetail,
-  previous: PreviousSlot | null
+  previous: PreviousSlot | null,
 ): EmailContent {
   const customer = `${lesson.customer_name} ${lesson.customer_surname}`;
-  const dogName = lesson.customer_dog_name ? ` (${lesson.customer_dog_name})` : '';
-  const isIncontro = lesson.lesson_type === 'incontro_conoscitivo';
+  const customerHtml = `<strong>${escapeHtml(customer)}</strong>`;
+  const kind = kindLabel(lesson);
+  const badge = { text: kind, tone: kindTone(lesson) };
 
   switch (event) {
-    case 'booked':
-      if (isIncontro && lesson.status === 'pending') {
+    case "booked":
+      if (isIncontro(lesson) && lesson.status === "pending") {
         return {
-          subject: 'Nuova richiesta di Incontro Conoscitivo',
-          html: shell(`
-            <h2>Nuova richiesta di Incontro Conoscitivo</h2>
-            <p><strong>${customer}</strong>${dogName} ha richiesto un Incontro Conoscitivo per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>, in attesa di conferma da "Gestione lezioni".</p>
-            ${noteBlock(lesson.description)}
-          `),
+          subject: "Nuova richiesta di Incontro Conoscitivo",
+          html: renderEmail({
+            preheader: `${customer} chiede un Incontro Conoscitivo per ${shortWhen(lesson)}.`,
+            badge,
+            title: "Nuova richiesta di Incontro Conoscitivo",
+            paragraphs: [`${customerHtml} ha richiesto un Incontro Conoscitivo. È in attesa della tua conferma.`],
+            details: [whenBlock(lesson, { withCustomer: true })],
+            note: noteOf(lesson.description),
+            cta: { url: `${siteUrl()}/prenotazioni/gestione-lezioni`, label: "Accetta o rifiuta" },
+          }),
         };
       }
       return {
-        subject: isIncontro ? 'Incontro Conoscitivo confermato' : 'Nuova prenotazione',
-        html: shell(`
-          <h2>${isIncontro ? 'Incontro Conoscitivo confermato' : 'Nuova prenotazione'}</h2>
-          <p><strong>${customer}</strong>${dogName}${isIncontro ? ' — Incontro Conoscitivo' : ''} per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
-          ${noteBlock(lesson.description)}
-        `),
+        subject: isIncontro(lesson) ? "Incontro Conoscitivo confermato" : "Nuova prenotazione",
+        html: renderEmail({
+          preheader: `${customer} · ${shortWhen(lesson)}.`,
+          badge,
+          title: isIncontro(lesson) ? "Incontro Conoscitivo confermato" : "Nuova prenotazione",
+          paragraphs: [`${customerHtml} ha prenotato ${isIncontro(lesson) ? "un Incontro Conoscitivo" : "una lezione"}.`],
+          details: [whenBlock(lesson, { withCustomer: true })],
+          note: noteOf(lesson.description),
+          cta: staffLessonsCta(),
+        }),
       };
-    case 'accepted':
+
+    case "accepted":
       return {
-        subject: 'Incontro Conoscitivo confermato',
-        html: shell(`
-          <h2>Incontro Conoscitivo confermato</h2>
-          <p>L'Incontro Conoscitivo di <strong>${customer}</strong>${dogName} per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong> è stato confermato.</p>
-        `),
+        subject: "Incontro Conoscitivo confermato",
+        html: renderEmail({
+          preheader: `${customer} · ${shortWhen(lesson)}.`,
+          badge,
+          title: "Incontro Conoscitivo confermato",
+          paragraphs: [`L'Incontro Conoscitivo di ${customerHtml} è stato confermato.`],
+          details: [whenBlock(lesson, { withCustomer: true })],
+        }),
       };
-    case 'rejected':
+
+    case "rejected":
       return {
-        subject: 'Incontro Conoscitivo rifiutato',
-        html: shell(`
-          <h2>Incontro Conoscitivo rifiutato</h2>
-          <p>L'Incontro Conoscitivo di <strong>${customer}</strong>${dogName} per il <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong> è stato rifiutato.</p>
-          ${reasonBlock(lesson.cancellation_reason)}
-        `),
+        subject: "Incontro Conoscitivo rifiutato",
+        html: renderEmail({
+          preheader: `${customer} · ${shortWhen(lesson)}.`,
+          badge: { text: kind, tone: "danger" },
+          title: "Incontro Conoscitivo rifiutato",
+          paragraphs: [`L'Incontro Conoscitivo di ${customerHtml} è stato rifiutato.`],
+          details: [whenBlock(lesson, { withCustomer: true, tone: "neutral" })],
+          note: reasonOf(lesson.cancellation_reason),
+        }),
       };
-    case 'rescheduled':
+
+    case "rescheduled":
       return {
-        subject: 'Lezione spostata',
-        html: shell(`
-          <h2>Lezione spostata</h2>
-          <p>La lezione di <strong>${customer}</strong>${dogName}
-          ${
-            previous
-              ? `è stata spostata dal <strong>${when(previous.date, previous.time_from, previous.time_to)}</strong>`
-              : 'è stata spostata'
-          }
-          al <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong>.</p>
-        `),
+        subject: "Lezione spostata",
+        html: renderEmail({
+          preheader: `${customer} · nuovo orario ${shortWhen(lesson)}.`,
+          badge,
+          title: "Lezione spostata",
+          paragraphs: [`La lezione di ${customerHtml} è stata spostata.`],
+          details: [
+            ...(previous ? [previousBlock(previous)] : []),
+            whenBlock(lesson, { withCustomer: true, heading: previous ? "Ora" : undefined }),
+          ],
+          cta: staffLessonsCta(),
+        }),
       };
-    case 'cancelled':
+
+    case "cancelled":
       return {
-        subject: 'Lezione cancellata',
-        html: shell(`
-          <h2>Lezione cancellata</h2>
-          <p>La lezione di <strong>${customer}</strong>${dogName} del <strong>${when(lesson.date, lesson.time_from, lesson.time_to)}</strong> è stata cancellata.</p>
-        `),
+        subject: kindWithParticiple(lesson, "cancellata", "cancellato"),
+        html: renderEmail({
+          preheader: `${customer} · ${shortWhen(lesson)}.`,
+          badge: { text: kind, tone: "danger" },
+          title: kindWithParticiple(lesson, "cancellata", "cancellato"),
+          paragraphs: [
+            isIncontro(lesson)
+              ? `L'Incontro Conoscitivo di ${customerHtml} è stato cancellato.`
+              : `La lezione di ${customerHtml} è stata cancellata.`,
+          ],
+          details: [whenBlock(lesson, { withCustomer: true, tone: "neutral" })],
+          note: reasonOf(lesson.cancellation_reason),
+        }),
       };
   }
 }

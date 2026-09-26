@@ -1,0 +1,171 @@
+<section class="staff-page">
+  <app-back-link />
+
+  <div class="page-header">
+    <div>
+      <h1>Gestione chiusure</h1>
+      @if (!loading() && upcomingGroups().length > 0) {
+        <p class="summary">
+          <strong>{{ upcomingGroups().length }}</strong>
+          {{ upcomingGroups().length === 1 ? 'chiusura' : 'chiusure' }} in programma ·
+          <strong>{{ upcomingDaysCount() }}</strong>
+          {{ upcomingDaysCount() === 1 ? 'giorno' : 'giorni' }} in tutto
+        </p>
+      }
+    </div>
+    @if (canAct()) {
+      <button type="button" class="primary-cta" (click)="openClosePeriod()">Chiudi campo</button>
+    }
+  </div>
+
+  <p class="hint">
+    Ferie, festivi e mezze giornate senza lezioni. Puoi chiudere anche date lontane: gli slot
+    nasceranno già chiusi. Le lezioni già prenotate non vengono toccate. Gli slot singoli si
+    aprono e chiudono dal calendario della <a routerLink="/prenotazioni/area-personale">home</a>.
+  </p>
+
+  @if (errorMessage()) {
+    <p class="error" role="alert">{{ errorMessage() }}</p>
+  }
+  @if (infoMessage()) {
+    <p class="success" role="status">{{ infoMessage() }}</p>
+  }
+
+  @if (loading()) {
+    <div class="list-skeleton" aria-busy="true" aria-label="Caricamento">
+      <span class="sk"></span>
+      <span class="sk"></span>
+      <span class="sk"></span>
+    </div>
+  } @else {
+    @if (upcomingGroups().length === 0) {
+      <div class="empty-state">
+        <p class="empty-title">Nessuna chiusura in programma</p>
+        @if (canAct()) {
+          <p class="empty-text">
+            Usa "Chiudi campo" per segnare ferie o festivi: nel calendario compariranno come
+            giornate chiuse.
+          </p>
+        } @else {
+          <p class="empty-text">Le chiusure decise dallo staff compaiono qui.</p>
+        }
+      </div>
+    } @else {
+      <ul class="closure-list">
+        @for (group of upcomingGroups(); track group.key) {
+          <ng-container
+            *ngTemplateOutlet="closureCard; context: { $implicit: group, past: false }"
+          />
+        }
+      </ul>
+    }
+
+    @if (pastGroups().length > 0) {
+      <button
+        type="button"
+        class="past-toggle"
+        [attr.aria-expanded]="showPast()"
+        (click)="showPast.set(!showPast())"
+      >
+        {{ showPast() ? 'Nascondi' : 'Mostra' }} le chiusure passate ({{ pastGroups().length }})
+        <span class="chevron" [class.open]="showPast()" aria-hidden="true">▾</span>
+      </button>
+
+      @if (showPast()) {
+        <ul class="closure-list past">
+          @for (group of pastGroups(); track group.key) {
+            <ng-container
+              *ngTemplateOutlet="closureCard; context: { $implicit: group, past: true }"
+            />
+          }
+        </ul>
+      }
+    }
+  }
+
+  <ng-template #closureCard let-group let-past="past">
+    <li class="closure-card" [class.ongoing]="isOngoing(group)" [class.past]="past">
+      <div class="closure-main">
+        <div class="date-block" aria-hidden="true">
+          <span class="date-weekday">{{ dateBlock(group.from).weekday }}</span>
+          <span class="date-day">{{ dateBlock(group.from).day }}</span>
+          <span class="date-month">{{ dateBlock(group.from).month }}</span>
+        </div>
+
+        <div class="closure-info">
+          @if (isOngoing(group)) {
+            <p class="eyebrow">In corso</p>
+          }
+          <h2 class="closure-title">{{ group.reason || 'Chiusura' }}</h2>
+          <p class="closure-when">{{ formatRange(group.from, group.to) }}</p>
+          <div class="closure-tags">
+            <span class="tag" [class.tag-partial]="group.scope !== 'giornata'">
+              {{ scopeLabel(group.scope) }}
+            </span>
+            @if (group.days.length > 1) {
+              <button
+                type="button"
+                class="days-toggle"
+                [attr.aria-expanded]="expandedKey() === group.key"
+                (click)="toggleExpanded(group)"
+              >
+                {{ group.days.length }} giorni
+                <span class="chevron" [class.open]="expandedKey() === group.key" aria-hidden="true">▾</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (canAct() && !past) {
+          <div class="closure-actions">
+            <button type="button" class="btn-quiet" (click)="openReopen(group)">Riapri</button>
+          </div>
+        }
+      </div>
+
+      @if (expandedKey() === group.key) {
+        <ul class="day-list">
+          @for (day of group.days; track dayKey(day)) {
+            <li>
+              <span class="day-date">{{ formatDate(day.date) }}</span>
+              @if (canAct() && !past) {
+                <button
+                  type="button"
+                  class="btn-quiet small"
+                  [disabled]="reopeningDayKey() === dayKey(day)"
+                  (click)="reopenDay(day)"
+                >
+                  {{ reopeningDayKey() === dayKey(day) ? 'Riapertura…' : 'Riapri solo questo' }}
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </li>
+  </ng-template>
+
+  @if (closePeriodOpen()) {
+    <app-close-period-dialog
+      [state]="closePeriodState()"
+      [busy]="closePeriodBusy()"
+      [errorMessage]="closePeriodError()"
+      [resultMessage]="closePeriodResult()"
+      (submitted)="submitClosePeriod($event)"
+      (closed)="closeClosePeriodDialog()"
+    />
+  }
+
+  @if (reopeningGroup(); as group) {
+    <app-confirm-dialog
+      [title]="group.days.length === 1 ? 'Riaprire questa giornata?' : 'Riaprire questa chiusura?'"
+      [message]="reopenMessage(group)"
+      confirmLabel="Riapri"
+      busyLabel="Riapertura…"
+      [busy]="reopenBusy()"
+      [errorMessage]="reopenError()"
+      (confirmed)="confirmReopen()"
+      (closed)="closeReopen()"
+    />
+  }
+</section>
