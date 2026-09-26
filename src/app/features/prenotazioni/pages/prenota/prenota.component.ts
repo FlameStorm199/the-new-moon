@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BookingService } from '../../../../core/lessons/booking.service';
-import { LessonsService } from '../../../../core/lessons/lessons.service';
+import { LESSON_STATUS_LABELS, LessonRow, LessonsService } from '../../../../core/lessons/lessons.service';
 import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
 import {
@@ -11,6 +11,7 @@ import {
 } from '../../components/booking-dialog/booking-dialog.component';
 import { WeekCalendarComponent } from '../../components/week-calendar/week-calendar.component';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
+import { formatLongDate, formatTimeRange } from '../../components/date-format';
 
 @Component({
   selector: 'app-prenota',
@@ -36,6 +37,15 @@ export class PrenotaComponent implements OnInit {
   readonly bookingId = signal<number | null>(null);
 
   /**
+   * Le proprie lezioni ancora da fare: mostrate sopra il calendario, così il
+   * limite di una a settimana non si scopre solo dall'errore dopo il click.
+   */
+  readonly myUpcoming = signal<LessonRow[]>([]);
+  readonly formatLongDate = formatLongDate;
+  readonly formatTimeRange = formatTimeRange;
+  readonly statusLabels = LESSON_STATUS_LABELS;
+
+  /**
    * Slot su cui è aperto il modale. Uno solo per entrambi i momenti: prima
    * chiede conferma, poi diventa la ricevuta — senza chiudersi in mezzo.
    */
@@ -53,6 +63,12 @@ export class PrenotaComponent implements OnInit {
       .filter((slot) => this.isOutsideCustomerWindow(slot))
       .map((slot) => slot.id)
   );
+
+  /** Etichetta sugli slot segnalati, con la soglia vera letta dal DB. */
+  readonly flaggedLabel = computed(() => {
+    const minHours = this.bookingMinHours();
+    return minHours === null ? '< finestra' : `< ${minHours}h`;
+  });
 
   /**
    * Un assistente può prenotare per sé esattamente come un customer
@@ -113,6 +129,27 @@ export class PrenotaComponent implements OnInit {
     }
   }
 
+  private async loadMyUpcoming(): Promise<void> {
+    const p = this.profile();
+    // Lo staff qui prenota per sé solo di rado e non ha il limite
+    // settimanale: la striscia servirebbe a poco.
+    if (!p || this.isStaff) {
+      return;
+    }
+    try {
+      const now = Date.now();
+      this.myUpcoming.set(
+        (await this.lessonsService.listForCustomer(p.id))
+          .filter((l) => l.status === 'pending' || l.status === 'confirmed')
+          .filter((l) => new Date(`${l.date}T${l.time_from}`).getTime() > now)
+          .sort((a, b) => `${a.date}T${a.time_from}`.localeCompare(`${b.date}T${b.time_from}`))
+      );
+    } catch {
+      // Solo informativo: se non si carica, il calendario funziona lo stesso.
+      this.myUpcoming.set([]);
+    }
+  }
+
   async loadSlots(): Promise<void> {
     this.loadingSlots.set(true);
     this.errorMessage.set(null);
@@ -120,6 +157,7 @@ export class PrenotaComponent implements OnInit {
       const [slots, settings] = await Promise.all([
         this.slotsService.listAvailable(),
         this.lessonsService.getBookingSettings(),
+        this.loadMyUpcoming(),
       ]);
       this.bookingMinHours.set(settings.bookingMinHoursBefore);
       // Lo staff bypassa la finestra minima anche lato server (book_lesson):
@@ -192,6 +230,7 @@ export class PrenotaComponent implements OnInit {
       // Il pannello resta aperto e cambia stato: una sola finestra da
       // chiudere invece di conferma più avviso di esito.
       this.dialogState.set('success');
+      void this.loadMyUpcoming();
     } catch (err) {
       // Non "err instanceof Error": senza throwOnError() supabase-js
       // restituisce l'errore RPC come oggetto semplice (il JSON di

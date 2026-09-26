@@ -33,9 +33,127 @@
   }
 
   .summary {
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     color: #666;
+
+    strong {
+      color: var(--pn-text, #222);
+      font-variant-numeric: tabular-nums;
+    }
   }
+
+  // =========================================================
+  // Filtri (schede) e ricerca
+  // =========================================================
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0.5rem 0 1.25rem;
+  }
+
+  .view-tabs {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: var(--pn-radius-md, 8px);
+    background: #f1f3f6;
+  }
+
+  .search-input {
+    flex: 1 1 14rem;
+    max-width: 20rem;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .tab-count {
+    display: inline-block;
+    min-width: 1.35rem;
+    margin-left: 0.35rem;
+    padding: 0 0.35rem;
+    border-radius: 0.3rem;
+    font-size: 0.75rem;
+    line-height: 1.35rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    background: #dfe3ea;
+    color: #444;
+
+    &.attention {
+      background: var(--pn-warning, #b06a00);
+      color: #fff;
+    }
+  }
+
+  // =========================================================
+  // Stati di caricamento e lista vuota
+  // =========================================================
+
+  .sk {
+    display: block;
+    border-radius: 0.4rem;
+    background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 50%, #eef0f4 100%);
+    background-size: 200% 100%;
+    animation: gl-shimmer 1.3s ease-in-out infinite;
+  }
+
+  .list-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    .sk-day { width: 35%; height: 1.4rem; margin-top: 0.75rem; }
+    .sk-row { height: 3rem; border-radius: var(--pn-radius-md, 8px); }
+  }
+
+  .empty-state {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-lg, 12px);
+
+    .empty-title {
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .empty-text {
+      font-size: 0.9rem;
+      color: #666;
+    }
+  }
+}
+
+// Schede del filtro: :host per battere il tema globale sui bottoni
+// (html body .staff-page button[type='button']).
+:host .staff-page .view-tab {
+  padding: 0.45rem 0.85rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: #555;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  &:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--pn-text, #222);
+  }
+
+  &.active {
+    background: #fff;
+    color: var(--pn-accent, #3b6fd4);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+}
+
+@keyframes gl-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
 }
 
 // button[type='button'] del tema globale (html body .staff-page
@@ -75,13 +193,43 @@
     // invece di ritagliare tutta la card.
 
     h2 {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
       margin: 0;
       padding: 0.75rem 1.1rem;
       font-size: 0.95rem;
-      text-transform: capitalize;
       background: #fafbfc;
       border-bottom: 1px solid var(--pn-border, #e0e0e0);
       border-radius: var(--pn-radius-lg, 12px) var(--pn-radius-lg, 12px) 0 0;
+    }
+
+    .day-tag {
+      padding: 0.05rem 0.5rem;
+      border-radius: 0.3rem;
+      font-size: 0.78rem;
+      background: var(--pn-accent, #3b6fd4);
+      color: #fff;
+    }
+
+    .day-date {
+      text-transform: capitalize;
+    }
+
+    .day-count {
+      margin-left: auto;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #888;
+    }
+
+    // Oggi: bordo accento, la giornata che si guarda più spesso.
+    &.today {
+      border-color: var(--pn-accent, #3b6fd4);
+
+      h2 {
+        background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+      }
     }
   }
 
@@ -91,7 +239,7 @@
 
   .lesson-row {
     display: grid;
-    grid-template-columns: 6rem 1fr auto 3rem;
+    grid-template-columns: 6rem 1fr auto minmax(3rem, auto);
     align-items: center;
     column-gap: 0.75rem;
     padding: 0.6rem 1.1rem;
@@ -115,17 +263,55 @@
     &.cancelled {
       opacity: 0.55;
     }
+
+    // Incontro da accettare/rifiutare: fondo ambra leggero, si nota nella
+    // lista anche senza passare dal filtro "Da confermare".
+    &.needs-action {
+      background: #fffaf0;
+    }
   }
 
   .col-time {
     font-weight: 600;
     color: #444;
+    font-variant-numeric: tabular-nums;
   }
 
   .col-customer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .customer-name {
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .customer-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.8rem;
+    font-size: 0.8rem;
+    color: #777;
+
+    .phone {
+      color: #777;
+      font-weight: 400;
+      font-variant-numeric: tabular-nums;
+
+      &:hover {
+        color: var(--pn-accent, #3b6fd4);
+      }
+    }
+  }
+
+  .inline-actions {
+    display: inline-flex;
+    gap: 0.35rem;
   }
 
   .col-status {
@@ -156,7 +342,19 @@
     font-size: 0.75rem;
     white-space: nowrap;
 
-    &.cancelled {
+    // Colore per stato: si distingue senza leggere l'etichetta.
+    &.status-confirmed {
+      background: var(--pn-success-bg, #eaf7ef);
+      color: var(--pn-success, #1b7a3d);
+    }
+
+    &.status-pending {
+      background: var(--pn-warning-bg, #fff4e0);
+      color: var(--pn-warning, #b06a00);
+    }
+
+    &.status-cancelled,
+    &.status-rejected {
       background: #fde8e8;
       color: #b00020;
     }
@@ -197,6 +395,34 @@
   &.open {
     background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
     color: var(--pn-accent, #3b6fd4);
+  }
+}
+
+// Accetta/Rifiuta direttamente sulla riga (solo Incontri in attesa).
+:host .staff-page .inline-accept,
+:host .staff-page .inline-reject {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  border-radius: 0.4rem;
+}
+
+:host .staff-page .inline-accept {
+  border: 1px solid var(--pn-success, #1b7a3d);
+  background: var(--pn-success, #1b7a3d);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #15632f;
+  }
+}
+
+:host .staff-page .inline-reject {
+  border: 1px solid var(--pn-danger, #b00020);
+  background: #fff;
+  color: var(--pn-danger, #b00020);
+
+  &:hover:not(:disabled) {
+    background: var(--pn-danger-bg, #fdecea);
   }
 }
 
@@ -268,5 +494,27 @@
     .col-status {
       grid-column: 1;
     }
+  }
+}
+
+// Anello di focus visibile per chi usa la tastiera (schede, bottoni, link).
+.staff-page {
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+@media (max-width: 640px) {
+  .staff-page .search-input {
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staff-page .sk {
+    animation: none;
   }
 }

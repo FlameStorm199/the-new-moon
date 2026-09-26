@@ -31,6 +31,9 @@
                 @if (customer.dog_name) {
                   ({{ customer.dog_name }})
                 }
+                @if (customer.type_id === 3) {
+                  · assistente
+                }
               </option>
             }
           </select>

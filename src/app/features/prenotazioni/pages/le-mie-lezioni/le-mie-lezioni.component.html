@@ -1,76 +1,137 @@
 <section class="lezioni-page">
   <app-back-link />
-  <h1>Le mie lezioni</h1>
+
+  <header class="page-header">
+    <div>
+      <h1>Le mie lezioni</h1>
+      @if (!loading() && canUsePlatform && lessons().length > 0) {
+        <p class="summary">
+          <strong>{{ upcoming().length }}</strong> in programma ·
+          <strong>{{ history().length }}</strong> nello storico
+        </p>
+      }
+    </div>
+    @if (!loading() && canUsePlatform && showBookCta) {
+      <a class="primary-cta" [routerLink]="bookingLink">Prenota</a>
+    }
+  </header>
 
   @if (loading()) {
-    <p>Caricamento…</p>
+    <div class="list-skeleton" aria-busy="true" aria-label="Caricamento">
+      <span class="sk sk-featured"></span>
+      <span class="sk"></span>
+      <span class="sk"></span>
+    </div>
   } @else if (!canUsePlatform) {
-    @if (isCustomerType) {
-      <p class="pending">
-        Il tuo account è in attesa di validazione da parte dello staff.
-      </p>
-    } @else {
-      <p class="pending">Questa pagina non è disponibile per il tuo ruolo.</p>
-    }
+    <div class="notice-card">
+      @if (isCustomerType) {
+        <p class="notice-title">Account in attesa di validazione</p>
+        <p class="notice-text">
+          Lo staff deve ancora confermare il tuo account: appena lo farà qui troverai le tue
+          lezioni.
+        </p>
+      } @else {
+        <p class="notice-title">Pagina non disponibile</p>
+        <p class="notice-text">Questa pagina non è disponibile per il tuo ruolo.</p>
+      }
+      <a routerLink="/prenotazioni/area-personale" class="notice-link">Torna alla home</a>
+    </div>
   } @else {
     @if (errorMessage()) {
-      <p class="error">{{ errorMessage() }}</p>
+      <p class="error" role="alert">{{ errorMessage() }}</p>
     }
 
-    <h2>Prossime</h2>
+    <h2 class="section-title">Prossime</h2>
     @if (upcoming().length === 0) {
-      <p class="empty">
-        Nessuna lezione in programma.
-        <a routerLink="/prenotazioni/prenota">Prenotane una</a>.
-      </p>
+      <div class="empty-state">
+        <p class="empty-title">Nessuna lezione in programma</p>
+        <p class="empty-text">
+          Scegli un orario libero dal calendario:
+          <a [routerLink]="bookingLink">prenota ora</a>.
+        </p>
+      </div>
     } @else {
-      <ul class="lessons">
-        @for (lesson of upcoming(); track lesson.id) {
-          <li>
-            <div class="when">
-              <strong>{{ formatDate(lesson.date) }}</strong>
-              {{ lesson.time_from.slice(0, 5) }} - {{ lesson.time_to.slice(0, 5) }}
+      <ul class="lesson-list">
+        @for (lesson of upcoming(); track lesson.id; let first = $first) {
+          <li class="lesson-card" [class.featured]="first">
+            <div class="date-block" aria-hidden="true">
+              <span class="date-weekday">{{ dateBlock(lesson.date).weekday }}</span>
+              <span class="date-day">{{ dateBlock(lesson.date).day }}</span>
+              <span class="date-month">{{ dateBlock(lesson.date).month }}</span>
             </div>
-            @if (lesson.description) {
-              <p class="description">{{ lesson.description }}</p>
-            }
+
+            <div class="lesson-info">
+              @if (first) {
+                <p class="eyebrow">La prossima</p>
+              }
+              <p class="lesson-when">
+                <span class="lesson-date">{{ formatDate(lesson.date) }}</span>
+                <span class="lesson-time">{{ formatTimeRange(lesson.time_from, lesson.time_to) }}</span>
+              </p>
+              <div class="lesson-tags">
+                <span class="tag" [class.tag-incontro]="lesson.lesson_type === 'incontro_conoscitivo'">
+                  {{ lessonTypeLabel(lesson) }}
+                </span>
+                <span class="status-badge" [class]="'status-badge status-' + lesson.status">
+                  {{ statusLabels[lesson.status] }}
+                </span>
+              </div>
+              @if (lesson.status === 'pending') {
+                <p class="lesson-note">Lo staff deve ancora confermarla: riceverai un'email.</p>
+              }
+              @if (lesson.description) {
+                <p class="lesson-desc">{{ lesson.description }}</p>
+              }
+              @if (!canCancel(lesson)) {
+                <p class="lesson-note">
+                  Non più cancellabile online (servono almeno {{ cancelMinHours() }} ore di
+                  anticipo): contatta il centro.
+                </p>
+              }
+            </div>
+
             @if (canCancel(lesson)) {
-              <button
-                type="button"
-                class="danger"
-                [disabled]="cancellingId() === lesson.id"
-                (click)="openCancel(lesson)"
-              >
-                Cancella
-              </button>
-            } @else {
-              <span class="note">
-                Non più cancellabile online (servono almeno
-                {{ cancelMinHours() }} ore di anticipo): contatta il centro.
-              </span>
+              <div class="lesson-actions">
+                <button
+                  type="button"
+                  class="btn-danger-quiet"
+                  [disabled]="cancellingId() === lesson.id"
+                  (click)="openCancel(lesson)"
+                >
+                  Cancella
+                </button>
+              </div>
             }
           </li>
         }
       </ul>
     }
 
-    <h2>Storico</h2>
+    <h2 class="section-title">Storico</h2>
     @if (history().length === 0) {
-      <p class="empty">Nessuna lezione passata.</p>
+      <p class="empty-inline">Ancora nessuna lezione passata.</p>
     } @else {
-      <ul class="lessons history">
-        @for (lesson of history(); track lesson.id) {
+      <ul class="history-list">
+        @for (lesson of visibleHistory(); track lesson.id) {
           <li>
-            <div class="when">
-              <strong>{{ formatDate(lesson.date) }}</strong>
-              {{ lesson.time_from.slice(0, 5) }} - {{ lesson.time_to.slice(0, 5) }}
-            </div>
-            <span class="badge" [class.cancelled]="lesson.status === 'cancelled'">
-              {{ statusLabels[lesson.status] }}
+            <span class="history-when">
+              <span class="history-date">{{ formatDate(lesson.date) }}</span>
+              <span class="history-time">{{ formatTimeRange(lesson.time_from, lesson.time_to) }}</span>
+            </span>
+            @if (lesson.lesson_type === 'incontro_conoscitivo') {
+              <span class="tag tag-incontro">Incontro conoscitivo</span>
+            }
+            <span class="history-status" [class]="'history-status h-' + lesson.status">
+              {{ historyLabel(lesson) }}
             </span>
           </li>
         }
       </ul>
+      @if (hiddenHistoryCount() > 0) {
+        <button type="button" class="show-more" (click)="showAllHistory.set(true)">
+          Mostra le altre {{ hiddenHistoryCount() }}
+        </button>
+      }
     }
   }
 

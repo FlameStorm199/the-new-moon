@@ -1,43 +1,87 @@
 <section class="prenota-page">
   <app-back-link />
-  <h1>Prenota una lezione</h1>
 
-  @if (loadingProfile()) {
-    <p>Caricamento…</p>
-  } @else if (!canBook) {
-    @if (isCustomerType) {
-      <p class="pending">
-        Il tuo account è in attesa di validazione da parte dello staff: potrai prenotare non
-        appena verrà confermato.
-      </p>
-    } @else {
-      <p class="pending">Il tuo ruolo non può prenotare lezioni da questa pagina.</p>
-    }
-  } @else {
-    @if (errorMessage()) {
-      <p class="error">{{ errorMessage() }}</p>
-    }
-
-    @if (bookingMinHours(); as minHours) {
+  <header class="page-head">
+    <h1>Prenota una lezione</h1>
+    @if (canBook && bookingMinHours(); as minHours) {
       @if (isStaff) {
-        <p class="hint">
-          Stai prenotando come staff: vedi anche gli slot a meno di {{ minHours }} ore, che a un
-          cliente non compaiono.
+        <p class="lead">
+          Stai prenotando come staff: vedi anche gli slot a meno di {{ minHours }} ore, segnati in
+          arancione, che a un cliente non compaiono.
         </p>
       } @else {
-        <p class="hint">Le lezioni sono prenotabili fino a {{ minHours }} ore prima.</p>
+        <p class="lead">
+          Scegli un orario libero nel calendario. Puoi prenotare una lezione a settimana, fino a
+          {{ minHours }} ore prima dell'inizio.
+        </p>
       }
+    }
+  </header>
+
+  @if (loadingProfile()) {
+    <div class="page-skeleton" aria-busy="true" aria-label="Caricamento">
+      <span class="sk sk-line"></span>
+      <span class="sk sk-calendar"></span>
+    </div>
+  } @else if (!canBook) {
+    <div class="notice-card">
+      @if (isCustomerType) {
+        <p class="notice-title">Account in attesa di validazione</p>
+        <p class="notice-text">
+          Lo staff deve ancora confermare il tuo account: appena lo farà potrai prenotare da
+          questa pagina.
+        </p>
+      } @else {
+        <p class="notice-title">Prenotazione non disponibile</p>
+        <p class="notice-text">Il tuo ruolo non può prenotare lezioni da questa pagina.</p>
+      }
+      <a routerLink="/prenotazioni/area-personale" class="notice-link">Torna alla home</a>
+    </div>
+  } @else {
+    @if (errorMessage()) {
+      <p class="error" role="alert">
+        {{ errorMessage() }}
+        <button type="button" class="retry" (click)="loadSlots()">Riprova</button>
+      </p>
+    }
+
+    @if (myUpcoming().length > 0) {
+      <div class="upcoming" aria-label="Le tue prossime lezioni">
+        <p class="upcoming-label">Già in programma</p>
+        <ul>
+          @for (lesson of myUpcoming(); track lesson.id) {
+            <li>
+              <span class="upcoming-when">
+                {{ formatLongDate(lesson.date) }} ·
+                {{ formatTimeRange(lesson.time_from, lesson.time_to) }}
+              </span>
+              <span class="status-badge" [class]="'status-badge status-' + lesson.status">
+                {{ statusLabels[lesson.status] }}
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
     }
 
     @if (loadingSlots()) {
-      <p>Caricamento slot disponibili…</p>
-    } @else if (slots().length === 0) {
-      <p>Nessuno slot disponibile nei prossimi giorni.</p>
-    } @else {
+      <div class="page-skeleton" aria-busy="true" aria-label="Caricamento slot disponibili">
+        <span class="sk sk-toolbar"></span>
+        <span class="sk sk-calendar"></span>
+      </div>
+    } @else if (slots().length === 0 && !errorMessage()) {
+      <div class="empty-state">
+        <p class="empty-title">Nessun orario libero al momento</p>
+        <p class="empty-text">
+          Gli slot vengono aperti dallo staff settimana per settimana: ricontrolla tra qualche
+          giorno.
+        </p>
+      </div>
+    } @else if (slots().length > 0) {
       <app-week-calendar
         [slots]="slots()"
         [flaggedSlotIds]="flaggedSlotIds()"
-        flaggedLabel="&lt; 36h"
+        [flaggedLabel]="flaggedLabel()"
         [busySlotId]="bookingId()"
         (slotSelected)="openBooking($event)"
       />

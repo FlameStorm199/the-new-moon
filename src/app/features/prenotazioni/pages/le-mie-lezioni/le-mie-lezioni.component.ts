@@ -12,7 +12,10 @@ import {
   CancelLessonDialogComponent,
 } from '../../components/cancel-lesson-dialog/cancel-lesson-dialog.component';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
-import { formatLongDate } from '../../components/date-format';
+import { dateBlockParts, formatLongDate, formatTimeRange } from '../../components/date-format';
+
+/** Oltre questa soglia lo storico si apre a richiesta: la pagina resta corta. */
+const HISTORY_PREVIEW = 6;
 
 @Component({
   selector: 'app-le-mie-lezioni',
@@ -26,6 +29,8 @@ export class LeMieLezioniComponent implements OnInit {
   private readonly profileService = inject(UserProfileService);
 
   readonly formatDate = formatLongDate;
+  readonly formatTimeRange = formatTimeRange;
+  readonly dateBlock = dateBlockParts;
 
   readonly profile = signal<UserProfile | null>(null);
   readonly lessons = signal<LessonRow[]>([]);
@@ -52,6 +57,46 @@ export class LeMieLezioniComponent implements OnInit {
   readonly history = computed(() =>
     this.lessons().filter((l) => !(this.isActive(l) && this.startOf(l).getTime() > Date.now()))
   );
+
+  readonly showAllHistory = signal(false);
+
+  readonly visibleHistory = computed(() =>
+    this.showAllHistory() ? this.history() : this.history().slice(0, HISTORY_PREVIEW)
+  );
+
+  readonly hiddenHistoryCount = computed(() =>
+    Math.max(0, this.history().length - this.visibleHistory().length)
+  );
+
+  /**
+   * Nello storico "confermata" per una lezione già passata è fuorviante:
+   * quello che conta ormai è che si sia svolta. Stessa cosa per una
+   * richiesta rimasta in attesa oltre la data.
+   */
+  historyLabel(lesson: LessonRow): string {
+    if (lesson.status === 'confirmed') return 'svolta';
+    if (lesson.status === 'pending') return 'non confermata';
+    return this.statusLabels[lesson.status];
+  }
+
+  /**
+   * Un future_customer prenota solo l'incontro conoscitivo, da un'altra
+   * pagina: il collegamento "Prenota" deve portarlo lì.
+   */
+  get bookingLink(): string {
+    return this.profile()?.typeCode === 'future_customer'
+      ? '/prenotazioni/prenota-incontro-conoscitivo'
+      : '/prenotazioni/prenota';
+  }
+
+  /** L'incontro conoscitivo è uno solo: già prenotato, niente invito a prenotarne un altro. */
+  get showBookCta(): boolean {
+    return !(this.profile()?.typeCode === 'future_customer' && this.upcoming().length > 0);
+  }
+
+  lessonTypeLabel(lesson: LessonRow): string {
+    return lesson.lesson_type === 'incontro_conoscitivo' ? 'Incontro conoscitivo' : 'Lezione';
+  }
 
   /**
    * Un assistente può prenotare per sé (vedi prenota.component.ts), quindi ha

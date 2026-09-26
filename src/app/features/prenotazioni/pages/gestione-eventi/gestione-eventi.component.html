@@ -2,7 +2,15 @@
   <app-back-link />
 
   <div class="page-header">
-    <h1>Gestione eventi</h1>
+    <div>
+      <h1>Gestione eventi</h1>
+      @if (!loading() && events().length > 0) {
+        <p class="summary">
+          <strong>{{ events().length }}</strong> {{ events().length === 1 ? 'evento' : 'eventi' }} in
+          programma · <strong>{{ totalRegistrations() }}</strong> iscritti in totale
+        </p>
+      }
+    </div>
     @if (canAct()) {
       <button type="button" class="primary-cta" (click)="openCreate()">Nuovo evento</button>
     }
@@ -16,46 +24,117 @@
   }
 
   @if (loading()) {
-    <p>Caricamento…</p>
+    <div class="list-skeleton" aria-busy="true" aria-label="Caricamento">
+      <span class="sk"></span>
+      <span class="sk"></span>
+      <span class="sk"></span>
+    </div>
   } @else if (events().length === 0) {
-    <p class="empty">Nessun evento in programma.</p>
+    <div class="empty-state">
+      <p class="empty-title">Nessun evento in programma</p>
+      @if (canAct()) {
+        <p class="empty-text">Crea il primo dal bottone "Nuovo evento": comparirà anche nel calendario della dashboard.</p>
+      } @else {
+        <p class="empty-text">Gli eventi creati dallo staff compaiono qui.</p>
+      }
+    </div>
   } @else {
     <ul class="event-list">
       @for (event of events(); track event.id) {
-        <li>
-          <div class="event-row">
-            <div class="info">
-              <strong>{{ event.title }}</strong>
-              <span>{{ formatDate(event.date) }} · {{ event.time_from.slice(0, 5) }}–{{ event.time_to.slice(0, 5) }}</span>
-              <span>{{ event.location }}</span>
-              @if (event.price !== null) {
-                <span>{{ event.price }} €</span>
-              }
+        <li class="event-card">
+          <div class="event-main">
+            <div class="date-block" aria-hidden="true">
+              <span class="date-weekday">{{ dateBlock(event.date).weekday }}</span>
+              <span class="date-day">{{ dateBlock(event.date).day }}</span>
+              <span class="date-month">{{ dateBlock(event.date).month }}</span>
             </div>
-            <div class="actions">
-              <button type="button" class="link-btn" (click)="toggleRegistrations(event)">
-                {{ postiLabel(event) }}
-              </button>
-              @if (canAct()) {
-                <button type="button" (click)="openEdit(event)">Modifica</button>
-                <button type="button" class="danger" (click)="openDelete(event)">Cancella</button>
+
+            <div class="event-info">
+              <h2 class="event-title">{{ event.title }}</h2>
+              <p class="event-when">
+                <span class="visually-hidden">{{ formatDate(event.date) }},</span>
+                {{ event.time_from.slice(0, 5) }}–{{ event.time_to.slice(0, 5) }}
+                <span class="dot" aria-hidden="true">·</span>
+                {{ event.location }}
+              </p>
+              @if (event.description) {
+                <p class="event-desc">{{ event.description }}</p>
               }
+              <div class="event-tags">
+                @if (event.price !== null) {
+                  <span class="tag">{{ priceLabel(event.price) }}</span>
+                }
+                @if (isFull(event)) {
+                  <span class="tag full">Completo</span>
+                }
+              </div>
             </div>
+
+            @if (canAct()) {
+              <div class="event-actions">
+                <button type="button" class="btn-quiet" (click)="openEdit(event)">Modifica</button>
+                <button type="button" class="btn-danger-quiet" (click)="openDelete(event)">
+                  Cancella
+                </button>
+              </div>
+            }
+          </div>
+
+          <div class="capacity">
+            @if (event.max_customers !== null) {
+              <div
+                class="capacity-bar"
+                role="progressbar"
+                [attr.aria-valuenow]="event.active_registrations"
+                aria-valuemin="0"
+                [attr.aria-valuemax]="event.max_customers"
+                [attr.aria-label]="'Posti occupati: ' + postiLabel(event)"
+              >
+                <span
+                  class="capacity-fill"
+                  [class.full]="isFull(event)"
+                  [style.width.%]="fillPercent(event)"
+                ></span>
+              </div>
+            }
+            <button
+              type="button"
+              class="registrations-toggle"
+              [attr.aria-expanded]="expandedEventId() === event.id"
+              [attr.aria-controls]="'regs-' + event.id"
+              (click)="toggleRegistrations(event)"
+            >
+              {{ postiLabel(event) }}
+              @if (event.max_customers === null) {
+                <span class="no-limit">· nessun limite</span>
+              }
+              <span class="chevron" [class.open]="expandedEventId() === event.id" aria-hidden="true">▾</span>
+            </button>
           </div>
 
           @if (expandedEventId() === event.id) {
-            <div class="registrations">
+            <div class="registrations" [id]="'regs-' + event.id">
               @if (loadingRegistrations()) {
                 <p class="hint">Caricamento iscritti…</p>
               } @else if (registrationsFor(event.id).length === 0) {
-                <p class="hint">Nessun iscritto.</p>
+                <p class="hint">Ancora nessun iscritto.</p>
               } @else {
                 <ul>
                   @for (reg of registrationsFor(event.id); track reg.id) {
                     <li>
-                      <span>{{ customerLabel(reg) }}</span>
+                      <span class="reg-info">
+                        <span class="reg-name">{{ reg.customer_name }} {{ reg.customer_surname }}</span>
+                        <span class="reg-meta">
+                          @if (reg.customer_dog_name) {
+                            <span>🐾 {{ reg.customer_dog_name }}</span>
+                          }
+                          @if (reg.customer_email) {
+                            <a [href]="'mailto:' + reg.customer_email">{{ reg.customer_email }}</a>
+                          }
+                        </span>
+                      </span>
                       @if (canAct()) {
-                        <button type="button" class="danger small" (click)="openRemove(reg)">
+                        <button type="button" class="btn-danger-quiet small" (click)="openRemove(reg)">
                           Rimuovi
                         </button>
                       }

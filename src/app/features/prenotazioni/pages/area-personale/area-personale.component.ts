@@ -7,7 +7,13 @@ import { ClosedDay, SlotRow, SlotsService } from '../../../../core/slots/slots.s
 import { LessonRow, LessonsService } from '../../../../core/lessons/lessons.service';
 import { EventRow, EventsService } from '../../../../core/events/events.service';
 import { StaffCalendarComponent } from '../../components/staff-calendar/staff-calendar.component';
-import { formatLongDate, formatShortDate, formatTimeRange } from '../../components/date-format';
+import { formatLongDate, formatShortDate, formatTimeRange, todayIso } from '../../components/date-format';
+
+const STAFF_ROLE_LABELS: Record<string, string> = {
+  admin: 'Amministratore',
+  trainer: 'Educatore',
+  assistant: 'Assistente · sola consultazione',
+};
 import { LessonDetailDialogComponent } from '../../components/lesson-detail-dialog/lesson-detail-dialog.component';
 import {
   MoveLessonDialogComponent,
@@ -66,6 +72,35 @@ export class AreaPersonaleComponent implements OnInit {
   /** Fase 2: eventi da oggi in avanti, stessa scelta di listUpcoming() ovunque nella feature eventi. */
   readonly events = signal<EventRow[]>([]);
   readonly togglingSlotId = signal<number | null>(null);
+
+  // --- Vista staff: riepilogo in testa, calcolato dagli stessi dati già
+  // caricati per il calendario (nessuna query in più).
+
+  readonly todayLessonsCount = computed(() => {
+    const today = todayIso();
+    return this.lessons().filter(
+      (l) => l.date === today && (l.status === 'pending' || l.status === 'confirmed')
+    ).length;
+  });
+
+  /** Incontri Conoscitivi in attesa di Accetta/Rifiuta: l'unica cosa che chiede un'azione allo staff. */
+  readonly pendingIncontriCount = computed(
+    () =>
+      this.lessons().filter((l) => l.lesson_type === 'incontro_conoscitivo' && l.status === 'pending')
+        .length
+  );
+
+  readonly weekEventsCount = computed(() => {
+    const today = todayIso();
+    const limit = new Date();
+    limit.setDate(limit.getDate() + 6);
+    const limitIso = `${limit.getFullYear()}-${String(limit.getMonth() + 1).padStart(2, '0')}-${String(limit.getDate()).padStart(2, '0')}`;
+    return this.events().filter((e) => e.date >= today && e.date <= limitIso).length;
+  });
+
+  get staffRoleLabel(): string {
+    return STAFF_ROLE_LABELS[this.profile()?.typeCode ?? ''] ?? '';
+  }
 
   /** Slot su cui aprire "Sposta lezione": liberi, attivi, non quello occupato dalla lezione stessa. */
   readonly freeSlotsForMove = computed(() => this.slots().filter((s) => s.active && !s.occupied));

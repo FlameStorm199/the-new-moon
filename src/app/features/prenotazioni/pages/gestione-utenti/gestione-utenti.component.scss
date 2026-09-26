@@ -1,70 +1,173 @@
+// Stessa impostazione di gestione-lezioni.component.scss (intestazione con
+// CTA a destra, schede di filtro, righe): le due pagine di gestione
+// principali si leggono allo stesso modo.
 .staff-page {
-  max-width: 36rem;
+  max-width: 48rem;
   margin: 0 auto;
   padding: 1.5rem 1rem;
-
-  .error {
-    color: #b00020;
-  }
 
   .success {
     color: #1b7a3d;
   }
 
-  .empty {
-    font-size: 0.9rem;
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+
+    h1 {
+      margin-bottom: 0.35rem;
+    }
+  }
+
+  .summary {
+    font-size: 0.88rem;
     color: #666;
+
+    strong {
+      color: var(--pn-text, #222);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .attention {
+      color: var(--pn-warning, #b06a00);
+    }
+  }
+
+  // =========================================================
+  // Pannello "Nuovo utente" (chiuso di default)
+  // =========================================================
+
+  .create-panel {
+    margin: 0.75rem 0 1.5rem;
+    padding: 1.25rem 1.25rem 1.4rem;
+    border-radius: var(--pn-radius-lg, 12px);
+    background: #f6f7f9;
+
+    h2 {
+      font-size: 1.05rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .hint {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 1rem;
+    }
+  }
+
+  .create-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem 1rem;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    input,
+    select {
+      width: 100%;
+    }
+
+    .span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .optional {
+      font-weight: 400;
+      color: #888;
+    }
+
+    input[aria-invalid='true'] {
+      border-color: var(--pn-danger, #b00020);
+    }
+
+    .field-error {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--pn-danger, #b00020);
+    }
+
+    .create-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // =========================================================
+  // Filtri
+  // =========================================================
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0.75rem 0 1rem;
+  }
+
+  .view-tabs {
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: var(--pn-radius-md, 8px);
+    background: #f1f3f6;
+  }
+
+  .tab-count {
+    display: inline-block;
+    min-width: 1.35rem;
+    margin-left: 0.35rem;
+    padding: 0 0.35rem;
+    border-radius: 0.3rem;
+    font-size: 0.75rem;
+    line-height: 1.35rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+
+    &.attention {
+      background: var(--pn-warning, #b06a00);
+      color: #fff;
+    }
   }
 
   .filters {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    flex: 1 1 20rem;
+    justify-content: flex-end;
   }
 
   .search-input {
     flex: 1 1 12rem;
-    padding: 0.5rem 0.7rem;
-    border: 1px solid #ddd;
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
+    max-width: 18rem;
   }
 
   .role-select {
     flex: 0 0 auto;
-    padding: 0.5rem 0.7rem;
-    border: 1px solid #ddd;
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
-    background: #fff;
   }
 
-  .hint {
-    font-size: 0.85rem;
-    color: #555;
-  }
-
-  .create-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 0.5rem;
-
-    label {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      font-size: 0.9rem;
-    }
-  }
+  // =========================================================
+  // Elenco
+  // =========================================================
 
   .user-list {
     list-style: none;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.6rem;
   }
 
   .user-list li {
@@ -72,73 +175,236 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
+    gap: 0.75rem 1rem;
+    border: 1px solid var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-md, 8px);
+    padding: 0.85rem 1rem;
+
+    // Da gestire (cliente da validare, futuro cliente): bordo sinistro
+    // ambra, si nota scorrendo anche senza il filtro "Da gestire".
+    &.needs-action {
+      border-left: 4px solid var(--pn-warning, #b06a00);
+      padding-left: calc(1rem - 3px);
+    }
   }
 
   .info {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    font-size: 0.9rem;
+    gap: 0.25rem;
+    min-width: 0;
+    flex: 1 1 16rem;
+  }
+
+  .name-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.55rem;
 
     strong {
       font-size: 1rem;
     }
+  }
 
-    .role {
-      color: #555;
+  // Ruolo come etichetta colorata: staff e clienti si separano a colpo d'occhio.
+  .role-chip {
+    padding: 0.05rem 0.45rem;
+    border-radius: 0.3rem;
+    font-size: 0.74rem;
+    font-weight: 600;
+    background: #eef2f6;
+    color: #33475b;
+
+    &.role-future_customer {
+      background: #e0f4f1;
+      color: #0b6b63;
     }
 
-    .pending {
-      color: #b06a00;
+    &.role-assistant,
+    &.role-trainer,
+    &.role-admin {
+      background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+      color: var(--pn-accent-dark, #2d5ab0);
+    }
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.9rem;
+    font-size: 0.83rem;
+    color: #666;
+
+    .email {
+      overflow-wrap: anywhere;
+    }
+
+    .phone {
+      color: #666;
+      font-weight: 400;
+      font-variant-numeric: tabular-nums;
+
+      &:hover {
+        color: var(--pn-accent, #3b6fd4);
+      }
+    }
+  }
+
+  .row-feedback {
+    margin-top: 0.3rem;
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: var(--pn-success, #1b7a3d);
+
+    &.error {
+      color: var(--pn-danger, #b00020);
     }
   }
 
   .actions {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.4rem;
   }
 
-  .icon-btn {
-    flex: 0 0 auto;
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
+  // =========================================================
+  // Caricamento e lista vuota
+  // =========================================================
+
+  .list-skeleton {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-weight: 700;
-    line-height: 1;
-    cursor: pointer;
+    flex-direction: column;
+    gap: 0.6rem;
 
-    &.accept {
-      border: 1px solid var(--pn-success, #1b7a3d);
-      color: var(--pn-success, #1b7a3d);
-      background: #fff;
+    .sk {
+      display: block;
+      height: 4rem;
+      border-radius: var(--pn-radius-md, 8px);
+      background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 50%, #eef0f4 100%);
+      background-size: 200% 100%;
+      animation: gu-shimmer 1.3s ease-in-out infinite;
+    }
+  }
 
-      &:hover:not(:disabled) {
-        background: var(--pn-success-bg, #eaf7ef);
-      }
+  .empty-state {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-lg, 12px);
+
+    .empty-title {
+      font-weight: 700;
+      margin-bottom: 0.35rem;
     }
 
-    &.reject {
-      border: 1px solid var(--pn-danger, #b00020);
-      color: var(--pn-danger, #b00020);
-      background: #fff;
-
-      &:hover:not(:disabled) {
-        background: var(--pn-danger-bg, #fdecea);
-      }
+    .empty-text {
+      font-size: 0.9rem;
+      color: #666;
     }
+  }
 
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+// Bottoni: :host per battere in specificità il tema globale
+// (html body .staff-page button[type='button']), come nelle altre pagine staff.
+
+:host .staff-page .primary-cta {
+  background: var(--pn-accent, #3b6fd4);
+  color: #fff;
+  border: none;
+  padding: 0.65rem 1.4rem;
+
+  &:hover {
+    background: var(--pn-accent-dark, #2d5ab0);
+  }
+
+  // Pannello aperto: il bottone diventa "Chiudi", meno invadente.
+  &.open {
+    background: #fff;
+    color: #555;
+    border: 1px solid #d5d8de;
+
+    &:hover {
+      background: #f6f6f6;
     }
+  }
+}
+
+:host .staff-page .view-tab {
+  padding: 0.45rem 0.85rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: #555;
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  &:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--pn-text, #222);
+  }
+
+  &.active {
+    background: #fff;
+    color: var(--pn-accent, #3b6fd4);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+}
+
+:host .staff-page .actions button {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.82rem;
+  border-radius: 0.4rem;
+}
+
+:host .staff-page .actions .btn-accept {
+  border: 1px solid var(--pn-success, #1b7a3d);
+  background: var(--pn-success, #1b7a3d);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: #15632f;
+  }
+}
+
+:host .staff-page .actions .btn-quiet {
+  border: 1px solid #d5d8de;
+  background: #fff;
+  color: #444;
+
+  &:hover:not(:disabled) {
+    border-color: var(--pn-accent, #3b6fd4);
+    color: var(--pn-accent, #3b6fd4);
+    background: #fff;
+  }
+}
+
+:host .staff-page .actions .btn-reject {
+  border: 1px solid var(--pn-danger, #b00020);
+  background: #fff;
+  color: var(--pn-danger, #b00020);
+
+  &:hover:not(:disabled) {
+    background: var(--pn-danger-bg, #fdecea);
+  }
+}
+
+@keyframes gu-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staff-page .list-skeleton .sk {
+    animation: none;
   }
 }

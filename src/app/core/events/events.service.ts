@@ -17,6 +17,13 @@ export interface EventRow {
   my_registration_id: number | null;
 }
 
+const PRICE_FORMAT = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
+
+/** "25,00 €" o "Gratuito": stessa etichetta nella pagina staff e in quella clienti. */
+export function formatEventPrice(price: number): string {
+  return price === 0 ? 'Gratuito' : PRICE_FORMAT.format(price);
+}
+
 export interface EventInput {
   title: string;
   location: string;

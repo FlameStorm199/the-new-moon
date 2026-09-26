@@ -1,11 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { EventRow, EventsService } from '../../../../core/events/events.service';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { EventRow, EventsService, formatEventPrice } from '../../../../core/events/events.service';
 import { EventRegistrationsService } from '../../../../core/events/event-registrations.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog.component';
-import { formatLongDate } from '../../components/date-format';
+import { dateBlockParts, formatLongDate, formatTimeRange } from '../../components/date-format';
+
+/** Sotto questa soglia i posti rimasti vengono segnalati: invita a non aspettare. */
+const FEW_SEATS = 3;
 
 /**
  * Lista eventi + iscrizione/cancellazione self-service, per customer/
@@ -28,12 +31,21 @@ export class EventiComponent implements OnInit {
   private readonly profileService = inject(UserProfileService);
 
   readonly formatDate = formatLongDate;
+  readonly formatTimeRange = formatTimeRange;
+  readonly dateBlock = dateBlockParts;
+  readonly priceLabel = formatEventPrice;
 
   readonly profile = signal<UserProfile | null>(null);
   readonly events = signal<EventRow[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly registeringId = signal<number | null>(null);
+  /** Esito dell'ultima iscrizione/cancellazione, mostrato in cima. */
+  readonly infoMessage = signal<string | null>(null);
+
+  readonly myRegistrationsCount = computed(
+    () => this.events().filter((e) => e.my_registration_id !== null).length
+  );
 
   // --- Conferma "Cancella la mia iscrizione" ---
   readonly cancellingEvent = signal<EventRow | null>(null);
@@ -66,17 +78,26 @@ export class EventiComponent implements OnInit {
     return event.max_customers !== null && event.active_registrations >= event.max_customers;
   }
 
-  postiLabel(event: EventRow): string | null {
+  seatsLeft(event: EventRow): number | null {
     return event.max_customers === null
       ? null
-      : `${event.active_registrations}/${event.max_customers} posti`;
+      : Math.max(0, event.max_customers - event.active_registrations);
+  }
+
+  /** Solo quando i posti stanno finendo: con molti posti liberi è rumore. */
+  fewSeatsLabel(event: EventRow): string | null {
+    const left = this.seatsLeft(event);
+    if (left === null || left === 0 || left > FEW_SEATS) return null;
+    return left === 1 ? 'Ultimo posto' : `Ultimi ${left} posti`;
   }
 
   async register(event: EventRow): Promise<void> {
     this.registeringId.set(event.id);
     this.errorMessage.set(null);
+    this.infoMessage.set(null);
     try {
       await this.registrationsService.register(event.id);
+      this.infoMessage.set(`Sei iscritto/a a "${event.title}": ti abbiamo inviato un'email di riepilogo.`);
       await this.load();
     } catch (err) {
       this.errorMessage.set(errorText(err) ?? 'Iscrizione non riuscita.');
@@ -103,6 +124,7 @@ export class EventiComponent implements OnInit {
     try {
       await this.registrationsService.cancel(event.my_registration_id);
       this.cancellingEvent.set(null);
+      this.infoMessage.set(`Iscrizione a "${event.title}" cancellata.`);
       await this.load();
     } catch (err) {
       this.cancelError.set(errorText(err) ?? 'Cancellazione non riuscita.');

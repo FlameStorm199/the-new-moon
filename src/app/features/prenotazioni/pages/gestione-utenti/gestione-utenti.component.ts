@@ -8,6 +8,20 @@ import {
 } from '../../../../core/users/admin-users.service';
 import { UserProfileService } from '../../../../core/users/user-profile.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
+import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog.component';
+
+/** Esito di un'azione su una riga, mostrato dentro quella riga (non in cima alla pagina). */
+interface RowFeedback {
+  id: number;
+  kind: 'success' | 'error';
+  text: string;
+}
+
+const CREATE_REQUIRED_MESSAGES = {
+  name: 'Inserisci il nome.',
+  surname: 'Inserisci il cognome.',
+  email: "Inserisci l'email.",
+} as const;
 
 const TYPE_LABELS: Record<UserTypeCode | '', string> = {
   customer: 'Cliente',
@@ -28,7 +42,7 @@ const ALL_ROLES: UserTypeCode[] = ['customer', 'future_customer', 'assistant', '
 @Component({
   selector: 'app-gestione-utenti',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BackLinkComponent],
+  imports: [CommonModule, ReactiveFormsModule, BackLinkComponent, ConfirmDialogComponent],
   templateUrl: './gestione-utenti.component.html',
   styleUrl: './gestione-utenti.component.scss',
 })
@@ -63,17 +77,35 @@ export class GestioneUtentiComponent implements OnInit {
   readonly searchTerm = signal('');
   readonly roleFilter = signal<RoleFilter>('all');
 
+  /** "Da gestire": clienti da validare e futuri clienti da trasformare in assistiti. */
+  readonly onlyTodo = signal(false);
+
+  readonly todoCount = computed(() => this.users().filter((u) => this.isPendingValidation(u)).length);
+
+  /** Form di creazione chiuso di default: la lista è ciò che si usa ogni giorno. */
+  readonly showCreate = signal(false);
+
+  readonly rowFeedback = signal<RowFeedback | null>(null);
+
+  /** Utente su cui è aperta la conferma di "Rifiuta" (cancellazione). */
+  readonly rejecting = signal<AdminUserRow | null>(null);
+
   readonly filteredUsers = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const role = this.roleFilter();
+    const onlyTodo = this.onlyTodo();
     return this.users().filter((row) => {
       if (role !== 'all' && row.typeCode !== role) {
+        return false;
+      }
+      if (onlyTodo && !this.isPendingValidation(row)) {
         return false;
       }
       if (!term) {
         return true;
       }
-      const haystack = `${row.name} ${row.surname} ${row.email ?? ''}`.toLowerCase();
+      const haystack =
+        `${row.name} ${row.surname} ${row.email ?? ''} ${row.dogName ?? ''} ${row.phone ?? ''}`.toLowerCase();
       return haystack.includes(term);
     });
   });
@@ -132,14 +164,48 @@ export class GestioneUtentiComponent implements OnInit {
     }
   }
 
-  async submitCreate(): Promise<void> {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+  /** Messaggio sotto il campo del form di creazione, dopo che ci si è passati. */
+  createFieldError(name: 'name' | 'surname' | 'email' | 'phone' | 'dog_name'): string | null {
+    const control = this.form.controls[name];
+    if (!control.touched) {
+      return null;
     }
+    if (name === 'phone' || name === 'dog_name') {
+      // Obbligatori solo per customer/future_customer: il validatore dipende
+      // dal ruolo scelto, quindi è controllato qui e non nel FormControl.
+      if (this.requiresPhoneAndDog() && !control.value.trim()) {
+        return 'Obbligatorio per questo ruolo.';
+      }
+      return null;
+    }
+    if (control.hasError('required')) {
+      return CREATE_REQUIRED_MESSAGES[name];
+    }
+    if (control.hasError('email')) {
+      return "L'indirizzo email non sembra valido.";
+    }
+    return null;
+  }
+
+  toggleCreate(): void {
+    this.showCreate.update((v) => !v);
+  }
+
+  telHref(phone: string): string {
+    return `tel:${phone.replace(/[^\d+]/g, '')}`;
+  }
+
+  feedbackFor(row: AdminUserRow): RowFeedback | null {
+    const fb = this.rowFeedback();
+    return fb && fb.id === row.id ? fb : null;
+  }
+
+  async submitCreate(): Promise<void> {
     const value = this.form.getRawValue();
-    if (REQUIRES_PHONE_AND_DOG.has(value.type_code) && (!value.phone.trim() || !value.dog_name.trim())) {
-      this.errorMessage.set('Telefono e nome del cane sono obbligatori per questo ruolo.');
+    const missingForRole =
+      REQUIRES_PHONE_AND_DOG.has(value.type_code) && (!value.phone.trim() || !value.dog_name.trim());
+    if (this.form.invalid || missingForRole) {
+      this.form.markAllAsTouched();
       return;
     }
 
@@ -159,6 +225,7 @@ export class GestioneUtentiComponent implements OnInit {
         result.warning ?? "Utente creato. Email di invito inviata per l'impostazione della password."
       );
       this.form.reset({ type_code: 'assistant', name: '', surname: '', email: '', phone: '', dog_name: '' });
+      this.showCreate.set(false);
       await this.load();
     } catch (err) {
       this.errorMessage.set((err as Error).message || 'Creazione utente fallita.');
@@ -168,35 +235,48 @@ export class GestioneUtentiComponent implements OnInit {
   }
 
   async validateUser(row: AdminUserRow): Promise<void> {
-    this.actingOnId.set(row.id);
-    this.errorMessage.set(null);
-    this.infoMessage.set(null);
-    try {
-      await this.usersService.validate(row.id);
-      this.users.update((list) =>
-        list.map((u) => (u.id === row.id ? { ...u, validated: true } : u))
-      );
-    } catch (err) {
-      this.errorMessage.set((err as Error).message || 'Validazione non riuscita.');
-    } finally {
-      this.actingOnId.set(null);
-    }
+    await this.runOnRow(
+      row.id,
+      async () => {
+        await this.usersService.validate(row.id);
+        this.users.update((list) =>
+          list.map((u) => (u.id === row.id ? { ...u, validated: true } : u))
+        );
+      },
+      'Utente validato: gli arriva un\'email di conferma.'
+    );
   }
 
-  async rejectUser(row: AdminUserRow): Promise<void> {
-    if (this.currentUserId === null) {
+  // --- "Rifiuta": cancella l'utente, quindi chiede conferma prima ---
+
+  readonly rejectBusy = signal(false);
+  readonly rejectError = signal<string | null>(null);
+
+  openReject(row: AdminUserRow): void {
+    this.rejecting.set(row);
+    this.rejectError.set(null);
+  }
+
+  closeReject(): void {
+    this.rejecting.set(null);
+  }
+
+  async confirmReject(): Promise<void> {
+    const row = this.rejecting();
+    if (!row || this.currentUserId === null) {
       return;
     }
-    this.actingOnId.set(row.id);
-    this.errorMessage.set(null);
-    this.infoMessage.set(null);
+    this.rejectBusy.set(true);
+    this.rejectError.set(null);
     try {
       await this.usersService.rejectPendingUser(row.id, this.currentUserId);
       this.users.update((list) => list.filter((u) => u.id !== row.id));
+      this.rejecting.set(null);
+      this.infoMessage.set(`${row.name} ${row.surname} rimosso.`);
     } catch (err) {
-      this.errorMessage.set((err as Error).message || 'Rifiuto non riuscito.');
+      this.rejectError.set((err as Error).message || 'Rifiuto non riuscito.');
     } finally {
-      this.actingOnId.set(null);
+      this.rejectBusy.set(false);
     }
   }
 
@@ -213,12 +293,23 @@ export class GestioneUtentiComponent implements OnInit {
    * customer.sql) lo consente anche a un educatore, non solo all'admin.
    */
   async promoteFutureCustomer(row: AdminUserRow): Promise<void> {
-    await this.runOnRow(
+    const ok = await this.runOnRow(
       row.id,
-      () => this.usersService.promoteFutureCustomer(row.id),
-      'Utente promosso a cliente. Email di invito inviata.'
+      async () => {
+        await this.usersService.promoteFutureCustomer(row.id);
+        // Aggiornata in locale invece di ricaricare tutto: la riga resta al
+        // suo posto e l'esito resta visibile lì.
+        this.users.update((list) =>
+          list.map((u) => (u.id === row.id ? { ...u, typeCode: 'customer', validated: true } : u))
+        );
+      },
+      'Ora è un assistito: gli è arrivata l\'email per impostare la password.'
     );
-    await this.load();
+    if (!ok) {
+      // La promozione può essere riuscita anche se l'invito no (due chiamate
+      // separate): si ricarica per mostrare lo stato vero.
+      await this.load();
+    }
   }
 
   async forceReset(row: AdminUserRow): Promise<void> {
@@ -229,19 +320,26 @@ export class GestioneUtentiComponent implements OnInit {
     );
   }
 
+  /** true se l'azione è riuscita: l'esito compare dentro la riga, non in cima alla pagina. */
   private async runOnRow(
     userId: number,
     action: () => Promise<void>,
     successMessage: string
-  ): Promise<void> {
+  ): Promise<boolean> {
     this.actingOnId.set(userId);
-    this.errorMessage.set(null);
+    this.rowFeedback.set(null);
     this.infoMessage.set(null);
     try {
       await action();
-      this.infoMessage.set(successMessage);
+      this.rowFeedback.set({ id: userId, kind: 'success', text: successMessage });
+      return true;
     } catch (err) {
-      this.errorMessage.set((err as Error).message || 'Operazione fallita.');
+      this.rowFeedback.set({
+        id: userId,
+        kind: 'error',
+        text: (err as Error).message || 'Operazione non riuscita.',
+      });
+      return false;
     } finally {
       this.actingOnId.set(null);
     }

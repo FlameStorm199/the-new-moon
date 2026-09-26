@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { EventInput, EventRow, EventsService } from '../../../../core/events/events.service';
+import { EventInput, EventRow, EventsService, formatEventPrice } from '../../../../core/events/events.service';
 import {
   EventRegistrationRow,
   EventRegistrationsService,
@@ -13,7 +13,7 @@ import {
   EventFormDialogState,
   EventFormMode,
 } from '../../components/event-form-dialog/event-form-dialog.component';
-import { formatLongDate } from '../../components/date-format';
+import { dateBlockParts, formatLongDate } from '../../components/date-format';
 
 @Component({
   selector: 'app-gestione-eventi',
@@ -28,6 +28,8 @@ export class GestioneEventiComponent implements OnInit {
   private readonly profileService = inject(UserProfileService);
 
   readonly formatDate = formatLongDate;
+  readonly dateBlock = dateBlockParts;
+  readonly priceLabel = formatEventPrice;
 
   readonly events = signal<EventRow[]>([]);
   readonly loading = signal(true);
@@ -90,6 +92,21 @@ export class GestioneEventiComponent implements OnInit {
     return event.max_customers === null
       ? `${event.active_registrations} iscritti`
       : `${event.active_registrations}/${event.max_customers} iscritti`;
+  }
+
+  /** Iscritti totali sugli eventi in programma, per il riepilogo in testa. */
+  totalRegistrations(): number {
+    return this.events().reduce((sum, e) => sum + e.active_registrations, 0);
+  }
+
+  isFull(event: EventRow): boolean {
+    return event.max_customers !== null && event.active_registrations >= event.max_customers;
+  }
+
+  /** Riempimento della barra dei posti, 0–100. */
+  fillPercent(event: EventRow): number {
+    if (event.max_customers === null || event.max_customers === 0) return 0;
+    return Math.min(100, Math.round((event.active_registrations / event.max_customers) * 100));
   }
 
   // --- "Nuovo evento" / "Modifica evento" ---

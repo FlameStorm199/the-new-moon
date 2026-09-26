@@ -10,10 +10,12 @@ export interface EventRegistrationRow {
   customer_name: string;
   customer_surname: string;
   customer_dog_name: string | null;
+  /** Per contattare l'iscritto dalla lista dello staff. */
+  customer_email: string | null;
 }
 
 const REGISTRATION_COLUMNS =
-  'id, event_id, customer_id, status, cancellation_note, customer_name, customer_surname, customer_dog_name';
+  'id, event_id, customer_id, status, cancellation_note, customer_name, customer_surname, customer_dog_name, customer_email';
 
 /**
  * Iscrizione self-service istantanea, niente approvazione staff (decisione

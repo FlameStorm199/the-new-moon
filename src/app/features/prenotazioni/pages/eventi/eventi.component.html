@@ -1,61 +1,99 @@
 <section class="eventi-page">
   <app-back-link />
-  <h1>Eventi</h1>
+
+  <header class="page-head">
+    <h1>Eventi</h1>
+    <p class="lead">
+      Uscite, seminari e giornate speciali del centro. L'iscrizione è immediata e puoi
+      cancellarla da qui.
+    </p>
+    @if (!loading() && myRegistrationsCount() > 0) {
+      <p class="summary">
+        Sei iscritto/a a <strong>{{ myRegistrationsCount() }}</strong>
+        {{ myRegistrationsCount() === 1 ? 'evento' : 'eventi' }}
+      </p>
+    }
+  </header>
 
   @if (errorMessage()) {
-    <p class="error">{{ errorMessage() }}</p>
+    <p class="error" role="alert">{{ errorMessage() }}</p>
+  }
+  @if (infoMessage()) {
+    <p class="success" role="status">{{ infoMessage() }}</p>
   }
 
   @if (loading()) {
-    <p>Caricamento…</p>
+    <div class="list-skeleton" aria-busy="true" aria-label="Caricamento">
+      <span class="sk"></span>
+      <span class="sk"></span>
+    </div>
   } @else if (events().length === 0) {
-    <p class="empty">Nessun evento in programma.</p>
+    <div class="empty-state">
+      <p class="empty-title">Nessun evento in programma</p>
+      <p class="empty-text">Quando lo staff ne pubblica uno nuovo lo trovi qui.</p>
+    </div>
   } @else {
     <ul class="event-list">
       @for (event of events(); track event.id) {
-        <li>
-          <div class="info">
-            <div class="title-row">
-              <strong>{{ event.title }}</strong>
+        <li class="event-card" [class.registered]="event.my_registration_id">
+          <div class="event-main">
+            <div class="date-block" aria-hidden="true">
+              <span class="date-weekday">{{ dateBlock(event.date).weekday }}</span>
+              <span class="date-day">{{ dateBlock(event.date).day }}</span>
+              <span class="date-month">{{ dateBlock(event.date).month }}</span>
+            </div>
+
+            <div class="event-info">
               @if (event.my_registration_id) {
-                <span class="badge">Iscritto/a</span>
+                <p class="eyebrow">✓ Sei iscritto/a</p>
+              }
+              <h2 class="event-title">{{ event.title }}</h2>
+              <p class="event-when">
+                <span class="visually-hidden">{{ formatDate(event.date) }},</span>
+                {{ formatTimeRange(event.time_from, event.time_to) }}
+                <span class="dot" aria-hidden="true">·</span>
+                {{ event.location }}
+              </p>
+              @if (event.description) {
+                <p class="event-desc">{{ event.description }}</p>
               }
             </div>
-            <span>{{ formatDate(event.date) }} · {{ event.time_from.slice(0, 5) }}–{{ event.time_to.slice(0, 5) }}</span>
-            <span>{{ event.location }}</span>
-            @if (event.description) {
-              <p class="description">{{ event.description }}</p>
-            }
-            <span class="meta">
-              @if (event.price !== null) {
-                {{ event.price }} €
-              }
-              @if (postiLabel(event); as label) {
-                · {{ label }}
-              }
-            </span>
           </div>
 
-          @if (canRegister) {
-            <div class="actions">
-              @if (event.my_registration_id) {
-                <button type="button" class="danger" (click)="openCancel(event)">
-                  Cancella iscrizione
-                </button>
-              } @else if (isFull(event)) {
-                <span class="hint">Posti esauriti</span>
-              } @else {
-                <button
-                  type="button"
-                  class="primary"
-                  [disabled]="registeringId() === event.id"
-                  (click)="register(event)"
-                >
-                  {{ registeringId() === event.id ? 'Iscrizione…' : 'Iscriviti' }}
-                </button>
+          <div class="event-footer">
+            <div class="event-tags">
+              @if (event.price !== null) {
+                <span class="tag">{{ priceLabel(event.price) }}</span>
+              }
+              @if (isFull(event) && !event.my_registration_id) {
+                <span class="tag tag-full">Completo</span>
+              }
+              @if (fewSeatsLabel(event); as label) {
+                <span class="tag tag-few">{{ label }}</span>
               }
             </div>
-          }
+
+            @if (canRegister) {
+              <div class="event-actions">
+                @if (event.my_registration_id) {
+                  <button type="button" class="btn-danger-quiet" (click)="openCancel(event)">
+                    Cancella iscrizione
+                  </button>
+                } @else if (isFull(event)) {
+                  <span class="full-note">Posti esauriti</span>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn-primary"
+                    [disabled]="registeringId() === event.id"
+                    (click)="register(event)"
+                  >
+                    {{ registeringId() === event.id ? 'Iscrizione…' : 'Iscriviti' }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </li>
       }
     </ul>
@@ -64,7 +102,7 @@
   @if (cancellingEvent(); as event) {
     <app-confirm-dialog
       title="Cancellare la tua iscrizione?"
-      [message]="event.title"
+      [message]="event.title + ' — ' + formatDate(event.date)"
       confirmLabel="Cancella iscrizione"
       busyLabel="Cancellazione…"
       [danger]="true"

@@ -3,12 +3,211 @@
 .prenota-page {
   max-width: 52rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 1.5rem 1rem 2.5rem;
 
-  .hint {
-    font-size: 0.85rem;
+  .page-head {
+    margin-bottom: 1.25rem;
+
+    h1 {
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.01em;
+    }
+  }
+
+  // Le regole di prenotazione in un'unica frase, sotto il titolo: prima
+  // erano sparse tra un hint minuscolo e il modale di conferma.
+  .lead {
+    font-size: 0.95rem;
     color: #555;
-    line-height: 1.5;
-    margin: 0.75rem 0;
+    line-height: 1.55;
+    max-width: 62ch;
+    text-wrap: pretty;
+  }
+
+  .error {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: var(--pn-radius-md, 8px);
+    background: var(--pn-danger-bg, #fdecea);
+    color: var(--pn-danger, #b00020);
+    font-size: 0.9rem;
+  }
+
+  // =========================================================
+  // Lezioni già in programma
+  // =========================================================
+
+  .upcoming {
+    padding: 0.8rem 1rem;
+    border-radius: var(--pn-radius-lg, 12px);
+    background: #f5f7fb;
+
+    .upcoming-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 0.35rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.75rem;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    .upcoming-when {
+      font-weight: 600;
+      font-size: 0.92rem;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // Stessi colori degli stati in gestione lezioni.
+  .status-badge {
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    &.status-pending {
+      background: #fff4e0;
+      color: #b06a00;
+    }
+
+    &.status-confirmed {
+      background: #e6f4ea;
+      color: #1b7a3d;
+    }
+  }
+
+  // =========================================================
+  // Account non abilitato
+  // =========================================================
+
+  .notice-card {
+    padding: 1.1rem 1.25rem;
+    border-radius: var(--pn-radius-lg, 12px);
+    background: var(--pn-warning-bg, #fff4e0);
+
+    .notice-title {
+      font-weight: 700;
+      color: var(--pn-warning, #b06a00);
+      margin-bottom: 0.3rem;
+    }
+
+    .notice-text {
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: #6b4a14;
+      max-width: 60ch;
+    }
+
+    .notice-link {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+  }
+
+  // =========================================================
+  // Caricamento e nessuno slot
+  // =========================================================
+
+  .page-skeleton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+
+    .sk {
+      display: block;
+      border-radius: var(--pn-radius-md, 8px);
+      background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 50%, #eef0f4 100%);
+      background-size: 200% 100%;
+      animation: pr-shimmer 1.3s ease-in-out infinite;
+    }
+
+    .sk-line {
+      align-self: flex-start;
+      width: min(28rem, 80%);
+      height: 1rem;
+    }
+
+    .sk-toolbar {
+      width: 16rem;
+      height: 2.75rem;
+      border-radius: 999px;
+    }
+
+    .sk-calendar {
+      width: 100%;
+      height: 22rem;
+      border-radius: var(--pn-radius-lg, 12px);
+    }
+  }
+
+  .empty-state {
+    margin-top: 1.5rem;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-lg, 12px);
+
+    .empty-title {
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .empty-text {
+      font-size: 0.9rem;
+      color: #666;
+      max-width: 42ch;
+      margin: 0 auto;
+    }
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+// :host per battere il tema globale sui bottoni (vedi le pagine staff).
+:host .prenota-page .retry {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.82rem;
+  border-radius: 0.4rem;
+  border: 1px solid currentColor;
+  background: #fff;
+  color: var(--pn-danger, #b00020);
+}
+
+@keyframes pr-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prenota-page .page-skeleton .sk {
+    animation: none;
   }
 }

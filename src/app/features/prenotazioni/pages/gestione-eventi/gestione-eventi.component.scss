@@ -1,5 +1,12 @@
+// Stessa impostazione delle altre pagine di gestione (intestazione con CTA,
+// riepilogo, card). Il viola del blocco data è lo stesso degli eventi nel
+// calendario della dashboard (staff-calendar.component.scss, --event): un
+// evento si riconosce con lo stesso colore in entrambe le viste.
 .staff-page {
-  max-width: 44rem;
+  --event: #7c4dff;
+  --event-soft: #f1ecff;
+
+  max-width: 48rem;
   margin: 0 auto;
   padding: 1.5rem 1rem;
 
@@ -11,9 +18,8 @@
     color: #1b7a3d;
   }
 
-  .empty,
   .hint {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: #666;
   }
 
@@ -26,123 +32,381 @@
     margin-bottom: 1rem;
 
     h1 {
-      margin-bottom: 0;
+      margin-bottom: 0.35rem;
     }
   }
+
+  .summary {
+    font-size: 0.88rem;
+    color: #666;
+
+    strong {
+      color: var(--pn-text, #222);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  // =========================================================
+  // Card evento
+  // =========================================================
 
   .event-list {
     list-style: none;
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.9rem;
   }
 
-  .event-list > li {
+  .event-card {
     border: 1px solid var(--pn-border, #e0e0e0);
     border-radius: var(--pn-radius-lg, 12px);
-    padding: 0.85rem 1rem;
+    padding: 1rem 1.1rem;
   }
 
-  .event-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+  .event-main {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: start;
   }
 
-  .info {
+  // La data, l'informazione chiave di un evento, come un foglietto di calendario.
+  .date-block {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    font-size: 0.9rem;
-    color: #555;
+    align-items: center;
+    width: 3.6rem;
+    padding: 0.4rem 0 0.45rem;
+    border-radius: var(--pn-radius-md, 8px);
+    background: var(--event-soft);
+    color: var(--event);
+    line-height: 1.1;
 
-    strong {
-      font-size: 1rem;
-      color: #222;
+    .date-weekday,
+    .date-month {
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .date-day {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
     }
   }
 
-  .actions {
+  .event-info {
+    min-width: 0;
+  }
+
+  .event-title {
+    font-size: 1.05rem;
+    margin: 0 0 0.2rem;
+    text-wrap: balance;
+  }
+
+  .event-when {
+    font-size: 0.88rem;
+    color: #555;
+    font-variant-numeric: tabular-nums;
+
+    .dot {
+      margin: 0 0.3rem;
+      color: #aaa;
+    }
+  }
+
+  .event-desc {
+    margin-top: 0.45rem;
+    font-size: 0.88rem;
+    color: #666;
+    line-height: 1.5;
+    max-width: 60ch;
+    // Tre righe al massimo: la descrizione completa sta nel modale Modifica.
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .event-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+
+    &:empty {
+      display: none;
+    }
+  }
+
+  .tag {
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #eef2f6;
+    color: #33475b;
+
+    &.full {
+      background: #fde8e8;
+      color: #b00020;
+    }
+  }
+
+  .event-actions {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  // =========================================================
+  // Posti e iscritti
+  // =========================================================
+
+  .capacity {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.9rem;
+    margin-top: 0.9rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f0f1f4;
+  }
+
+  .capacity-bar {
+    flex: 0 1 10rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: #eceef2;
+    overflow: hidden;
+  }
+
+  .capacity-fill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--event);
+    transition: width 0.3s ease;
+
+    &.full {
+      background: #b00020;
+    }
+  }
+
+  .no-limit {
+    font-weight: 400;
+    color: #888;
+  }
+
+  .chevron {
+    display: inline-block;
+    margin-left: 0.25rem;
+    transition: transform 0.2s ease;
+
+    &.open {
+      transform: rotate(180deg);
+    }
   }
 
   .registrations {
     margin-top: 0.75rem;
-    padding-top: 0.75rem;
-    border-top: 1px dashed #eee;
+    border-radius: var(--pn-radius-md, 8px);
+    background: #f8f9fb;
+    padding: 0.6rem 0.85rem;
 
     ul {
       list-style: none;
       padding: 0;
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
     }
 
     li {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.88rem;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      box-shadow: none;
+      border-bottom: 1px solid #eceef2;
+
+      &:last-child {
+        border-bottom: none;
+      }
     }
+
+    .reg-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+
+    .reg-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .reg-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.1rem 0.8rem;
+      font-size: 0.8rem;
+      color: #777;
+
+      a {
+        color: #777;
+        font-weight: 400;
+        overflow-wrap: anywhere;
+
+        &:hover {
+          color: var(--pn-accent, #3b6fd4);
+        }
+      }
+    }
+  }
+
+  // =========================================================
+  // Caricamento e lista vuota
+  // =========================================================
+
+  .list-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+
+    .sk {
+      display: block;
+      height: 7rem;
+      border-radius: var(--pn-radius-lg, 12px);
+      background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 50%, #eef0f4 100%);
+      background-size: 200% 100%;
+      animation: ge-shimmer 1.3s ease-in-out infinite;
+    }
+  }
+
+  .empty-state {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    border: 1px dashed var(--pn-border, #e0e0e0);
+    border-radius: var(--pn-radius-lg, 12px);
+
+    .empty-title {
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .empty-text {
+      font-size: 0.9rem;
+      color: #666;
+      max-width: 40ch;
+      margin: 0 auto;
+    }
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  a:focus-visible,
+  button:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
   }
 }
 
+// Su telefono le azioni scendono sotto il testo invece di stringerlo.
+@media (max-width: 560px) {
+  .staff-page .event-main {
+    grid-template-columns: auto 1fr;
+  }
+
+  .staff-page .event-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
+// Bottoni: :host per battere in specificità il tema globale
+// (html body .staff-page button[type='button']), come nelle altre pagine staff.
+
 :host .staff-page .primary-cta {
-  flex: 0 0 auto;
   background: var(--pn-accent, #3b6fd4);
   color: #fff;
   border: none;
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--pn-radius-md, 8px);
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
+  padding: 0.65rem 1.4rem;
 
   &:hover {
     background: var(--pn-accent-dark, #2d5ab0);
   }
 }
 
-:host .staff-page button {
-  border: 1px solid var(--pn-border, #e0e0e0);
-  background: #fff;
-  color: #333;
-  border-radius: var(--pn-radius-md, 8px);
-  padding: 0.4rem 0.8rem;
+:host .staff-page .btn-quiet,
+:host .staff-page .btn-danger-quiet {
+  padding: 0.35rem 0.8rem;
   font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
+  border-radius: 0.4rem;
+  background: #fff;
+}
+
+:host .staff-page .btn-quiet {
+  border: 1px solid #d5d8de;
+  color: #444;
 
   &:hover {
-    background: #f6f6f6;
-  }
-
-  &.link-btn {
-    border: none;
-    background: none;
+    border-color: var(--pn-accent, #3b6fd4);
     color: var(--pn-accent, #3b6fd4);
-    text-decoration: underline;
-    padding: 0.4rem 0.2rem;
+    background: #fff;
   }
+}
 
-  &.danger {
+:host .staff-page .btn-danger-quiet {
+  border: 1px solid #e8c5ca;
+  color: var(--pn-danger, #b00020);
+
+  &:hover {
     border-color: var(--pn-danger, #b00020);
-    color: var(--pn-danger, #b00020);
-
-    &:hover {
-      background: var(--pn-danger-bg, #fdecea);
-    }
+    background: var(--pn-danger-bg, #fdecea);
   }
 
   &.small {
-    padding: 0.2rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.78rem;
+  }
+}
+
+:host .staff-page .registrations-toggle {
+  padding: 0.3rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--pn-text, #222);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  &:hover {
+    background: #f1f3f6;
+    color: var(--pn-text, #222);
+  }
+}
+
+@keyframes ge-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staff-page .list-skeleton .sk {
+    animation: none;
+  }
+
+  .staff-page .chevron,
+  .staff-page .capacity-fill {
+    transition: none;
   }
 }

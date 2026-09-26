@@ -240,37 +240,121 @@
   }
 
   // =========================================================
-  // Staff: card delle pagine di gestione, sotto il calendario
+  // Staff: intestazione con riepilogo del giorno
   // =========================================================
+  // Saluto e ruolo a sinistra, tre numeri a destra: cosa c'è oggi, cosa
+  // chiede un'azione (Incontri da confermare), cosa arriva in settimana.
+  // Il calendario resta il protagonista subito sotto.
 
-  .tile-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-    gap: 0.75rem;
+  .staff-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    margin-bottom: 0.5rem;
 
-    // Le pagine staff sono qui in secondo piano rispetto al calendario:
-    // stesse card ma più piccole, per non competere visivamente con esso.
-    &.secondary .tile {
-      padding: 0.75rem 0.9rem;
-      font-size: 0.82rem;
+    h1 {
+      margin-bottom: 0.4rem;
+    }
 
-      .tile-icon {
-        font-size: 1.1rem;
+    .role-label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--pn-text-muted);
+    }
+  }
+
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .stat {
+    // Il tema globale dà un'ombra a ogni <li> delle pagine prenotazioni
+    // (pensata per le righe-elenco): qui non serve.
+    box-shadow: none;
+    min-width: 7.5rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: var(--pn-radius-md);
+    background: #f6f7f9;
+
+    &.attention {
+      background: var(--pn-warning-bg);
+
+      .stat-value {
+        color: var(--pn-warning);
       }
     }
   }
 
-  .tile {
+  .stat-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    font-weight: inherit;
+
+    &:hover {
+      text-decoration: none;
+
+      .stat-label {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    color: var(--pn-text);
+  }
+
+  .stat-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--pn-text-muted);
+  }
+
+  .calendar-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .sk-bar { width: 40%; height: 2rem; margin: 0 auto; }
+    .sk-grid { height: 22rem; border-radius: var(--pn-radius-lg); }
+  }
+
+  // =========================================================
+  // Staff: pagine di gestione, sotto il calendario
+  // =========================================================
+  // Stesso stile delle righe-azione del cliente (icona, titolo, una riga di
+  // descrizione), in griglia: le voci sono già in navbar, qui la
+  // descrizione dice cosa c'è dentro a chi non lo ricorda.
+
+  .manage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.6rem;
+  }
+
+  .manage-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem 1.1rem;
+    gap: 0.8rem;
+    padding: 0.8rem 0.95rem;
     border: 1px solid var(--pn-border);
     border-radius: var(--pn-radius-md);
-    text-decoration: none;
     color: var(--pn-text);
-    font-weight: 700;
-    font-size: 0.9rem;
+    text-decoration: none;
     transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
 
     &:hover {
@@ -280,12 +364,30 @@
     }
 
     &:active {
-      transform: scale(0.98);
+      transform: scale(0.99);
     }
   }
 
-  .tile-icon {
-    font-size: 1.3rem;
+  .manage-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .manage-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .manage-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+  }
+
+  .manage-desc {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--pn-text-muted);
   }
 
   // Stesse pagine che vede un cliente, ma per lo staff volutamente piccole:
@@ -361,7 +463,7 @@
 
   .area-personale .action-primary,
   .area-personale .action-row,
-  .area-personale .tile {
+  .area-personale .manage-item {
     transition: none;
   }
 }

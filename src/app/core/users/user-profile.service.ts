@@ -6,6 +6,8 @@ export interface CustomerOption {
   name: string;
   surname: string;
   dog_name: string | null;
+  /** 3 = assistente: prenotabile anche lui come cliente, segnalato nella tendina. */
+  type_id: number;
 }
 
 export interface UserProfile {
@@ -84,16 +86,19 @@ export class UserProfileService {
   }
 
   /**
-   * Clienti validati, per le tendine dello staff. La RLS restituisce l'elenco
-   * completo solo a chi è staff: per un customer questa query tornerebbe al
-   * massimo sé stesso.
+   * Chi lo staff può scegliere in "Prenota per un cliente": clienti validati
+   * (customer/future_customer) e assistenti. Un assistente può essere anche
+   * cliente (vedi 23_assistant_self_booking.sql), ma non ha mai
+   * validated=true (è un concetto solo dei clienti), quindi entra con una
+   * condizione a parte invece che dal filtro sulla validazione. La RLS
+   * restituisce l'elenco completo solo a chi è staff.
    */
-  async listValidatedCustomers(): Promise<CustomerOption[]> {
+  async listBookableCustomers(): Promise<CustomerOption[]> {
     const { data, error } = await this.supabase
       .from('users')
-      .select('id, name, surname, dog_name')
-      .eq('validated', true)
-      .in('type_id', [1, 2]) // customer, future_customer (user_types in schema_fase1.sql)
+      .select('id, name, surname, dog_name, type_id')
+      // type_id: 1 customer, 2 future_customer, 3 assistant (user_types in schema_fase1.sql)
+      .or('and(type_id.in.(1,2),validated.eq.true),type_id.eq.3')
       .is('deleted_at', null)
       .order('surname', { ascending: true })
       .order('name', { ascending: true });

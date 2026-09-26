@@ -44,6 +44,7 @@ $gutter-width-compact: 2.6rem;
   .range-label {
     font-weight: 700;
     font-size: 1rem;
+    font-variant-numeric: tabular-nums;
     min-width: 12rem;
     text-align: center;
   }
@@ -53,8 +54,9 @@ $gutter-width-compact: 2.6rem;
   // Dimensioni fisse e centratura flex: il padding del tema globale
   // deformerebbe il cerchio e sposterebbe la freccia dal centro.
   flex: 0 0 auto;
-  width: 2.25rem;
-  height: 2.25rem;
+  // 44px: area minima comoda per il tocco su telefono.
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0;
   display: flex;
   align-items: center;
@@ -67,8 +69,19 @@ $gutter-width-compact: 2.6rem;
   color: var(--accent);
   cursor: pointer;
 
+  transition: background 0.15s ease, transform 0.1s ease;
+
   &:hover:not(:disabled) {
     background: var(--accent-soft);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.94);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
   }
 
   &:disabled {
@@ -200,7 +213,7 @@ $gutter-width-compact: 2.6rem;
   line-height: 1.15;
   text-align: center;
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 
   // Orari incolonnati: "09:00–09:55" su una riga sola è più largo della
   // colonna di un giorno e sbordava da entrambi i lati.
@@ -227,6 +240,16 @@ $gutter-width-compact: 2.6rem;
   &:hover:not(:disabled) {
     background: var(--accent-dark);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  // Navigazione da tastiera: l'anello resta visibile anche sul blu pieno.
+  &:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.5);
+    outline-offset: 2px;
   }
 
   &:disabled {

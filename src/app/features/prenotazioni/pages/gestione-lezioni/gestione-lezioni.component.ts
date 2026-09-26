@@ -38,6 +38,13 @@ interface DayGroup {
 
 const ACTIVE_STATUSES = new Set(['pending', 'confirmed']);
 
+/**
+ * Filtro della lista: "attive" di default (le cancellate/rifiutate restano
+ * consultabili ma non riempiono più la vista di tutti i giorni), "da
+ * confermare" = solo gli Incontri Conoscitivi che aspettano Accetta/Rifiuta.
+ */
+export type LessonsView = 'active' | 'pending' | 'closed';
+
 @Component({
   selector: 'app-gestione-lezioni',
   standalone: true,
@@ -102,9 +109,35 @@ export class GestioneLezioniComponent implements OnInit {
   readonly respondDialogState = signal<RespondIncontroDialogState>('confirm');
   readonly respondDialogError = signal<string | null>(null);
 
+  readonly view = signal<LessonsView>('active');
+  /** Nome, cognome o nome del cane, case-insensitive. */
+  readonly search = signal('');
+
+  readonly pendingCount = computed(
+    () => this.lessons().filter((l) => this.isPendingIncontro(l)).length
+  );
+
+  readonly closedCount = computed(
+    () => this.lessons().filter((l) => !ACTIVE_STATUSES.has(l.status)).length
+  );
+
+  private readonly filteredLessons = computed(() => {
+    const view = this.view();
+    const term = this.search().trim().toLowerCase();
+    return this.lessons().filter((l) => {
+      if (view === 'active' && !ACTIVE_STATUSES.has(l.status)) return false;
+      if (view === 'pending' && !this.isPendingIncontro(l)) return false;
+      if (view === 'closed' && ACTIVE_STATUSES.has(l.status)) return false;
+      if (!term) return true;
+      const haystack =
+        `${l.customer_name} ${l.customer_surname} ${l.customer_dog_name ?? ''}`.toLowerCase();
+      return haystack.includes(term);
+    });
+  });
+
   readonly groupedByDate = computed<DayGroup[]>(() => {
     const groups = new Map<string, LessonRow[]>();
-    for (const lesson of this.lessons()) {
+    for (const lesson of this.filteredLessons()) {
       const list = groups.get(lesson.date) ?? [];
       list.push(lesson);
       groups.set(lesson.date, list);
@@ -141,7 +174,7 @@ export class GestioneLezioniComponent implements OnInit {
     try {
       const [lessons, customers, slots] = await Promise.all([
         this.lessonsService.listUpcoming(30),
-        this.profileService.listValidatedCustomers(),
+        this.profileService.listBookableCustomers(),
         this.slotsService.listAvailable(),
       ]);
       this.lessons.set(lessons);
@@ -152,6 +185,16 @@ export class GestioneLezioniComponent implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** "Oggi"/"Domani" davanti alla data: la domanda più frequente è "chi viene oggi?". */
+  dayTag(date: string): string | null {
+    const today = todayIso();
+    if (date === today) return 'Oggi';
+    const t = new Date();
+    t.setDate(t.getDate() + 1);
+    const tomorrow = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    return date === tomorrow ? 'Domani' : null;
   }
 
   customerLabel(lesson: LessonRow): string {
@@ -166,6 +209,16 @@ export class GestioneLezioniComponent implements OnInit {
   /** Incontro Conoscitivo ancora in attesa di risposta: mostra Accetta/Rifiuta invece di Sposta. */
   isPendingIncontro(lesson: LessonRow): boolean {
     return lesson.lesson_type === 'incontro_conoscitivo' && lesson.status === 'pending';
+  }
+
+  /** Lo stato come classe CSS, per colorare il badge (verde/ambra/rosso). */
+  statusClass(lesson: LessonRow): string {
+    return `status-${lesson.status}`;
+  }
+
+  /** Numero di telefono pulito per il link tel: (niente spazi o trattini). */
+  telHref(phone: string): string {
+    return `tel:${phone.replace(/[^\d+]/g, '')}`;
   }
 
   // --- Menu azioni per riga ---

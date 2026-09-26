@@ -1,6 +1,42 @@
 <section class="area-personale" [class.staff-view]="isStaffViewer">
   @if (profile(); as p) {
-    <h1>Ciao, {{ p.name }}</h1>
+    @if (isStaffViewer) {
+      <header class="staff-head">
+        <div>
+          <h1>Ciao, {{ p.name }}</h1>
+          <span class="role-label">{{ staffRoleLabel }}</span>
+        </div>
+
+        @if (!loadingCalendar() && !calendarError()) {
+          <ul class="stats" aria-label="Riepilogo">
+            <li class="stat">
+              <span class="stat-value">{{ todayLessonsCount() }}</span>
+              <span class="stat-label">
+                {{ todayLessonsCount() === 1 ? 'appuntamento oggi' : 'appuntamenti oggi' }}
+              </span>
+            </li>
+            <li class="stat" [class.attention]="pendingIncontriCount() > 0">
+              <a routerLink="/prenotazioni/gestione-lezioni" class="stat-link">
+                <span class="stat-value">{{ pendingIncontriCount() }}</span>
+                <span class="stat-label">
+                  {{ pendingIncontriCount() === 1 ? 'incontro da confermare' : 'incontri da confermare' }}
+                </span>
+              </a>
+            </li>
+            <li class="stat">
+              <a routerLink="/prenotazioni/gestione-eventi" class="stat-link">
+                <span class="stat-value">{{ weekEventsCount() }}</span>
+                <span class="stat-label">
+                  {{ weekEventsCount() === 1 ? 'evento in settimana' : 'eventi in settimana' }}
+                </span>
+              </a>
+            </li>
+          </ul>
+        }
+      </header>
+    } @else {
+      <h1>Ciao, {{ p.name }}</h1>
+    }
 
     @if (isStaffViewer) {
       <div class="calendar-hero">
@@ -8,7 +44,10 @@
           <p class="error">{{ calendarError() }}</p>
         }
         @if (loadingCalendar()) {
-          <p>Caricamento calendario…</p>
+          <div class="calendar-skeleton" aria-busy="true" aria-label="Caricamento calendario">
+            <span class="sk sk-bar"></span>
+            <span class="sk sk-grid"></span>
+          </div>
         } @else {
           <app-staff-calendar
             [slots]="slots()"
@@ -139,28 +178,43 @@
     }
 
     @if (isStaffViewer) {
-      <div class="tile-grid secondary">
-        <a routerLink="/prenotazioni/gestione-lezioni" class="tile">
-          <span class="tile-icon">🗓️</span>
-          <span class="tile-title">Gestione lezioni</span>
+      <nav class="manage-grid" aria-label="Pagine di gestione">
+        <a routerLink="/prenotazioni/gestione-lezioni" class="manage-item">
+          <span class="manage-icon" aria-hidden="true">🗓️</span>
+          <span class="manage-text">
+            <span class="manage-title">Lezioni</span>
+            <span class="manage-desc">Elenco, prenotazioni per i clienti, spostamenti</span>
+          </span>
         </a>
-        <a routerLink="/prenotazioni/gestione-eventi" class="tile">
-          <span class="tile-icon">🎉</span>
-          <span class="tile-title">Gestione eventi</span>
+        <a routerLink="/prenotazioni/gestione-eventi" class="manage-item">
+          <span class="manage-icon" aria-hidden="true">🎉</span>
+          <span class="manage-text">
+            <span class="manage-title">Eventi</span>
+            <span class="manage-desc">Nuovi eventi e iscritti</span>
+          </span>
         </a>
-        <a routerLink="/prenotazioni/gestione-slot" class="tile">
-          <span class="tile-icon">🕐</span>
-          <span class="tile-title">Gestione slot</span>
+        <a routerLink="/prenotazioni/gestione-slot" class="manage-item">
+          <span class="manage-icon" aria-hidden="true">🕐</span>
+          <span class="manage-text">
+            <span class="manage-title">Slot</span>
+            <span class="manage-desc">Aprire, chiudere e aggiungere orari</span>
+          </span>
         </a>
-        <a routerLink="/prenotazioni/fasce-orarie" class="tile">
-          <span class="tile-icon">⏰</span>
-          <span class="tile-title">Fasce orarie</span>
+        <a routerLink="/prenotazioni/fasce-orarie" class="manage-item">
+          <span class="manage-icon" aria-hidden="true">⏰</span>
+          <span class="manage-text">
+            <span class="manage-title">Fasce orarie</span>
+            <span class="manage-desc">Orari settimanali di apertura</span>
+          </span>
         </a>
-        <a routerLink="/prenotazioni/gestione-utenti" class="tile">
-          <span class="tile-icon">👥</span>
-          <span class="tile-title">Gestione utenti</span>
+        <a routerLink="/prenotazioni/gestione-utenti" class="manage-item">
+          <span class="manage-icon" aria-hidden="true">👥</span>
+          <span class="manage-text">
+            <span class="manage-title">Utenti</span>
+            <span class="manage-desc">Validazioni, inviti, Incontri Conoscitivi</span>
+          </span>
         </a>
-      </div>
+      </nav>
     }
   } @else if (loadingProfile()) {
     <div class="skeleton-page" aria-busy="true" aria-label="Caricamento">

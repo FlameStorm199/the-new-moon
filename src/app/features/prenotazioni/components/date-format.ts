@@ -51,3 +51,21 @@ export function todayIso(): string {
   const day = String(now.getDate()).padStart(2, '0');
   return `${now.getFullYear()}-${month}-${day}`;
 }
+
+const WEEKDAYS_SHORT = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+const MONTHS_SHORT = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+
+/**
+ * Pezzi per un "foglietto di calendario" (giorno grande, mese e giorno della
+ * settimana abbreviati) da una data ISO. Stessa costruzione locale di
+ * formatLongDate, per lo stesso motivo del fuso.
+ */
+export function dateBlockParts(isoDate: string): { weekday: string; day: number; month: string } {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return {
+    weekday: WEEKDAYS_SHORT[date.getDay()],
+    day: date.getDate(),
+    month: MONTHS_SHORT[date.getMonth()],
+  };
+}

@@ -6,8 +6,8 @@
       <h1>Gestione lezioni</h1>
       @if (!loading()) {
         <p class="summary">
-          {{ upcomingCount() }} lezion{{ upcomingCount() === 1 ? 'e' : 'i' }} nei prossimi 30
-          giorni · {{ todayCount() }} oggi
+          <strong>{{ todayCount() }}</strong> oggi ·
+          <strong>{{ upcomingCount() }}</strong> nei prossimi 30 giorni
         </p>
       }
     </div>
@@ -22,14 +22,93 @@
     <p class="error">{{ errorMessage() }}</p>
   }
 
+  <div class="toolbar">
+    <div class="view-tabs" role="tablist" aria-label="Filtra lezioni">
+      <button
+        type="button"
+        role="tab"
+        class="view-tab"
+        [class.active]="view() === 'active'"
+        [attr.aria-selected]="view() === 'active'"
+        (click)="view.set('active')"
+      >
+        Attive
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="view-tab"
+        [class.active]="view() === 'pending'"
+        [attr.aria-selected]="view() === 'pending'"
+        (click)="view.set('pending')"
+      >
+        Da confermare
+        @if (pendingCount() > 0) {
+          <span class="tab-count attention">{{ pendingCount() }}</span>
+        }
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="view-tab"
+        [class.active]="view() === 'closed'"
+        [attr.aria-selected]="view() === 'closed'"
+        (click)="view.set('closed')"
+      >
+        Cancellate e rifiutate
+        @if (closedCount() > 0) {
+          <span class="tab-count">{{ closedCount() }}</span>
+        }
+      </button>
+    </div>
+    <input
+      type="search"
+      class="search-input"
+      placeholder="Cerca cliente o cane…"
+      aria-label="Cerca cliente o cane"
+      [value]="search()"
+      (input)="search.set($any($event.target).value)"
+    />
+  </div>
+
   @if (loading()) {
-    <p>Caricamento…</p>
+    <div class="list-skeleton" aria-busy="true" aria-label="Caricamento">
+      <span class="sk sk-day"></span>
+      <span class="sk sk-row"></span>
+      <span class="sk sk-row"></span>
+      <span class="sk sk-day"></span>
+      <span class="sk sk-row"></span>
+    </div>
   } @else if (groupedByDate().length === 0) {
-    <p class="empty">Nessuna lezione in programma.</p>
+    <div class="empty-state">
+      @if (search().trim()) {
+        <p class="empty-title">Nessun risultato per "{{ search().trim() }}"</p>
+        <p class="empty-text">Controlla il nome o cerca per il nome del cane.</p>
+      } @else if (view() === 'pending') {
+        <p class="empty-title">Nessun Incontro Conoscitivo da confermare</p>
+        <p class="empty-text">Quando qualcuno ne prenota uno, compare qui.</p>
+      } @else if (view() === 'closed') {
+        <p class="empty-title">Nessuna lezione cancellata o rifiutata</p>
+        <p class="empty-text">Nei prossimi 30 giorni.</p>
+      } @else {
+        <p class="empty-title">Nessuna lezione nei prossimi 30 giorni</p>
+        @if (canAct()) {
+          <p class="empty-text">Puoi prenotarne una per un cliente dal bottone in alto.</p>
+        }
+      }
+    </div>
   } @else {
     @for (group of groupedByDate(); track group.date) {
-      <div class="day-card">
-        <h2>{{ formatDayHeader(group.date) }}</h2>
+      <div class="day-card" [class.today]="dayTag(group.date) === 'Oggi'">
+        <h2>
+          @if (dayTag(group.date); as tag) {
+            <span class="day-tag">{{ tag }}</span>
+          }
+          <span class="day-date">{{ formatDayHeader(group.date) }}</span>
+          <span class="day-count">
+            {{ group.lessons.length }} {{ group.lessons.length === 1 ? 'lezione' : 'lezioni' }}
+          </span>
+        </h2>
 
         <div class="lesson-table">
           <div class="lesson-row header-row" aria-hidden="true">
@@ -40,16 +119,32 @@
           </div>
 
           @for (lesson of group.lessons; track lesson.id) {
-            <div class="lesson-row" [class.cancelled]="lesson.status === 'cancelled'">
+            <div
+              class="lesson-row"
+              [class.cancelled]="lesson.status === 'cancelled' || lesson.status === 'rejected'"
+              [class.needs-action]="isPendingIncontro(lesson)"
+            >
               <span class="col-time">
                 {{ lesson.time_from.slice(0, 5) }}–{{ lesson.time_to.slice(0, 5) }}
               </span>
-              <span class="col-customer">{{ customerLabel(lesson) }}</span>
+              <span class="col-customer">
+                <span class="customer-name">
+                  {{ lesson.customer_name }} {{ lesson.customer_surname }}
+                </span>
+                <span class="customer-meta">
+                  @if (lesson.customer_dog_name) {
+                    <span>🐾 {{ lesson.customer_dog_name }}</span>
+                  }
+                  @if (lesson.customer_phone) {
+                    <a [href]="telHref(lesson.customer_phone)" class="phone">{{ lesson.customer_phone }}</a>
+                  }
+                </span>
+              </span>
               <span class="col-status">
                 @if (lesson.lesson_type === 'incontro_conoscitivo') {
                   <span class="badge incontro">Incontro conoscitivo</span>
                 }
-                <span class="badge" [class.cancelled]="lesson.status === 'cancelled'">
+                <span class="badge" [ngClass]="statusClass(lesson)">
                   {{ statusLabels[lesson.status] }}
                 </span>
                 @if (lesson.bypass_weekly_limit) {
@@ -57,7 +152,28 @@
                 }
               </span>
               <span class="col-actions">
-                @if (canAct() && isCancellable(lesson)) {
+                @if (canAct() && isPendingIncontro(lesson)) {
+                  <!-- L'unica riga che chiede un'azione: i due bottoni in
+                       vista, non dietro il menu "⋯". -->
+                  <span class="inline-actions">
+                    <button
+                      type="button"
+                      class="inline-accept"
+                      [disabled]="busyId() === lesson.id"
+                      (click)="openRespond(lesson, 'accept')"
+                    >
+                      Accetta
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-reject"
+                      [disabled]="busyId() === lesson.id"
+                      (click)="openRespond(lesson, 'reject')"
+                    >
+                      Rifiuta
+                    </button>
+                  </span>
+                } @else if (canAct() && isCancellable(lesson)) {
                   <button
                     type="button"
                     class="kebab"
@@ -70,22 +186,10 @@
                   </button>
                   @if (openActionsFor() === lesson.id) {
                     <div class="actions-menu" (click)="$event.stopPropagation()">
-                      @if (isPendingIncontro(lesson)) {
-                        <!-- In attesa di risposta: Accetta/Rifiuta la sostituiscono, non
-                             Sposta/Cancella — quelle hanno senso solo una volta che la
-                             lezione esiste davvero (confermata), non su una richiesta. -->
-                        <button type="button" (click)="openRespond(lesson, 'accept')">
-                          Accetta
-                        </button>
-                        <button type="button" class="danger" (click)="openRespond(lesson, 'reject')">
-                          Rifiuta
-                        </button>
-                      } @else {
-                        <button type="button" (click)="openMove(lesson)">Sposta</button>
-                        <button type="button" class="danger" (click)="openCancel(lesson)">
-                          Cancella
-                        </button>
-                      }
+                      <button type="button" (click)="openMove(lesson)">Sposta</button>
+                      <button type="button" class="danger" (click)="openCancel(lesson)">
+                        Cancella
+                      </button>
                     </div>
                   }
                 }
