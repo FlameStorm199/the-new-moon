@@ -1,6 +1,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
+import { createContextClient } from "@supabase/server/core";
 import { jsonResponse } from "../_shared/auth-helpers.ts";
 
 // Punto di ingresso PUBBLICO (nessun login) del form "Incontro Conoscitivo"
@@ -38,6 +39,22 @@ import { jsonResponse } from "../_shared/auth-helpers.ts";
 // usare i token per accedere come questo specifico utente — accettabile,
 // perché in quel momento l'account non contiene nulla di più sensibile di
 // quanto la persona ha appena scritto lei stessa nel form).
+//
+// verifyOtp() va chiamato su un client ANONIMO (createContextClient(), sotto
+// — niente argomenti = anon key), MAI su ctx.supabaseAdmin: quest'ultimo è
+// scoped alle operazioni con service_role (admin.*, query dirette che
+// bypassano RLS), non alle azioni di autenticazione "pubbliche" come
+// verifyOtp/signInWithPassword. Stesso principio già seguito da
+// manage-user-password/index.ts (handleSelfChange), che per lo stesso motivo
+// usa un client a sé per signInWithPassword invece di ctx.supabaseAdmin.
+//
+// NB: verifyOtp conferma anche l'email (per GoTrue una verifica OTP è prova
+// di possesso dell'indirizzo), e la conferma aggiorna public.users tramite
+// trigger. Un primo rilascio di questo flusso falliva proprio lì: il trigger
+// enforce_users_update_rules rifiutava l'UPDATE server-side (regressione
+// del 34, corretta nel 37). Per lo stesso motivo la "vera" conferma email
+// dell'Incontro Conoscitivo non usa più email_confirmed_at, ma un token
+// proprio — vedi database/37_fix_users_update_rules_and_incontro_token.sql.
 //
 // pending_admin_user_creations: handle_new_auth_user() NON si fa più da
 // parte per gli utenti creati dall'Admin API (versione originale in
@@ -174,6 +191,9 @@ export default {
     });
     const emailOtp = linkData?.properties?.email_otp as string | undefined;
     if (linkError || !emailOtp) {
+      console.error(
+        `request-incontro-conoscitivo: generateLink fallito per ${email}: ${linkError?.message ?? "email_otp assente nella risposta"}`,
+      );
       // L'utente esiste già a questo punto: non annulliamo la creazione per
       // un fallimento del solo login automatico (raro: significherebbe
       // buttare via una richiesta valida per un problema temporaneo di
@@ -188,12 +208,21 @@ export default {
       );
     }
 
-    const { data: verified, error: verifyOtpError } = await ctx.supabaseAdmin.auth.verifyOtp({
+    // verifyOtp è un'operazione di autenticazione "normale" (pubblica), non
+    // amministrativa: va fatta su un client anonimo a sé, non su
+    // ctx.supabaseAdmin (scoped alle operazioni admin/service_role — stesso
+    // motivo per cui handleSelfChange in manage-user-password/index.ts usa
+    // un client separato per signInWithPassword, non ctx.supabaseAdmin).
+    const anonClient = createContextClient();
+    const { data: verified, error: verifyOtpError } = await anonClient.auth.verifyOtp({
       email,
       token: emailOtp,
       type: "recovery",
     });
     if (verifyOtpError || !verified?.session) {
+      console.error(
+        `request-incontro-conoscitivo: verifyOtp fallito per ${email}: ${verifyOtpError?.message ?? "nessuna sessione nella risposta"}`,
+      );
       return jsonResponse(
         {
           warning: "Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.",

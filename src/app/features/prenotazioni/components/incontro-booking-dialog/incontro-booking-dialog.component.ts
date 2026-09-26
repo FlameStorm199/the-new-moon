@@ -12,17 +12,12 @@ import {
 import { SlotRow } from '../../../../core/slots/slots.service';
 import { formatLongDate, formatTimeRange } from '../date-format';
 
-export type IncontroBookingDialogState = 'confirm' | 'success';
-
 /**
- * Copia di booking-dialog.component.ts, testo adattato all'Incontro
- * Conoscitivo (richiesta esplicita: "compresi i modali") — componente
- * dedicato invece di parametrizzare quello esistente: questa pagina serve
- * solo future_customer, niente logica di ruolo da mescolarci.
- *
- * Nessun campo nota (a differenza di booking-dialog): non richiesto per
- * l'Incontro Conoscitivo, che non ha un equivalente di "note per
- * l'educatore" nel documento di design.
+ * Conferma della prenotazione dell'Incontro Conoscitivo (testi adattati da
+ * booking-dialog.component.ts). Solo la domanda "Confermi?": l'esito non è
+ * più una ricevuta dentro il modale ma una pagina a sé
+ * (incontro-conoscitivo-richiesta-inviata), così dopo la prenotazione non
+ * si resta sulla pagina del calendario.
  */
 @Component({
   selector: 'app-incontro-booking-dialog',
@@ -33,7 +28,6 @@ export type IncontroBookingDialogState = 'confirm' | 'success';
 })
 export class IncontroBookingDialogComponent implements AfterViewInit {
   @Input({ required: true }) slot!: SlotRow;
-  @Input() state: IncontroBookingDialogState = 'confirm';
   @Input() busy = false;
   @Input() errorMessage: string | null = null;
 

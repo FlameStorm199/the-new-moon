@@ -28,7 +28,6 @@
   @if (dialogSlot(); as slot) {
     <app-incontro-booking-dialog
       [slot]="slot"
-      [state]="dialogState()"
       [busy]="bookingId() === slot.id"
       [errorMessage]="dialogError()"
       (confirmed)="confirmBooking()"

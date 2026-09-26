@@ -1,22 +1,95 @@
+// .icc-page è nella whitelist del tema condiviso (styles.scss): card, h1
+// con sottolineatura accento e bottoni arrivano già da lì. Qui solo il
+// centraggio (pagina di solo messaggio, non un form) e il cerchio di
+// conferma — stesso trattamento (dimensioni, colori) del ".tick" usato nei
+// modali di prenotazione/cancellazione (_dialog-shared.scss): un'unica
+// "spunta di conferma" riconoscibile in tutta l'app, non una nuova qui.
 .icc-page {
-  max-width: 24rem;
+  max-width: 26rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 2rem 1.5rem;
   text-align: center;
 
-  .cta {
-    display: inline-block;
-    margin-top: 1rem;
-    padding: 0.65rem 1.25rem;
-    border-radius: 0.4rem;
-    background: var(--pn-accent, #3b6fd4);
-    color: #fff;
-    font-weight: 600;
-    text-decoration: none;
+  .message {
+    color: #555;
+    line-height: 1.6;
+  }
+
+  .tick {
+    width: 3.5rem;
+    height: 3.5rem;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: var(--pn-success-bg, #eaf7ef);
+    color: var(--pn-success, #1b7a3d);
+
+    // "In attesa di un tuo passo" (controlla la mail), non ancora un esito:
+    // blu accento invece del verde di conferma.
+    &.mail {
+      background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+      color: var(--pn-accent, #3b6fd4);
+    }
+  }
+
+  // Data e orario dell'incontro: stesso riquadro dei modali di prenotazione
+  // (_dialog-shared.scss, .detail), qui in una pagina.
+  .detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin: 0.25rem 0 1.25rem;
+    padding: 0.9rem;
+    border-radius: 0.6rem;
+    background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+
+    .detail-label {
+      font-size: 0.85rem;
+      color: #555;
+    }
+
+    .date {
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-transform: capitalize;
+    }
+
+    .time {
+      color: #555;
+      font-size: 0.95rem;
+    }
   }
 
   .secondary {
-    margin-top: 0.75rem;
+    margin-top: 1rem;
     font-size: 0.9rem;
+  }
+}
+
+// L'unica azione di questa pagina: piena larghezza come il bottone di
+// invio dell'Incontro Conoscitivo, stesso motivo — resta l'unico invito
+// all'azione dello stato "confermato". :host per lo stesso motivo di
+// specificità già documentato in incontro-conoscitivo.component.scss.
+:host .icc-page .cta {
+  display: block;
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.9rem 1.5rem;
+  border-radius: var(--pn-radius-md, 8px);
+  background: var(--pn-accent, #3b6fd4);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: var(--pn-accent-dark, #2d5ab0);
+    text-decoration: none;
   }
 }

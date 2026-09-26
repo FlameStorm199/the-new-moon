@@ -5,10 +5,10 @@ import { BookingService } from '../../../../core/lessons/booking.service';
 import { LessonsService } from '../../../../core/lessons/lessons.service';
 import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
-import {
-  IncontroBookingDialogComponent,
-  IncontroBookingDialogState,
-} from '../../components/incontro-booking-dialog/incontro-booking-dialog.component';
+import { IncontroBookingDialogComponent } from '../../components/incontro-booking-dialog/incontro-booking-dialog.component';
+
+/** Riepilogo dopo la prenotazione: vedi incontro-conoscitivo-richiesta-inviata.component.ts. */
+const RIEPILOGO_URL = '/prenotazioni/incontro-conoscitivo-richiesta-inviata';
 import { WeekCalendarComponent } from '../../components/week-calendar/week-calendar.component';
 
 /**
@@ -49,7 +49,6 @@ export class PrenotaIncontroConoscitivoComponent implements OnInit {
   readonly bookingId = signal<number | null>(null);
 
   readonly dialogSlot = signal<SlotRow | null>(null);
-  readonly dialogState = signal<IncontroBookingDialogState>('confirm');
   readonly dialogError = signal<string | null>(null);
 
   async ngOnInit(): Promise<void> {
@@ -70,6 +69,20 @@ export class PrenotaIncontroConoscitivoComponent implements OnInit {
     if (profile.typeCode !== 'future_customer') {
       this.router.navigateByUrl('/prenotazioni/area-personale');
       return;
+    }
+
+    // Incontro già prenotato: niente calendario, si va al riepilogo. Copre
+    // anche chi ci torna scrivendo l'indirizzo a mano o da un segnalibro —
+    // il tasto "indietro" è già coperto da replaceUrl in confirmBooking().
+    try {
+      if (await this.lessonsService.findActiveIncontro(profile.id)) {
+        this.router.navigateByUrl(RIEPILOGO_URL, { replaceUrl: true });
+        return;
+      }
+    } catch {
+      // Se il controllo fallisce si mostra comunque il calendario: il vincolo
+      // vero (un solo Incontro attivo) resta nel database, book_lesson
+      // rifiuterebbe una seconda prenotazione con un messaggio chiaro.
     }
 
     await this.loadSlots();
@@ -100,7 +113,6 @@ export class PrenotaIncontroConoscitivoComponent implements OnInit {
 
   openBooking(slot: SlotRow): void {
     this.dialogSlot.set(slot);
-    this.dialogState.set('confirm');
     this.dialogError.set(null);
     this.errorMessage.set(null);
   }
@@ -120,13 +132,15 @@ export class PrenotaIncontroConoscitivoComponent implements OnInit {
     this.dialogError.set(null);
     try {
       await this.bookingService.bookLesson(slot.id);
-      this.slots.update((list) => list.filter((s) => s.id !== slot.id));
-      this.dialogState.set('success');
     } catch (err) {
       const message = (err as { message?: string } | null)?.message;
       this.dialogError.set(message || 'Richiesta non riuscita.');
-    } finally {
       this.bookingId.set(null);
+      return;
     }
+
+    // replaceUrl: la pagina di prenotazione esce dalla cronologia, il tasto
+    // "indietro" dal riepilogo non ci riporta qui.
+    this.router.navigateByUrl(RIEPILOGO_URL, { replaceUrl: true });
   }
 }

@@ -2,6 +2,7 @@
   <div class="legend">
     <span class="legend-item"><span class="swatch free"></span>Libero</span>
     <span class="legend-item"><span class="swatch occupied"></span>Prenotato</span>
+    <span class="legend-item"><span class="swatch incontro"></span>Incontro conoscitivo</span>
     <span class="legend-item"><span class="swatch inactive"></span>Disattivo</span>
     <span class="legend-item"><span class="swatch closed"></span>Chiuso</span>
     <span class="legend-item"><span class="swatch event"></span>Evento</span>
@@ -65,6 +66,7 @@
             type="button"
             class="slot"
             [class.occupied]="item.occupied"
+            [class.incontro]="item.incontro"
             [class.inactive]="!item.occupied && !item.slot.active"
             [class.busy]="togglingSlotId === item.slot.id"
             [disabled]="togglingSlotId === item.slot.id || (!item.occupied && !canToggle)"

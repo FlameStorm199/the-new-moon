@@ -55,7 +55,9 @@ export class IncontroConoscitivoComponent {
 
     try {
       await this.incontroConoscitivo.request(value);
-      this.router.navigateByUrl('/prenotazioni/prenota-incontro-conoscitivo');
+      // replaceUrl: "indietro" dalla prenotazione non deve riportare qui —
+      // un secondo invio del form proverebbe a ricreare lo stesso account.
+      this.router.navigateByUrl('/prenotazioni/prenota-incontro-conoscitivo', { replaceUrl: true });
     } catch (err) {
       const message = (err as Error | null)?.message;
       this.errorMessage.set(

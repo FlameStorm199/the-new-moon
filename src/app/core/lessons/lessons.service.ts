@@ -63,6 +63,27 @@ export class LessonsService {
     return data ?? [];
   }
 
+  /**
+   * L'Incontro Conoscitivo ancora attivo (in attesa o confermato) di un
+   * cliente, se c'è: al più uno per persona, garantito dall'indice
+   * lessons_one_active_incontro_conoscitivo_unique (database/28_...).
+   */
+  async findActiveIncontro(customerId: number): Promise<LessonRow | null> {
+    const { data, error } = await this.supabase
+      .from('v_lessons_detail')
+      .select(LESSON_COLUMNS)
+      .eq('customer_id', customerId)
+      .eq('lesson_type', 'incontro_conoscitivo')
+      .in('status', ['pending', 'confirmed'])
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
+
   /** Lezioni da oggi in avanti, per la gestione staff. */
   async listUpcoming(days = 30): Promise<LessonRow[]> {
     const from = toIsoDate(new Date());

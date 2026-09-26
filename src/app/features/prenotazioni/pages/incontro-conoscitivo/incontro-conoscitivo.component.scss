@@ -1,38 +1,85 @@
+// .ic-page è nella whitelist del tema condiviso (styles.scss): card, h1 con
+// sottolineatura accento, input e bottone già arrivano da lì. Qui solo ciò
+// che è specifico di questa pagina: la foto in testa (bleeding fino ai bordi
+// della card, per questo l'overflow:hidden e zero padding sull'elemento
+// radice — tutto il resto del contenuto vive in .content, che il padding
+// invece ce l'ha) e la disposizione a coppie dei campi più corti.
 .ic-page {
-  max-width: 24rem;
+  max-width: 28rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  overflow: hidden;
+
+  .hero-image {
+    display: block;
+    width: 100%;
+    height: 11rem;
+    object-fit: cover;
+    // Stesso ritaglio già scelto per la stessa foto in login.component.scss
+    // (.login-visual img): coerenza per un'immagine che ricorre in due punti.
+    object-position: 25% 40%;
+  }
+
+  .content {
+    padding: 1.5rem 1.75rem 1.75rem;
+  }
 
   .intro {
     color: #555;
-    margin: 0 0 1rem;
+    line-height: 1.6;
+    margin: 0 0 1.5rem;
   }
 
   form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.1rem;
+  }
+
+  // Nome+Cognome, poi Telefono+Nome del cane: due coppie più corte affiancate
+  // invece di cinque campi impilati uno sotto l'altro — la Email, il campo
+  // più importante da scrivere giusto, resta sola sulla sua riga.
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
+
+    @media (max-width: 420px) {
+      grid-template-columns: 1fr;
+    }
   }
 
   label {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-  }
 
-  input {
-    padding: 0.5rem;
-    font-size: 1rem;
-  }
-
-  .error {
-    color: #b00020;
-    margin: 0;
+    // Esplicito invece di affidarsi solo allo stretch di flex/grid: dentro
+    // .field-row (due colonne) un input senza width propria è arrivato a
+    // riempire la colonna in modo incoerente — con width:100% l'input segue
+    // sempre esattamente il bordo destro della sua etichetta, in ogni caso.
+    input {
+      width: 100%;
+    }
   }
 
   .privacy-note {
     font-size: 0.8rem;
     color: #777;
-    margin-top: 0.75rem;
+    margin-top: 1.1rem;
+    text-align: center;
   }
+}
+
+// L'unica azione della pagina: piena larghezza e più alta del bottone di
+// login/registrati (dove il form è più corto e meno decisivo) — qui è
+// l'unico invito all'azione della pagina, merita di pesare come tale.
+// :host, non un semplice .ic-page button[type='submit']: stesso motivo già
+// documentato altrove nel progetto (es. gestione-lezioni.component.scss) —
+// il tema globale (`html body .ic-page button[type='submit']`) batterebbe
+// per specificità una regola locale senza :host.
+:host .content button[type='submit'] {
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  font-size: 1rem;
+  margin-top: 0.25rem;
 }

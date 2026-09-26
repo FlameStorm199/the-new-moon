@@ -27,6 +27,11 @@ $gutter-width-compact: 2.6rem;
   // il resto, richiesta esplicita.
   --event: #7c4dff;
   --event-hover: #6a3fd9;
+  // Slot occupato da un Incontro Conoscitivo invece che da una lezione:
+  // verde acqua, vicino al verde di "Prenotato" (è comunque uno slot
+  // occupato) ma distinguibile a colpo d'occhio. Stesso colore del badge in
+  // Gestione lezioni.
+  --incontro: #0f8f84;
 }
 
 .legend {
@@ -69,6 +74,10 @@ $gutter-width-compact: 2.6rem;
 
     &.event {
       background: var(--event);
+    }
+
+    &.incontro {
+      background: var(--incontro);
     }
   }
 }
@@ -246,6 +255,12 @@ $gutter-width-compact: 2.6rem;
 
   &.occupied {
     background: var(--occupied);
+  }
+
+  // Un Incontro Conoscitivo è sempre anche .occupied: la classe in più lo
+  // rende più specifico, quindi vince sul verde di "Prenotato".
+  &.occupied.incontro {
+    background: var(--incontro);
   }
 
   // Slot esistente ma disattivato dallo staff (gestione-slot): grigio molto

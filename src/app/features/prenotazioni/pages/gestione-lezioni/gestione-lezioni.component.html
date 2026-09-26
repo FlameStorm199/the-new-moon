@@ -46,6 +46,9 @@
               </span>
               <span class="col-customer">{{ customerLabel(lesson) }}</span>
               <span class="col-status">
+                @if (lesson.lesson_type === 'incontro_conoscitivo') {
+                  <span class="badge incontro">Incontro conoscitivo</span>
+                }
                 <span class="badge" [class.cancelled]="lesson.status === 'cancelled'">
                   {{ statusLabels[lesson.status] }}
                 </span>

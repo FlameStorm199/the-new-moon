@@ -1,0 +1,35 @@
+<section class="icc-page">
+  @if (loading()) {
+    <p class="message">Caricamento…</p>
+  } @else if (errorMessage()) {
+    <p class="error">{{ errorMessage() }}</p>
+  }
+
+  @if (incontro(); as lesson) {
+    @if (lesson.status === 'confirmed') {
+      <div class="tick" aria-hidden="true">✓</div>
+      <h1>Incontro confermato</h1>
+    } @else {
+      <div class="tick mail" aria-hidden="true">✉</div>
+      <h1>Richiesta inviata</h1>
+    }
+
+    <div class="detail">
+      <span class="detail-label">Il tuo Incontro Conoscitivo</span>
+      <span class="date">{{ dateLabel(lesson) }}</span>
+      <span class="time">{{ timeLabel(lesson) }}</span>
+    </div>
+
+    @if (lesson.status === 'confirmed') {
+      <p class="message">L'educatore ha confermato l'incontro: ti aspettiamo!</p>
+    } @else {
+      <p class="message">
+        Se non l'hai ancora fatto, conferma il tuo indirizzo dal link che ti abbiamo mandato per
+        email: la richiesta arriva all'educatore solo dopo. Non trovi la mail? Guarda anche nella
+        cartella spam.
+      </p>
+    }
+
+    <a routerLink="/" class="cta">Torna al sito</a>
+  }
+</section>

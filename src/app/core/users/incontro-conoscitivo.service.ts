@@ -63,4 +63,19 @@ export class IncontroConoscitivoService {
       throw new Error("Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.");
     }
   }
+
+  /**
+   * Consuma il token del link nella mail di conferma (RPC
+   * confirm_incontro_email, database/37_...): nessuna sessione richiesta,
+   * funziona anche se il link viene aperto su un altro dispositivo.
+   * true = confermata ora; false = token non valido, già usato o prenotazione
+   * non più attiva.
+   */
+  async confirmEmail(token: string): Promise<boolean> {
+    const { data, error } = await this.supabase.rpc('confirm_incontro_email', { p_token: token });
+    if (error) {
+      throw error;
+    }
+    return data === 'confirmed';
+  }
 }

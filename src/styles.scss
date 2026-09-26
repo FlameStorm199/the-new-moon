@@ -82,7 +82,14 @@ html body {
   .area-personale,
   .prenota-page,
   .lezioni-page,
-  .staff-page {
+  .staff-page,
+  // Fase 2 — le due pagine pubbliche dell'Incontro Conoscitivo (form di
+  // richiesta e atterraggio di conferma email) sono la stessa "famiglia" di
+  // pagina di login/registrati: card centrata, stesso trattamento di
+  // titolo/input/bottone. Estendere qui invece di ridichiarare tutto in
+  // locale, come già fatto per le pagine precedenti.
+  .ic-page,
+  .icc-page {
     background: #fff;
     border: 1px solid var(--pn-border);
     border-radius: var(--pn-radius-lg);

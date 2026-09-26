@@ -11,6 +11,8 @@ interface PositionedSlot {
   occupied: boolean;
   /** Solo se occupied: la lezione da mostrare nel dettaglio al click. */
   lesson: LessonRow | null;
+  /** Occupato da un Incontro Conoscitivo invece che da una lezione: colore a parte. */
+  incontro: boolean;
   timeFrom: string;
   /** Orario di fine se libero, "Disattivo" se disattivato, breve info sul cliente se prenotato. */
   secondLine: string;
@@ -286,6 +288,7 @@ export class StaffCalendarComponent implements OnDestroy {
             rowEnd: endRow(toMinutes(slot.time_to), rowByHour),
             occupied: slot.occupied,
             lesson,
+            incontro: lesson?.lesson_type === 'incontro_conoscitivo',
             timeFrom: slot.time_from.slice(0, 5),
             secondLine: slot.occupied
               ? bookingLabel(lesson) ?? 'Prenotato'

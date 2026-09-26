@@ -40,8 +40,9 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       import('./pages/privacy/privacy.component').then((m) => m.PrivacyComponent),
   },
   {
-    // Atterraggio del link di conferma email dell'Incontro Conoscitivo
-    // (Fase 2) — stesso motivo di reimposta-password: nessun guard, vedi
+    // Atterraggio del link di conferma dell'Incontro Conoscitivo (Fase 2):
+    // nessun guard, il link porta un token e può essere aperto senza
+    // sessione, anche da un altro dispositivo — vedi
     // incontro-conoscitivo-confermato.component.ts.
     path: 'incontro-conoscitivo-confermato',
     loadComponent: () =>
@@ -118,6 +119,17 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       import('./pages/prenota-incontro-conoscitivo/prenota-incontro-conoscitivo.component').then(
         (m) => m.PrenotaIncontroConoscitivoComponent
       ),
+  },
+  {
+    // Fase 2 — riepilogo dopo la prenotazione dell'Incontro Conoscitivo (al
+    // posto della ricevuta nel modale): vedi
+    // incontro-conoscitivo-richiesta-inviata.component.ts.
+    path: 'incontro-conoscitivo-richiesta-inviata',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import(
+        './pages/incontro-conoscitivo-richiesta-inviata/incontro-conoscitivo-richiesta-inviata.component'
+      ).then((m) => m.IncontroConoscitivoRichiestaInviataComponent),
   },
   {
     path: 'le-mie-lezioni',

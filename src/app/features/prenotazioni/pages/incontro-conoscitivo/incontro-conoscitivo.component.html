@@ -1,49 +1,55 @@
 <section class="ic-page">
-  <app-back-link to="/" label="Torna al sito" />
+  <img class="hero-image" src="assets/images/home.JPG" alt="" />
 
-  <h1>🐾 Richiedi un Incontro Conoscitivo</h1>
-  <p class="intro">
-    Compila il modulo per fissare un primo incontro con ASD Cinofila "La Luna Nuova": al passo
-    successivo scegli subito data e orario.
-  </p>
+  <div class="content">
+    <app-back-link to="/" label="Torna al sito" />
 
-  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <label>
-      Nome
-      <input type="text" formControlName="name" autocomplete="given-name" />
-    </label>
+    <h1>🐾 Richiedi un Incontro Conoscitivo</h1>
+    <p class="intro">
+      Raccontaci di te e del tuo cane: al passo successivo scegli subito il giorno che preferisci
+      per conoscerci di persona.
+    </p>
 
-    <label>
-      Cognome
-      <input type="text" formControlName="surname" autocomplete="family-name" />
-    </label>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field-row">
+        <label>
+          Nome
+          <input type="text" formControlName="name" autocomplete="given-name" />
+        </label>
+        <label>
+          Cognome
+          <input type="text" formControlName="surname" autocomplete="family-name" />
+        </label>
+      </div>
 
-    <label>
-      Email
-      <input type="email" formControlName="email" autocomplete="email" />
-    </label>
+      <label>
+        Email
+        <input type="email" formControlName="email" autocomplete="email" />
+      </label>
 
-    <label>
-      Telefono
-      <input type="tel" formControlName="phone" autocomplete="tel" />
-    </label>
+      <div class="field-row">
+        <label>
+          Telefono
+          <input type="tel" formControlName="phone" autocomplete="tel" />
+        </label>
+        <label>
+          Nome del cane
+          <input type="text" formControlName="dogName" />
+        </label>
+      </div>
 
-    <label>
-      Nome del cane
-      <input type="text" formControlName="dogName" />
-    </label>
+      @if (errorMessage()) {
+        <p class="error">{{ errorMessage() }}</p>
+      }
 
-    @if (errorMessage()) {
-      <p class="error">{{ errorMessage() }}</p>
-    }
+      <button type="submit" [disabled]="form.invalid || loading()">
+        {{ loading() ? 'Attendere…' : "Prenota l'incontro conoscitivo" }}
+      </button>
+    </form>
 
-    <button type="submit" [disabled]="form.invalid || loading()">
-      {{ loading() ? 'Attendere…' : "Prenota l'incontro conoscitivo" }}
-    </button>
-  </form>
-
-  <p class="privacy-note">
-    Inviando la richiesta accetti la nostra
-    <a routerLink="/prenotazioni/privacy">informativa privacy</a>.
-  </p>
+    <p class="privacy-note">
+      Inviando la richiesta accetti la nostra
+      <a routerLink="/prenotazioni/privacy">informativa privacy</a>.
+    </p>
+  </div>
 </section>

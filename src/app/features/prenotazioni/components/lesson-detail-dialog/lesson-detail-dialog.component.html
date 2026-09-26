@@ -17,7 +17,9 @@
       ✕
     </button>
 
-    <h2 id="lesson-detail-title">Dettaglio lezione</h2>
+    <h2 id="lesson-detail-title">
+      {{ lesson.lesson_type === 'incontro_conoscitivo' ? 'Incontro conoscitivo' : 'Dettaglio lezione' }}
+    </h2>
 
     <div class="detail">
       <span class="who">{{ customerLabel }}</span>

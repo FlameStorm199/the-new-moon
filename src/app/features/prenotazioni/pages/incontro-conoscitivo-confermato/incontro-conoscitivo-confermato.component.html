@@ -1,21 +1,29 @@
 <section class="icc-page">
-  @if (checkingSession()) {
-    <p>Verifica in corso…</p>
-  } @else if (confirmed()) {
-    <h1>✅ Email confermata</h1>
-    <p>
-      La tua richiesta di Incontro Conoscitivo è ora effettiva: l'educatore la riceve e ti
-      risponderà a breve.
-    </p>
-    <a routerLink="/prenotazioni/le-mie-lezioni" class="cta">Le mie richieste</a>
-    <p class="secondary">
-      <a routerLink="/prenotazioni/area-personale">Vai all'area personale</a>
-    </p>
-  } @else {
-    <h1>Link non valido</h1>
-    <p>
-      Questo link di conferma non è più valido (scaduto o già usato). Contatta il centro se hai
-      bisogno di una nuova email.
-    </p>
+  @switch (state()) {
+    @case ('checking') {
+      <p class="message">Conferma in corso…</p>
+    }
+    @case ('confirmed') {
+      <div class="tick" aria-hidden="true">✓</div>
+      <h1>Email confermata</h1>
+      <p class="message">
+        La tua richiesta di Incontro Conoscitivo è ora effettiva: l'educatore la riceve e ti
+        risponderà via email a breve.
+      </p>
+      <a routerLink="/" class="cta">Torna al sito</a>
+    }
+    @case ('invalid') {
+      <h1>Link non valido</h1>
+      <p class="error">
+        Questo link di conferma non è più valido: è già stato usato oppure la richiesta è stata
+        annullata. Contatta il centro se hai bisogno di aiuto.
+      </p>
+    }
+    @default {
+      <h1>Qualcosa non ha funzionato</h1>
+      <p class="error">
+        Non siamo riusciti a confermare la richiesta. Riprova ad aprire il link tra qualche minuto.
+      </p>
+    }
   }
 </section>
