@@ -2,10 +2,9 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import { jsonResponse } from "../_shared/auth-helpers.ts";
-import { sendIncontroConoscitivoConfirmationEmail } from "../_shared/email-confirmation.ts";
 
 // Punto di ingresso PUBBLICO (nessun login) del form "Incontro Conoscitivo"
-// (giorno 3: pagina /incontro-conoscitivo, fuori navbar). Crea un utente
+// (pagina /incontro-conoscitivo, fuori navbar). Crea un utente
 // future_customer con lo stesso meccanismo già usato per lo staff in
 // admin-create-user (admin.createUser + service_role), MAI
 // supabase.auth.signUp() lato client: quella via crea sempre e solo customer
@@ -17,11 +16,28 @@ import { sendIncontroConoscitivoConfirmationEmail } from "../_shared/email-confi
 // supabase-js manda comunque l'header apikey con la publishable key di
 // progetto, che soddisfa questa modalità.
 //
-// email_confirm: false — a differenza di admin-create-user (email_confirm:
-// true, perché lì è l'Admin a verificare l'indirizzo di persona), qui
-// l'indirizzo lo scrive il pubblico: va confermato con un click. Vedi
-// _shared/email-confirmation.ts e il trigger trg_auth_user_email_confirmed
-// in database/26_fase2_schema.sql.
+// email_confirm: false — l'indirizzo lo scrive il pubblico, va confermato.
+// A DIFFERENZA della versione precedente, però, la conferma NON avviene qui:
+// l'utente prenota subito il proprio Incontro Conoscitivo (pagina
+// /prenotazioni/prenota-incontro-conoscitivo, immediatamente dopo questa
+// chiamata) e riceve il link di conferma indirizzo SOLO dopo, innescato
+// dalla prenotazione stessa (trg_lessons_notify_fn, vedi
+// database/35_fase2_incontro_deferred_notification.sql).
+//
+// LOGIN AUTOMATICO E SILENZIOSO: per poter prenotare, il frontend ha bisogno
+// di una sessione autenticata (RLS su slots/lessons, vedi can_use_platform())
+// — ma questo utente non ha e non avrà mai una password (la riceve solo se
+// e quando lo staff lo promuove, "Trasforma in assistito" in Gestione
+// utenti). Generiamo quindi un OTP di tipo "recovery" con
+// admin.generateLink() — lo stesso meccanismo già usato altrove per i link
+// di invito/reset — ma SENZA spedirlo per email: lo verifichiamo qui stesso
+// con verifyOtp() e restituiamo al client i token di sessione risultanti.
+// Nessun link, nessuna mail, nessuna interazione richiesta all'utente: si
+// ritrova loggato in automatico. Scelta discussa e confermata esplicitamente
+// con l'utente (rischio: chi intercettasse questa risposta di rete potrebbe
+// usare i token per accedere come questo specifico utente — accettabile,
+// perché in quel momento l'account non contiene nulla di più sensibile di
+// quanto la persona ha appena scritto lei stessa nel form).
 //
 // pending_admin_user_creations: handle_new_auth_user() NON si fa più da
 // parte per gli utenti creati dall'Admin API (versione originale in
@@ -152,17 +168,45 @@ export default {
       }
     }
 
-    const confirmation = await sendIncontroConoscitivoConfirmationEmail(ctx.supabaseAdmin, email);
-    if (!confirmation.ok) {
+    const { data: linkData, error: linkError } = await ctx.supabaseAdmin.auth.admin.generateLink({
+      type: "recovery",
+      email,
+    });
+    const emailOtp = linkData?.properties?.email_otp as string | undefined;
+    if (linkError || !emailOtp) {
+      // L'utente esiste già a questo punto: non annulliamo la creazione per
+      // un fallimento del solo login automatico (raro: significherebbe
+      // buttare via una richiesta valida per un problema temporaneo di
+      // GoTrue) — segnaliamo il warning, il frontend saprà che deve
+      // spiegare all'utente di riprovare o contattare il centro.
       return jsonResponse(
         {
-          warning: `Richiesta registrata, ma l'invio dell'email di conferma è fallito: ${confirmation.error}`,
+          warning: "Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.",
           user_id: created.user.id,
         },
         207,
       );
     }
 
-    return jsonResponse({ user_id: created.user.id });
+    const { data: verified, error: verifyOtpError } = await ctx.supabaseAdmin.auth.verifyOtp({
+      email,
+      token: emailOtp,
+      type: "recovery",
+    });
+    if (verifyOtpError || !verified?.session) {
+      return jsonResponse(
+        {
+          warning: "Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.",
+          user_id: created.user.id,
+        },
+        207,
+      );
+    }
+
+    return jsonResponse({
+      user_id: created.user.id,
+      access_token: verified.session.access_token,
+      refresh_token: verified.session.refresh_token,
+    });
   }),
 };

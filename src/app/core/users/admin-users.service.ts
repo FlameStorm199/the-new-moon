@@ -119,6 +119,26 @@ export class AdminUsersService {
     await this.callManagePassword('admin_invite', targetUserId);
   }
 
+  /**
+   * "Trasforma in assistito" (Fase 2): unica azione che sostituisce sia la
+   * vecchia validazione manuale sia l'attesa che l'utente imposti da solo la
+   * password — un future_customer non ne ha mai una finché lo staff non fa
+   * questo. Due chiamate separate (RPC + invito), non una sola: la RPC
+   * (database/34_fase2_promote_future_customer.sql) fa solo la parte DB
+   * (type_id + validated, dentro una transazione sua), l'invito passa dalla
+   * Edge Function centralizzata come ogni altro flusso password — comporle
+   * qui invece di scriverne una terza che duplica l'invio email.
+   */
+  async promoteFutureCustomer(targetUserId: number): Promise<void> {
+    const { error } = await this.supabase.rpc('promote_future_customer_to_customer', {
+      p_user_id: targetUserId,
+    });
+    if (error) {
+      throw error;
+    }
+    await this.inviteUser(targetUserId);
+  }
+
   async forceResetPassword(targetUserId: number): Promise<void> {
     await this.callManagePassword('admin_force_reset', targetUserId);
   }

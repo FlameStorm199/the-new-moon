@@ -17,6 +17,12 @@ export interface IncontroConoscitivoRequestInput {
  * Nessun JWT allegato (il chiamante non è loggato): functions.invoke() manda
  * comunque l'header apikey da solo, che è quanto la funzione richiede
  * (auth: ["publishable"]).
+ *
+ * La Edge Function autentica l'utente in automatico (login silenzioso, vedi
+ * i commenti nel suo index.ts) e restituisce i token di sessione: qui li
+ * passiamo a supabase.auth.setSession(), che stabilisce la sessione locale
+ * esattamente come farebbe un login vero — nessun altro codice da toccare,
+ * AuthService.session segue da sé (onAuthStateChange già agganciato lì).
  */
 @Injectable({ providedIn: 'root' })
 export class IncontroConoscitivoService {
@@ -38,9 +44,23 @@ export class IncontroConoscitivoService {
     if (data?.error) {
       throw new Error(data.error);
     }
-    // data?.warning (email di conferma non partita): l'utente è comunque
-    // stato creato, non è un errore da bloccare la UI — vedi index.ts della
-    // Edge Function. Il chiamante può ignorarlo o loggarlo, per ora non
-    // distinguiamo i due esiti positivi nella UI (v1).
+    if (data?.warning || !data?.access_token || !data?.refresh_token) {
+      // Account creato ma il login automatico non è riuscito (raro, vedi
+      // index.ts): non c'è sessione da stabilire, il chiamante deve saperlo
+      // per mostrare un messaggio diverso invece di navigare a una pagina
+      // di prenotazione dove l'utente risulterebbe non autenticato.
+      throw new Error(
+        data?.warning ??
+          "Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.",
+      );
+    }
+
+    const { error: sessionError } = await this.supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
+    if (sessionError) {
+      throw new Error("Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.");
+    }
   }
 }

@@ -1,0 +1,16 @@
+// Stessa classe radice di prenota.component.scss (.prenota-page): lo stile
+// di sfondo/card/bottoni arriva dal tema globale (styles.scss), agganciato
+// al nome della classe, non al componente — riusarlo qui evita di
+// duplicarlo.
+.prenota-page {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+
+  .hint {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.5;
+    margin: 0.75rem 0;
+  }
+}

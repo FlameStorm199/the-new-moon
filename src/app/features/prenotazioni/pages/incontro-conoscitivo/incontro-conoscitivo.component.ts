@@ -1,16 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { IncontroConoscitivoService } from '../../../../core/users/incontro-conoscitivo.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
 /**
  * Pagina pubblica (Fase 2), nessun login richiesto: crea un future_customer
- * tramite la Edge Function request-incontro-conoscitivo, che manda poi
- * un'email di conferma. Niente password qui — a differenza di
+ * tramite la Edge Function request-incontro-conoscitivo, che autentica
+ * l'utente in automatico (login silenzioso, vedi IncontroConoscitivoService)
+ * — nessuna email da controllare a questo punto, si passa subito alla
+ * prenotazione vera e propria. Niente password qui — a differenza di
  * register.component (self-signup customer) — la password arriva solo più
- * avanti, con l'invito manuale dello staff dopo l'incontro (giorno 5).
+ * avanti, quando lo staff promuove l'utente ("Trasforma in assistito" in
+ * Gestione utenti).
  *
  * Fuori navbar per scelta del centro (stessa nota valida per tutta l'area
  * /prenotazioni), raggiungibile solo da URL diretto: /incontro-conoscitivo.
@@ -24,6 +27,7 @@ import { BackLinkComponent } from '../../components/back-link/back-link.componen
 })
 export class IncontroConoscitivoComponent {
   private readonly incontroConoscitivo = inject(IncontroConoscitivoService);
+  private readonly router = inject(Router);
 
   readonly form = new FormGroup({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -38,7 +42,6 @@ export class IncontroConoscitivoComponent {
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
-  readonly submitted = signal(false);
 
   async submit(): Promise<void> {
     if (this.form.invalid || this.loading()) {
@@ -52,15 +55,14 @@ export class IncontroConoscitivoComponent {
 
     try {
       await this.incontroConoscitivo.request(value);
-      this.submitted.set(true);
+      this.router.navigateByUrl('/prenotazioni/prenota-incontro-conoscitivo');
     } catch (err) {
       const message = (err as Error | null)?.message;
       this.errorMessage.set(
         message?.includes('already been registered') || message?.includes('già registrat')
-          ? 'Esiste già una richiesta con questa email. Controlla la posta (anche lo spam) per il link di conferma, oppure contatta il centro.'
+          ? 'Esiste già una richiesta con questa email. Contatta il centro se pensi si tratti di un errore.'
           : message || 'Richiesta non riuscita. Riprova.'
       );
-    } finally {
       this.loading.set(false);
     }
   }

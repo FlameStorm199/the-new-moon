@@ -117,7 +117,15 @@
                 ✕
               </button>
             }
-            @if (isAdmin()) {
+            @if (row.typeCode === 'future_customer' && canValidate()) {
+              <button
+                type="button"
+                [disabled]="actingOnId() === row.id"
+                (click)="promoteFutureCustomer(row)"
+              >
+                {{ actingOnId() === row.id ? 'Attendere…' : 'Trasforma in assistito' }}
+              </button>
+            } @else if (isAdmin()) {
               <button
                 type="button"
                 [disabled]="actingOnId() === row.id"

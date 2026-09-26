@@ -1,0 +1,38 @@
+<section class="prenota-page">
+  <h1>🐾 Prenota il tuo Incontro Conoscitivo</h1>
+
+  @if (loadingProfile()) {
+    <p>Caricamento…</p>
+  } @else {
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
+
+    @if (bookingMinHours(); as minHours) {
+      <p class="hint">Gli incontri sono prenotabili fino a {{ minHours }} ore prima.</p>
+    }
+
+    @if (loadingSlots()) {
+      <p>Caricamento orari disponibili…</p>
+    } @else if (slots().length === 0) {
+      <p>Nessun orario disponibile nei prossimi giorni. Contatta il centro.</p>
+    } @else {
+      <app-week-calendar
+        [slots]="slots()"
+        [busySlotId]="bookingId()"
+        (slotSelected)="openBooking($event)"
+      />
+    }
+  }
+
+  @if (dialogSlot(); as slot) {
+    <app-incontro-booking-dialog
+      [slot]="slot"
+      [state]="dialogState()"
+      [busy]="bookingId() === slot.id"
+      [errorMessage]="dialogError()"
+      (confirmed)="confirmBooking()"
+      (closed)="closeDialog()"
+    />
+  }
+</section>

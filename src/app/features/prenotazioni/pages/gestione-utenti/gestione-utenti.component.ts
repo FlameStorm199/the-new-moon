@@ -110,13 +110,11 @@ export class GestioneUtentiComponent implements OnInit {
 
   /**
    * Il bottone "Valida" (✓) manuale resta solo per customer: per un
-   * future_customer la validazione non è mai una scelta manuale, avviene da
-   * sola quando imposta la password dopo l'invito (trg_auth_user_password_set,
-   * database/26_fase2_schema.sql) — mostrare qui un "Valida" che imposta solo
-   * validated=true senza promuoverlo a customer sarebbe un'azione fuorviante,
-   * un vicolo cieco. "Rifiuta" invece resta utile per entrambi: scartare una
+   * future_customer non esiste una validazione a sé — la promozione è
+   * "Trasforma in assistito" qui sotto, che fa insieme le due cose (ruolo +
+   * validazione). "Rifiuta" invece resta utile per entrambi: scartare una
    * richiesta di Incontro Conoscitivo mai seguita da nulla è un'azione
-   * indipendente dalla validazione.
+   * indipendente.
    */
   canManuallyValidate(row: AdminUserRow): boolean {
     return this.isPendingValidation(row) && row.typeCode === 'customer';
@@ -204,6 +202,23 @@ export class GestioneUtentiComponent implements OnInit {
 
   async resendInvite(row: AdminUserRow): Promise<void> {
     await this.runOnRow(row.id, () => this.usersService.inviteUser(row.id), 'Invito inviato.');
+  }
+
+  /**
+   * "Trasforma in assistito" (Fase 2): unica azione per un future_customer,
+   * al posto di Valida/Invita/Reset password — promuove a customer, valida
+   * e manda l'invito password in un solo click (vedi AdminUsersService).
+   * Disponibile a educatore e admin (canValidate()): l'eccezione mirata in
+   * enforce_users_update_rules() (database/34_fase2_promote_future_
+   * customer.sql) lo consente anche a un educatore, non solo all'admin.
+   */
+  async promoteFutureCustomer(row: AdminUserRow): Promise<void> {
+    await this.runOnRow(
+      row.id,
+      () => this.usersService.promoteFutureCustomer(row.id),
+      'Utente promosso a cliente. Email di invito inviata.'
+    );
+    await this.load();
   }
 
   async forceReset(row: AdminUserRow): Promise<void> {

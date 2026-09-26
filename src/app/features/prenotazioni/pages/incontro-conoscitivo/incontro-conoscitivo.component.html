@@ -3,54 +3,47 @@
 
   <h1>🐾 Richiedi un Incontro Conoscitivo</h1>
   <p class="intro">
-    Compila il modulo per fissare un primo incontro con ASD Cinofila "La Luna Nuova". Ti manderemo
-    un'email per confermare l'indirizzo, poi potrai scegliere data e orario.
+    Compila il modulo per fissare un primo incontro con ASD Cinofila "La Luna Nuova": al passo
+    successivo scegli subito data e orario.
   </p>
 
-  @if (submitted()) {
-    <p class="success">
-      Richiesta registrata. Controlla la tua email (anche lo spam) e clicca sul link di conferma
-      per continuare.
-    </p>
-  } @else {
-    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <label>
-        Nome
-        <input type="text" formControlName="name" autocomplete="given-name" />
-      </label>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <label>
+      Nome
+      <input type="text" formControlName="name" autocomplete="given-name" />
+    </label>
 
-      <label>
-        Cognome
-        <input type="text" formControlName="surname" autocomplete="family-name" />
-      </label>
+    <label>
+      Cognome
+      <input type="text" formControlName="surname" autocomplete="family-name" />
+    </label>
 
-      <label>
-        Email
-        <input type="email" formControlName="email" autocomplete="email" />
-      </label>
+    <label>
+      Email
+      <input type="email" formControlName="email" autocomplete="email" />
+    </label>
 
-      <label>
-        Telefono
-        <input type="tel" formControlName="phone" autocomplete="tel" />
-      </label>
+    <label>
+      Telefono
+      <input type="tel" formControlName="phone" autocomplete="tel" />
+    </label>
 
-      <label>
-        Nome del cane
-        <input type="text" formControlName="dogName" />
-      </label>
+    <label>
+      Nome del cane
+      <input type="text" formControlName="dogName" />
+    </label>
 
-      @if (errorMessage()) {
-        <p class="error">{{ errorMessage() }}</p>
-      }
+    @if (errorMessage()) {
+      <p class="error">{{ errorMessage() }}</p>
+    }
 
-      <button type="submit" [disabled]="loading()">
-        {{ loading() ? 'Invio in corso…' : 'Invia richiesta' }}
-      </button>
-    </form>
+    <button type="submit" [disabled]="form.invalid || loading()">
+      {{ loading() ? 'Attendere…' : "Prenota l'incontro conoscitivo" }}
+    </button>
+  </form>
 
-    <p class="privacy-note">
-      Inviando la richiesta accetti la nostra
-      <a routerLink="/prenotazioni/privacy">informativa privacy</a>.
-    </p>
-  }
+  <p class="privacy-note">
+    Inviando la richiesta accetti la nostra
+    <a routerLink="/prenotazioni/privacy">informativa privacy</a>.
+  </p>
 </section>

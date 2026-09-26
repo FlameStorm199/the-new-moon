@@ -12,11 +12,17 @@ import { AuthService } from '../../../../core/auth/auth.service';
  * ancora che quei token vengano letti.
  *
  * A differenza di reimposta-password non c'è nulla da impostare qui (niente
- * password per un future_customer, arriverà con l'invito manuale più
- * avanti): la pagina si limita a confermare l'esito e a linkare
- * /prenotazioni/prenota — a quel punto la sessione è già stabilita, la
- * navigazione interna successiva non ha la stessa race condition del primo
- * caricamento da link esterno.
+ * password per un future_customer, arriverà solo con "Trasforma in
+ * assistito" più avanti, deciso dallo staff): la pagina si limita a
+ * confermare l'esito.
+ *
+ * Revisione del flusso: quando si arriva qui, l'Incontro Conoscitivo è già
+ * stato prenotato (pagina /prenotazioni/prenota-incontro-conoscitivo,
+ * raggiunta subito dopo la creazione account — non più dopo questa
+ * conferma). Questo click è quello che fa scattare la notifica "come di
+ * consueto" a cliente ed educatore (vedi trg_lessons_notify_fn,
+ * database/35_fase2_incontro_deferred_notification.sql): non c'è più nulla
+ * da prenotare qui, solo da confermare che la richiesta è ora effettiva.
  */
 @Component({
   selector: 'app-incontro-conoscitivo-confermato',

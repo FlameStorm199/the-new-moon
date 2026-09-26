@@ -107,6 +107,19 @@ export const PRENOTAZIONI_ROUTES: Routes = [
       import('./pages/prenota/prenota.component').then((m) => m.PrenotaComponent),
   },
   {
+    // Fase 2 — atterraggio subito dopo request-incontro-conoscitivo (login
+    // automatico incluso nella risposta di quella Edge Function, vedi
+    // incontro-conoscitivo.component.ts): authGuard basta, la sessione a
+    // quel punto esiste già. Il componente stesso rimanda altrove chi non è
+    // future_customer (vedi prenota-incontro-conoscitivo.component.ts).
+    path: 'prenota-incontro-conoscitivo',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/prenota-incontro-conoscitivo/prenota-incontro-conoscitivo.component').then(
+        (m) => m.PrenotaIncontroConoscitivoComponent
+      ),
+  },
+  {
     path: 'le-mie-lezioni',
     canActivate: [authGuard],
     loadComponent: () =>
