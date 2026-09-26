@@ -1,0 +1,239 @@
+// Layout condiviso da login e registrazione (pagine sorelle): card a due
+// colonne con la foto a sinistra e il form a destra, che su telefono diventa
+// una striscia di foto in testa alla card. Importato con `@use` dai due
+// componenti, stesso schema di components/_dialog-shared.scss.
+//
+// Il tema globale (styles.scss) disegna .auth-page come una card unica con
+// bordo/ombra propri — qui quella card viene azzerata (.auth-split la
+// sovrascrive: due classi + l'attributo del componente battono per
+// specificità il selettore globale `html body .auth-page`) perché la vera
+// card, in due colonne, è .auth-card. h1/input/bottoni restano quelli del
+// tema: si applicano comunque, essendo solo più annidati.
+
+.auth-page.auth-split {
+  max-width: 60rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+.auth-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 28rem;
+  background: #fff;
+  border: 1px solid var(--pn-border, #e0e0e0);
+  border-radius: var(--pn-radius-lg, 12px);
+  box-shadow: var(--pn-shadow, 0 6px 20px rgba(0, 0, 0, 0.07));
+  overflow: hidden;
+}
+
+.auth-visual {
+  position: relative;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    // Foto orizzontale (cane al centro che guarda il padrone): su desktop il
+    // riquadro è più alto che largo e il ritaglio toglie ai lati, su
+    // telefono è una striscia bassa e toglie sopra e sotto — questo punto
+    // tiene il cane dentro l'inquadratura in entrambi i casi.
+    object-position: 45% 58%;
+    display: block;
+  }
+
+  .visual-caption {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.5rem;
+    color: #fff;
+    // Sfumatura solo in basso, dove sta il testo.
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.62) 100%);
+
+    .visual-brand {
+      font-weight: 700;
+      font-size: 1.15rem;
+      margin-bottom: 0.25rem;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    p {
+      font-size: 0.9rem;
+      opacity: 0.92;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+  }
+}
+
+.auth-form-side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2.5rem 2.75rem;
+
+  h1 {
+    margin-bottom: 0.6rem;
+  }
+
+  .subtitle {
+    color: var(--pn-text-muted, #555);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  label,
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.7rem 0.8rem;
+    font-size: 1rem;
+  }
+
+  input[aria-invalid='true'] {
+    border-color: var(--pn-danger, #b00020);
+  }
+
+  .field-error {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--pn-danger, #b00020);
+  }
+
+  .field-hint {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: #777;
+  }
+
+  .password-wrap {
+    position: relative;
+
+    // Spazio a destra per il bottone "Mostra", così il testo non ci finisce sotto.
+    input {
+      padding-right: 5.5rem;
+    }
+  }
+
+  .alt-line {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #eef0f3;
+    text-align: center;
+    font-size: 0.92rem;
+    color: var(--pn-text-muted, #555);
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+// :host per battere in specificità il tema globale sui bottoni (stesso motivo
+// documentato in gestione-lezioni.component.scss).
+:host .auth-form-side .submit {
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  margin-top: 0.3rem;
+  font-size: 1rem;
+  transition: background 0.2s ease, transform 0.15s ease;
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+}
+
+:host .auth-form-side .toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 0.4rem;
+  transform: translateY(-50%);
+  padding: 0.35rem 0.65rem;
+  border: none;
+  background: transparent;
+  color: var(--pn-accent, #3b6fd4);
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  &:hover {
+    background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+  }
+}
+
+// Link al posto del pulsante outline di default (il tema globale lo
+// batterebbe su un semplice .resend-link, da qui il :host).
+:host .resend-link {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--pn-accent, #3b6fd4);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    color: var(--pn-accent-dark, #2d5ab0);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Sotto i 720px la foto diventa una striscia bassa in testa alla card, nella
+// versione leggera da 900px (display:none non basterebbe: il browser la
+// scaricherebbe lo stesso).
+@media (max-width: 720px) {
+  .auth-page.auth-split {
+    margin: 1rem auto;
+  }
+
+  .auth-card {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .auth-visual {
+    height: 9.5rem;
+
+    .visual-caption {
+      padding: 1rem 1.25rem;
+
+      p {
+        font-size: 0.82rem;
+      }
+    }
+  }
+
+  .auth-form-side {
+    padding: 1.5rem 1.25rem 1.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host .auth-form-side .submit {
+    transition: none;
+  }
+}

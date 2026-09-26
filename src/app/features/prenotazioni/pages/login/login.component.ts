@@ -24,6 +24,25 @@ export class LoginComponent {
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
+  /** Mostra la password in chiaro: da telefono gli errori di battitura sono la prima causa di "password errata". */
+  readonly showPassword = signal(false);
+
+  togglePassword(): void {
+    this.showPassword.update((v) => !v);
+  }
+
+  /** Messaggio sotto il campo solo dopo che l'utente ci è passato, non a pagina appena aperta. */
+  fieldError(name: 'email' | 'password'): string | null {
+    const control = this.form.controls[name];
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    if (control.hasError('required')) {
+      return name === 'email' ? "Inserisci l'email." : 'Inserisci la password.';
+    }
+    return "L'indirizzo email non sembra valido.";
+  }
+
   /**
    * Impostata solo quando l'errore è "email non ancora confermata": mostra
    * il bottone per rimandarla, con l'indirizzo su cui rimandarla. Per

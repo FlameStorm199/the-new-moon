@@ -1,7 +1,10 @@
+// Tema di base (card, h1 con sottolineatura, colori --pn-*) da styles.scss:
+// qui solo la struttura della pagina. Stessa palette del resto del sito, un
+// solo accento (blu): nessun colore nuovo.
 .area-personale {
   max-width: 34rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 1.75rem 1.25rem 1.5rem;
 
   // Solo per lo staff: il calendario ha bisogno delle sette colonne del
   // calendario di prenotazione (vedi prenota.component.scss), la larghezza
@@ -10,22 +13,235 @@
     max-width: 56rem;
   }
 
-  .greeting {
-    color: #555;
-    margin-bottom: 1rem;
-  }
-
-  .placeholder {
-    color: #666;
+  h1 {
+    text-wrap: balance;
   }
 
   .calendar-hero {
-    margin: 1rem 0 1.5rem;
+    margin: 0.5rem 0 1.5rem;
 
     .error {
       color: #b00020;
     }
   }
+
+  // =========================================================
+  // Vista cliente: prossimo appuntamento
+  // =========================================================
+  // La prima cosa da trovare aprendo la pagina: quando devo venire.
+
+  .next-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 1.1rem 1.25rem 1.2rem;
+    border-radius: var(--pn-radius-lg);
+    background: var(--pn-accent-soft);
+    border-left: 4px solid var(--pn-accent);
+    color: var(--pn-text);
+    text-decoration: none;
+    margin-bottom: 1.25rem;
+    transition: background 0.2s ease;
+
+    .next-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--pn-accent-dark);
+    }
+
+    .next-date {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      text-transform: capitalize;
+      margin-top: 0.1rem;
+    }
+
+    .next-time {
+      font-size: 1rem;
+      color: var(--pn-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .next-status {
+      align-self: flex-start;
+      margin-top: 0.5rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 0.3rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--pn-warning);
+      background: var(--pn-warning-bg);
+    }
+
+    .next-empty-text {
+      font-size: 0.95rem;
+      color: var(--pn-text-muted);
+    }
+
+    // Stato vuoto: non un "appuntamento", quindi niente barra accento piena.
+    &.empty {
+      background: #f6f7f9;
+      border-left-color: var(--pn-border);
+
+      .next-label {
+        color: var(--pn-text);
+        font-size: 1rem;
+      }
+    }
+  }
+
+  a.next-card:hover {
+    background: rgba(59, 111, 212, 0.13);
+    text-decoration: none;
+  }
+
+  // =========================================================
+  // Vista cliente: azioni
+  // =========================================================
+  // Una principale (prenotare), piena e grande; le altre come righe più
+  // quiete — non tre card identiche dello stesso peso.
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .action-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.4rem;
+    border-radius: var(--pn-radius-md);
+    background: var(--pn-accent);
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(59, 111, 212, 0.25);
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+
+    &:hover {
+      background: var(--pn-accent-dark);
+      text-decoration: none;
+    }
+
+    &:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 8px rgba(59, 111, 212, 0.25);
+    }
+  }
+
+  .action-row {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--pn-border);
+    border-radius: var(--pn-radius-md);
+    color: var(--pn-text);
+    text-decoration: none;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+
+    &:hover {
+      border-color: var(--pn-accent);
+      background: #fafbfe;
+      text-decoration: none;
+    }
+
+    &:active {
+      transform: scale(0.99);
+    }
+
+    .action-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .action-title {
+      font-weight: 700;
+      font-size: 0.98rem;
+    }
+
+    .action-desc {
+      font-size: 0.83rem;
+      color: var(--pn-text-muted);
+      font-weight: 400;
+    }
+  }
+
+  .action-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+  }
+
+  // =========================================================
+  // Vista cliente: account in attesa di validazione
+  // =========================================================
+
+  .waiting-card {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    padding: 1.1rem 1.25rem;
+    border-radius: var(--pn-radius-lg);
+    background: var(--pn-warning-bg);
+
+    .waiting-icon {
+      font-size: 1.4rem;
+      line-height: 1.2;
+    }
+
+    .waiting-title {
+      font-weight: 700;
+      color: var(--pn-warning);
+      margin-bottom: 0.3rem;
+    }
+
+    .waiting-text {
+      font-size: 0.92rem;
+      line-height: 1.55;
+      color: #6b4a14;
+    }
+  }
+
+  // =========================================================
+  // Caricamento: sagome al posto del testo "Caricamento…"
+  // =========================================================
+
+  .sk {
+    display: block;
+    border-radius: 0.35rem;
+    background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 50%, #eef0f4 100%);
+    background-size: 200% 100%;
+    animation: sk-shimmer 1.3s ease-in-out infinite;
+  }
+
+  .next-card.skeleton {
+    gap: 0.5rem;
+
+    .sk-label { width: 40%; height: 0.8rem; }
+    .sk-date { width: 70%; height: 1.3rem; }
+    .sk-time { width: 30%; height: 0.95rem; }
+  }
+
+  .skeleton-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+
+    .sk-title { width: 45%; height: 1.8rem; margin-bottom: 0.4rem; }
+    .sk-block { height: 5.5rem; border-radius: var(--pn-radius-lg); }
+    .sk-block.short { height: 3.2rem; }
+  }
+
+  // =========================================================
+  // Staff: card delle pagine di gestione, sotto il calendario
+  // =========================================================
 
   .tile-grid {
     display: grid;
@@ -55,13 +271,16 @@
     color: var(--pn-text);
     font-weight: 700;
     font-size: 0.9rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
 
     &:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--pn-shadow);
       border-color: var(--pn-accent);
+      background: #fafbfe;
       text-decoration: none;
+    }
+
+    &:active {
+      transform: scale(0.98);
     }
   }
 
@@ -69,25 +288,12 @@
     font-size: 1.3rem;
   }
 
-  // Privacy (a sinistra) e, solo per lo staff, il link all'area assistito
-  // (a destra): stessa riga apposta, non due blocchi separati da scorrere.
-  .bottom-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.5rem 1.5rem;
-    margin-top: 2rem;
-  }
-
-  // Stesse due pagine che vede un cliente (Prenota, Le mie lezioni), ma qui
-  // volutamente piccole e a lato: per lo staff sono un'eccezione ("prenoto
-  // per me stesso"), non l'uso principale della pagina — messe alla pari
-  // delle altre tab confondevano chi testava la piattaforma.
+  // Stesse pagine che vede un cliente, ma per lo staff volutamente piccole:
+  // un'eccezione ("prenoto per me stesso"), non l'uso principale della pagina.
   .assisted-link {
+    margin-top: 1.5rem;
     font-size: 0.78rem;
     color: #888;
-    text-align: right;
 
     a {
       color: #888;
@@ -99,15 +305,63 @@
     }
   }
 
-  .footer-links {
-    font-size: 0.8rem;
-
-    a {
-      color: #999;
-    }
+  // Privacy a sinistra, Esci a destra: una sola riga di chiusura invece di
+  // un bottone isolato sotto il footer.
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eef0f3;
   }
 
-  .logout {
-    margin-top: 0.75rem;
+  .footer-link {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: #888;
+  }
+
+  // Anello di focus visibile su tutto ciò che è cliccabile: la pagina si usa
+  // anche da tastiera, e il tema di base non ne definisce uno.
+  a:focus-visible,
+  button:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+// :host per battere in specificità il tema globale sui bottoni
+// (html body .area-personale button[type='button']), stesso motivo
+// documentato in gestione-lezioni.component.scss.
+:host .area-personale .logout {
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  color: #666;
+  border-color: #d5d8de;
+  background: #fff;
+
+  &:hover:not(:disabled) {
+    color: var(--pn-danger);
+    border-color: var(--pn-danger);
+    background: var(--pn-danger-bg);
+  }
+}
+
+@keyframes sk-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .area-personale .sk {
+    animation: none;
+  }
+
+  .area-personale .action-primary,
+  .area-personale .action-row,
+  .area-personale .tile {
+    transition: none;
   }
 }

@@ -5,6 +5,19 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/auth.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
 
+const MIN_PASSWORD_LENGTH = 8;
+
+const REQUIRED_MESSAGES = {
+  name: 'Inserisci il nome.',
+  surname: 'Inserisci il cognome.',
+  email: "Inserisci l'email.",
+  phone: 'Inserisci il telefono.',
+  dogName: 'Inserisci il nome del cane.',
+  password: 'Scegli una password.',
+} as const;
+
+type FieldName = keyof typeof REQUIRED_MESSAGES;
+
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -22,13 +35,45 @@ export class RegisterComponent {
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     phone: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     dogName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(8)] }),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(MIN_PASSWORD_LENGTH)],
+    }),
   });
 
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly registered = signal(false);
   readonly resendState = signal<'idle' | 'sending' | 'sent'>('idle');
+
+  readonly minPasswordLength = MIN_PASSWORD_LENGTH;
+  readonly showPassword = signal(false);
+
+  togglePassword(): void {
+    this.showPassword.update((v) => !v);
+  }
+
+  /**
+   * Messaggio sotto il campo, solo dopo che l'utente ci è passato (o ha
+   * premuto "Registrati"): prima di questo, un form incompleto al click non
+   * diceva nulla e il bottone sembrava semplicemente non funzionare.
+   */
+  fieldError(name: FieldName): string | null {
+    const control = this.form.controls[name];
+    if (!control.touched || control.valid) {
+      return null;
+    }
+    if (control.hasError('required')) {
+      return REQUIRED_MESSAGES[name];
+    }
+    if (control.hasError('email')) {
+      return "L'indirizzo email non sembra valido.";
+    }
+    if (control.hasError('minlength')) {
+      return `La password deve avere almeno ${MIN_PASSWORD_LENGTH} caratteri.`;
+    }
+    return null;
+  }
 
   async submit(): Promise<void> {
     if (this.form.invalid || this.loading()) {

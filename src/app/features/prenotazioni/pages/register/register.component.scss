@@ -1,60 +1,50 @@
-.auth-page {
-  max-width: 24rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
+// Card a due colonne, foto, campi e bottone "Mostra" password: condivisi
+// con il login (../_auth-split.scss). Qui solo ciò che è della registrazione.
+@use '../auth-split' as *;
 
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
+.auth-form-side {
+  // Nome+Cognome e Telefono+Nome del cane affiancati, Email e Password da
+  // sole: sei campi impilati uno sotto l'altro erano lunghi da scorrere.
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.1rem;
 
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  input {
-    padding: 0.5rem;
-    font-size: 1rem;
-  }
-
-  .error {
-    color: #b00020;
-    margin: 0;
+    @media (max-width: 420px) {
+      grid-template-columns: 1fr;
+    }
   }
 
   .privacy-note {
     font-size: 0.8rem;
     color: #777;
-    margin-top: 0.75rem;
+    text-align: center;
   }
 
-  .success {
-    color: #1b7a3d;
-    margin: 0;
+  // Stato "registrazione completata": un esito, non un form.
+  .done {
+    text-align: center;
+
+    .done-icon {
+      width: 3.5rem;
+      height: 3.5rem;
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 1.6rem;
+      background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+      color: var(--pn-accent, #3b6fd4);
+    }
+
+    .resend-line {
+      font-size: 0.9rem;
+      color: var(--pn-text-muted, #555);
+    }
   }
 }
 
-// button[type='button'] del tema globale batte per specificità un semplice
-// .resend-link: stesso motivo per cui login.component.scss usa :host.
-:host .resend-link {
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--pn-accent, #3b6fd4);
-  font-size: inherit;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    color: var(--pn-accent-dark, #2d5ab0);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+:host .auth-form-side .done .resend-link {
+  display: inline;
 }

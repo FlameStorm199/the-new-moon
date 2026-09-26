@@ -7,7 +7,7 @@ import { ClosedDay, SlotRow, SlotsService } from '../../../../core/slots/slots.s
 import { LessonRow, LessonsService } from '../../../../core/lessons/lessons.service';
 import { EventRow, EventsService } from '../../../../core/events/events.service';
 import { StaffCalendarComponent } from '../../components/staff-calendar/staff-calendar.component';
-import { formatShortDate } from '../../components/date-format';
+import { formatLongDate, formatShortDate, formatTimeRange } from '../../components/date-format';
 import { LessonDetailDialogComponent } from '../../components/lesson-detail-dialog/lesson-detail-dialog.component';
 import {
   MoveLessonDialogComponent,
@@ -46,6 +46,14 @@ export class AreaPersonaleComponent implements OnInit {
 
   readonly profile = signal<UserProfile | null>(null);
   readonly loadingProfile = signal(true);
+
+  // --- Vista cliente: il prossimo appuntamento, la cosa più utile da
+  // trovare aprendo la pagina. undefined = non ancora caricato, null =
+  // nessuno in programma.
+  readonly nextLesson = signal<LessonRow | null | undefined>(undefined);
+  readonly nextLessonFailed = signal(false);
+  readonly formatLongDate = formatLongDate;
+  readonly formatTimeRange = formatTimeRange;
 
   // --- Calendario staff: la vista principale di questa pagina per chi è
   // staff, vedi StaffCalendarComponent. Caricato solo per isStaffViewer, un
@@ -137,8 +145,15 @@ export class AreaPersonaleComponent implements OnInit {
    * che mostrargli un'attesa che non finirà mai.
    */
   get showPendingMessage(): boolean {
+    // Solo customer: un future_customer non viene mai validato (la
+    // promozione è "Trasforma in assistito"), mostrargli un'attesa di
+    // validazione nasconderebbe le tile per sempre.
     const p = this.profile();
-    return !!p && this.isCustomerType && !p.validated;
+    return !!p && p.typeCode === 'customer' && !p.validated;
+  }
+
+  get isFutureCustomer(): boolean {
+    return this.profile()?.typeCode === 'future_customer';
   }
 
   async ngOnInit(): Promise<void> {
@@ -146,6 +161,28 @@ export class AreaPersonaleComponent implements OnInit {
     this.loadingProfile.set(false);
     if (this.isStaffViewer) {
       await this.loadCalendar();
+    } else if (this.canUsePlatform) {
+      await this.loadNextLesson();
+    }
+  }
+
+  /** Il primo appuntamento ancora attivo (in attesa o confermato) da adesso in poi. */
+  private async loadNextLesson(): Promise<void> {
+    const p = this.profile();
+    if (!p) {
+      return;
+    }
+    try {
+      const now = Date.now();
+      const upcoming = (await this.lessonsService.listForCustomer(p.id))
+        .filter((l) => (l.status === 'pending' || l.status === 'confirmed'))
+        .filter((l) => new Date(`${l.date}T${l.time_from}`).getTime() > now)
+        .sort((a, b) => `${a.date}T${a.time_from}`.localeCompare(`${b.date}T${b.time_from}`));
+      this.nextLesson.set(upcoming[0] ?? null);
+    } catch {
+      // Il riquadro è un di più: se il caricamento fallisce non si mostra
+      // (null direbbe "nessuna lezione", falso), le azioni restano tutte.
+      this.nextLessonFailed.set(true);
     }
   }
 

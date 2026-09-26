@@ -1,8 +1,6 @@
 <section class="area-personale" [class.staff-view]="isStaffViewer">
-  <h1>Area personale</h1>
-
   @if (profile(); as p) {
-    <p class="greeting">Ciao <strong>{{ p.name }} {{ p.surname }}</strong>.</p>
+    <h1>Ciao, {{ p.name }}</h1>
 
     @if (isStaffViewer) {
       <div class="calendar-hero">
@@ -64,24 +62,80 @@
     }
 
     @if (showPendingMessage) {
-      <p class="pending">
-        Il tuo account è in attesa di validazione da parte dello staff.
-      </p>
-    } @else if (canUsePlatform && !isStaffViewer) {
-      <div class="tile-grid">
-        <a routerLink="/prenotazioni/prenota" class="tile">
-          <span class="tile-icon">📅</span>
-          <span class="tile-title">Prenota una lezione</span>
-        </a>
-        <a routerLink="/prenotazioni/le-mie-lezioni" class="tile">
-          <span class="tile-icon">📋</span>
-          <span class="tile-title">Le mie lezioni</span>
-        </a>
-        <a routerLink="/prenotazioni/eventi" class="tile">
-          <span class="tile-icon">🎉</span>
-          <span class="tile-title">Eventi</span>
-        </a>
+      <div class="waiting-card">
+        <span class="waiting-icon" aria-hidden="true">⏳</span>
+        <div>
+          <p class="waiting-title">Il tuo account è in attesa di validazione</p>
+          <p class="waiting-text">
+            Lo staff controlla ogni nuova registrazione. Appena viene validata ti arriva un'email e
+            da qui potrai prenotare le lezioni.
+          </p>
+        </div>
       </div>
+    } @else if (canUsePlatform && !isStaffViewer) {
+      @if (!nextLessonFailed()) {
+        @if (nextLesson() === undefined) {
+          <div class="next-card skeleton" aria-hidden="true">
+            <span class="sk sk-label"></span>
+            <span class="sk sk-date"></span>
+            <span class="sk sk-time"></span>
+          </div>
+        } @else if (nextLesson() === null) {
+          <div class="next-card empty">
+            @if (isFutureCustomer) {
+              <span class="next-label">Non hai ancora prenotato l'Incontro Conoscitivo</span>
+              <span class="next-empty-text">Scegli il giorno che preferisci per conoscerci.</span>
+            } @else {
+              <span class="next-label">Nessuna lezione in programma</span>
+              <span class="next-empty-text">Scegli un orario libero per la prossima.</span>
+            }
+          </div>
+        }
+        @if (nextLesson(); as lesson) {
+          <a routerLink="/prenotazioni/le-mie-lezioni" class="next-card">
+            <span class="next-label">
+              {{ lesson.lesson_type === 'incontro_conoscitivo' ? 'Il tuo Incontro Conoscitivo' : 'La tua prossima lezione' }}
+            </span>
+            <span class="next-date">{{ formatLongDate(lesson.date) }}</span>
+            <span class="next-time">{{ formatTimeRange(lesson.time_from, lesson.time_to) }}</span>
+            @if (lesson.status === 'pending') {
+              <span class="next-status">In attesa di conferma dall'educatore</span>
+            }
+          </a>
+        }
+      }
+
+      <nav class="actions" aria-label="Azioni">
+        @if (isFutureCustomer) {
+          <!-- Un solo Incontro per persona: se è già in programma (riquadro
+               sopra) il bottone di prenotazione non ha più senso. -->
+          @if (nextLesson() === null || nextLessonFailed()) {
+            <a routerLink="/prenotazioni/prenota-incontro-conoscitivo" class="action-primary">
+              <span class="action-icon" aria-hidden="true">🐾</span>
+              Prenota l'Incontro Conoscitivo
+            </a>
+          }
+        } @else {
+          <a routerLink="/prenotazioni/prenota" class="action-primary">
+            <span class="action-icon" aria-hidden="true">📅</span>
+            Prenota una lezione
+          </a>
+        }
+        <a routerLink="/prenotazioni/le-mie-lezioni" class="action-row">
+          <span class="action-icon" aria-hidden="true">📋</span>
+          <span class="action-text">
+            <span class="action-title">Le mie lezioni</span>
+            <span class="action-desc">Prenotazioni in corso e storico</span>
+          </span>
+        </a>
+        <a routerLink="/prenotazioni/eventi" class="action-row">
+          <span class="action-icon" aria-hidden="true">🎉</span>
+          <span class="action-text">
+            <span class="action-title">Eventi</span>
+            <span class="action-desc">Iscriviti agli eventi del centro</span>
+          </span>
+        </a>
+      </nav>
     }
 
     @if (isStaffViewer) {
@@ -109,26 +163,31 @@
       </div>
     }
   } @else if (loadingProfile()) {
-    <p>Caricamento profilo…</p>
+    <div class="skeleton-page" aria-busy="true" aria-label="Caricamento">
+      <span class="sk sk-title"></span>
+      <span class="sk sk-block"></span>
+      <span class="sk sk-block short"></span>
+    </div>
   } @else {
-    <p class="pending">Non è stato possibile caricare il profilo.</p>
+    <p class="error">
+      Non riusciamo a caricare il tuo profilo. Ricarica la pagina; se il problema resta, esci e
+      accedi di nuovo.
+    </p>
   }
 
-  <div class="bottom-row">
-    <p class="footer-links">
-      <a routerLink="/prenotazioni/privacy">Privacy e assistenza</a>
+  @if (isStaffViewer) {
+    <p class="assisted-link">
+      Area assistito:
+      <a routerLink="/prenotazioni/prenota">Prenota una lezione</a>
+      ·
+      <a routerLink="/prenotazioni/le-mie-lezioni">Le mie lezioni</a>
+      ·
+      <a routerLink="/prenotazioni/eventi">Eventi</a>
     </p>
-    @if (isStaffViewer) {
-      <p class="assisted-link">
-        Area assistito:
-        <a routerLink="/prenotazioni/prenota">Prenota una lezione</a>
-        ·
-        <a routerLink="/prenotazioni/le-mie-lezioni">Le mie lezioni</a>
-        ·
-        <a routerLink="/prenotazioni/eventi">Eventi</a>
-      </p>
-    }
-  </div>
+  }
 
-  <button type="button" class="logout" (click)="logout()">Esci</button>
+  <footer class="bottom-row">
+    <a routerLink="/prenotazioni/privacy" class="footer-link">Privacy e assistenza</a>
+    <button type="button" class="logout" (click)="logout()">Esci</button>
+  </footer>
 </section>

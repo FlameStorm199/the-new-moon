@@ -1,75 +1,175 @@
-<section class="auth-page">
+<section class="auth-page auth-split">
   <app-back-link to="/prenotazioni/login" label="Accedi" />
-  <h1>🐾 Crea il tuo account</h1>
 
-  @if (registered()) {
-    <p>Registrazione completata. Controlla la tua email per confermare l'account prima di accedere.</p>
+  <div class="auth-card">
+    <div class="auth-visual">
+      <!-- Stessa foto (e stesse due versioni ridotte) del login: pagine sorelle. -->
+      <img
+        src="assets/images/home-900.jpg"
+        srcset="assets/images/home-900.jpg 900w, assets/images/home-1400.jpg 1400w"
+        sizes="(max-width: 720px) 100vw, 30rem"
+        alt=""
+      />
+      <div class="visual-caption">
+        <span class="visual-brand">🐾 La Luna Nuova</span>
+        <p>Educazione cinofila a Ponzano Veneto</p>
+      </div>
+    </div>
 
-    @if (errorMessage()) {
-      <p class="error">{{ errorMessage() }}</p>
-    }
+    <div class="auth-form-side">
+      @if (registered()) {
+        <div class="done">
+          <div class="done-icon" aria-hidden="true">✉</div>
+          <h1>Controlla la tua email</h1>
+          <p class="subtitle">
+            Ti abbiamo mandato un link a <strong>{{ form.controls.email.value }}</strong>: aprilo
+            per confermare l'account, poi potrai accedere.
+          </p>
 
-    @if (resendState() === 'sent') {
-      <p class="success">Email inviata di nuovo: controlla la posta (anche lo spam).</p>
-    } @else {
-      <p>
-        Non l'hai ricevuta?
-        <button
-          type="button"
-          class="resend-link"
-          [disabled]="resendState() === 'sending'"
-          (click)="resendConfirmation()"
-        >
-          {{ resendState() === 'sending' ? 'Invio…' : 'Invia di nuovo' }}
-        </button>
-      </p>
-    }
-  } @else {
-    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <label>
-        Nome
-        <input type="text" formControlName="name" autocomplete="given-name" />
-      </label>
+          @if (errorMessage()) {
+            <p class="error">{{ errorMessage() }}</p>
+          }
 
-      <label>
-        Cognome
-        <input type="text" formControlName="surname" autocomplete="family-name" />
-      </label>
+          @if (resendState() === 'sent') {
+            <p class="success">Email inviata di nuovo: controlla la posta (anche lo spam).</p>
+          } @else {
+            <p class="resend-line">
+              Non l'hai ricevuta?
+              <button
+                type="button"
+                class="resend-link"
+                [disabled]="resendState() === 'sending'"
+                (click)="resendConfirmation()"
+              >
+                {{ resendState() === 'sending' ? 'Invio…' : 'Invia di nuovo' }}
+              </button>
+            </p>
+          }
 
-      <label>
-        Email
-        <input type="email" formControlName="email" autocomplete="email" />
-      </label>
+          <p class="alt-line"><a routerLink="/prenotazioni/login">Vai all'accesso</a></p>
+        </div>
+      } @else {
+        <h1>Crea il tuo account</h1>
+        <p class="subtitle">Pochi dati su di te e sul tuo cane, poi potrai prenotare le lezioni.</p>
 
-      <label>
-        Telefono
-        <input type="tel" formControlName="phone" autocomplete="tel" />
-      </label>
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="field-row">
+            <label>
+              Nome
+              <input
+                type="text"
+                formControlName="name"
+                autocomplete="given-name"
+                [attr.aria-invalid]="fieldError('name') ? 'true' : null"
+              />
+              @if (fieldError('name'); as msg) {
+                <span class="field-error">{{ msg }}</span>
+              }
+            </label>
+            <label>
+              Cognome
+              <input
+                type="text"
+                formControlName="surname"
+                autocomplete="family-name"
+                [attr.aria-invalid]="fieldError('surname') ? 'true' : null"
+              />
+              @if (fieldError('surname'); as msg) {
+                <span class="field-error">{{ msg }}</span>
+              }
+            </label>
+          </div>
 
-      <label>
-        Nome del cane
-        <input type="text" formControlName="dogName" />
-      </label>
+          <label>
+            Email
+            <input
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              inputmode="email"
+              autocapitalize="off"
+              spellcheck="false"
+              [attr.aria-invalid]="fieldError('email') ? 'true' : null"
+            />
+            @if (fieldError('email'); as msg) {
+              <span class="field-error">{{ msg }}</span>
+            }
+          </label>
 
-      <label>
-        Password
-        <input type="password" formControlName="password" autocomplete="new-password" />
-      </label>
+          <div class="field-row">
+            <label>
+              Telefono
+              <input
+                type="tel"
+                formControlName="phone"
+                autocomplete="tel"
+                [attr.aria-invalid]="fieldError('phone') ? 'true' : null"
+              />
+              @if (fieldError('phone'); as msg) {
+                <span class="field-error">{{ msg }}</span>
+              }
+            </label>
+            <label>
+              Nome del cane
+              <input
+                type="text"
+                formControlName="dogName"
+                [attr.aria-invalid]="fieldError('dogName') ? 'true' : null"
+              />
+              @if (fieldError('dogName'); as msg) {
+                <span class="field-error">{{ msg }}</span>
+              }
+            </label>
+          </div>
 
-      @if (errorMessage()) {
-        <p class="error">{{ errorMessage() }}</p>
+          <div class="field">
+            <label for="register-password">Password</label>
+            <div class="password-wrap">
+              <input
+                id="register-password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="new-password"
+                aria-describedby="register-password-hint"
+                [attr.aria-invalid]="fieldError('password') ? 'true' : null"
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                (click)="togglePassword()"
+                [attr.aria-label]="showPassword() ? 'Nascondi password' : 'Mostra password'"
+                [attr.aria-pressed]="showPassword()"
+              >
+                {{ showPassword() ? 'Nascondi' : 'Mostra' }}
+              </button>
+            </div>
+            @if (fieldError('password'); as msg) {
+              <span class="field-error">{{ msg }}</span>
+            } @else {
+              <span class="field-hint" id="register-password-hint">
+                Almeno {{ minPasswordLength }} caratteri.
+              </span>
+            }
+          </div>
+
+          @if (errorMessage()) {
+            <p class="error">{{ errorMessage() }}</p>
+          }
+
+          <button type="submit" class="submit" [disabled]="loading()">
+            {{ loading() ? 'Registrazione in corso…' : 'Registrati' }}
+          </button>
+
+          <p class="privacy-note">
+            Registrandoti accetti la nostra
+            <a routerLink="/prenotazioni/privacy">informativa privacy</a>.
+          </p>
+        </form>
+
+        <p class="alt-line">
+          Hai già un account? <a routerLink="/prenotazioni/login">Accedi</a>
+        </p>
       }
-
-      <button type="submit" [disabled]="loading()">
-        {{ loading() ? 'Registrazione in corso…' : 'Registrati' }}
-      </button>
-    </form>
-
-    <p class="privacy-note">
-      Registrandoti accetti la nostra
-      <a routerLink="/prenotazioni/privacy">informativa privacy</a>.
-    </p>
-
-    <p>Hai già un account? <a routerLink="/prenotazioni/login">Accedi</a></p>
-  }
+    </div>
+  </div>
 </section>
