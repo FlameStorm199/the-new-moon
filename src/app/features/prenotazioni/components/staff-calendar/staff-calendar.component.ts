@@ -168,9 +168,19 @@ export class StaffCalendarComponent implements OnDestroy {
   /** Evento cliccato: chi usa il componente decide cosa farne (es. andare a Gestione eventi). */
   @Output() readonly eventOpen = new EventEmitter<EventRow>();
 
+  /**
+   * Slot da disegnare. Esclusi quelli disattivati (e liberi) che cadono
+   * sotto un evento: di solito sono stati spenti proprio per l'evento, e
+   * affiancati al blocco viola erano solo rumore. Uno slot disattivato
+   * lontano dagli eventi resta visibile, così si può riattivare con un clic.
+   */
   private readonly slotsByDate = computed(() => {
+    const events = this.eventsByDate();
     const map = new Map<string, SlotRow[]>();
     for (const slot of this.allSlots()) {
+      if (!slot.active && !slot.occupied && overlapsEvent(slot, events.get(slot.date))) {
+        continue;
+      }
       const list = map.get(slot.date) ?? [];
       list.push(slot);
       map.set(slot.date, list);
@@ -449,6 +459,13 @@ function buildLayout(
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
+}
+
+function overlapsEvent(slot: SlotRow, dayEvents: EventRow[] | undefined): boolean {
+  if (!dayEvents?.length) return false;
+  const from = toMinutes(slot.time_from);
+  const to = toMinutes(slot.time_to);
+  return dayEvents.some((e) => from < toMinutes(e.time_to) && to > toMinutes(e.time_from));
 }
 
 function toMinutes(time: string): number {
