@@ -1,13 +1,42 @@
-<footer>
-  <div class="footer-info">
-    <p>
-      <strong>ASD CINOFILA LA LUNA NUOVA</strong> – sede legale: Via San Pio X n. 64, 31056 Roncade (TV) – C.F. 94150620261
-    </p>
-    <p>Affiliazione CSEN settore Cinofila n. 47235</p>
-    <p>
-        <a href="mailto:info&#64;lalunanuova.org">info&#64;lalunanuova.org</a> – tel. 348 4663473 (Francesca), 347 5474812 (Elisa)    </p>
-  </div>
-  <div class="footer-copyright">
-    <p>2021 Asd Cinofila La Luna Nuova. <em>All rights reserved.</em></p>
-  </div>
-</footer>
+@if (visible()) {
+  <footer>
+    <div class="footer-inner">
+      <div class="brand">
+        <p class="brand-name">ASD Cinofila La Luna Nuova</p>
+        <p class="brand-tagline">Educazione cinofila a Ponzano Veneto</p>
+      </div>
+
+      <ul class="contacts" aria-label="Contatti">
+        <li>
+          <a href="mailto:info&#64;lalunanuova.org">
+            <i class="fa-regular fa-envelope" aria-hidden="true"></i>
+            info&#64;lalunanuova.org
+          </a>
+        </li>
+        @for (phone of phones; track phone.dial) {
+          <li>
+            <a [href]="'tel:' + phone.dial">
+              <i class="fa-solid fa-phone" aria-hidden="true"></i>
+              <span class="phone-number">{{ phone.display }}</span>
+              <span class="phone-name">{{ phone.name }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+
+      <div class="social">
+        <a [href]="social.facebookGeneral" target="_blank" rel="noopener" aria-label="Facebook La Luna Nuova">
+          <i class="fa-brands fa-facebook-f" aria-hidden="true"></i>
+        </a>
+        <a [href]="social.instagram" target="_blank" rel="noopener" aria-label="Instagram">
+          <i class="fa-brands fa-instagram" aria-hidden="true"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2021–{{ currentYear }} ASD Cinofila La Luna Nuova · C.F. 94150620261</p>
+      <a href="assets/docs/2-Privacy.pdf" target="_blank" rel="noopener">Informativa privacy</a>
+    </div>
+  </footer>
+}

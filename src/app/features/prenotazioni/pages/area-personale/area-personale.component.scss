@@ -407,47 +407,12 @@
     }
   }
 
-  // Privacy a sinistra, Esci a destra: una sola riga di chiusura invece di
-  // un bottone isolato sotto il footer.
-  .bottom-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-top: 2rem;
-    padding-top: 1rem;
-    border-top: 1px solid #eef0f3;
-  }
-
-  .footer-link {
-    font-size: 0.82rem;
-    font-weight: 400;
-    color: #888;
-  }
-
   // Anello di focus visibile su tutto ciò che è cliccabile: la pagina si usa
   // anche da tastiera, e il tema di base non ne definisce uno.
   a:focus-visible,
   button:focus-visible {
     outline: 3px solid rgba(59, 111, 212, 0.45);
     outline-offset: 2px;
-  }
-}
-
-// :host per battere in specificità il tema globale sui bottoni
-// (html body .area-personale button[type='button']), stesso motivo
-// documentato in gestione-lezioni.component.scss.
-:host .area-personale .logout {
-  padding: 0.45rem 1rem;
-  font-size: 0.85rem;
-  color: #666;
-  border-color: #d5d8de;
-  background: #fff;
-
-  &:hover:not(:disabled) {
-    color: var(--pn-danger);
-    border-color: var(--pn-danger);
-    background: var(--pn-danger-bg);
   }
 }
 

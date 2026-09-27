@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '../../../../core/auth/auth.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
 import { ClosedDay, SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { LessonRow, LessonsService } from '../../../../core/lessons/lessons.service';
@@ -43,7 +42,6 @@ const HORIZON_DAYS = 30;
   styleUrl: './area-personale.component.scss',
 })
 export class AreaPersonaleComponent implements OnInit {
-  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly profileService = inject(UserProfileService);
   private readonly slotsService = inject(SlotsService);
@@ -345,10 +343,6 @@ export class AreaPersonaleComponent implements OnInit {
     }
   }
 
-  async logout(): Promise<void> {
-    await this.auth.signOut();
-    this.router.navigateByUrl('/prenotazioni/login');
-  }
 }
 
 function errorText(err: unknown): string | null {

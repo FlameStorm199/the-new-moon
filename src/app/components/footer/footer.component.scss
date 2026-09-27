@@ -1,46 +1,160 @@
+// Footer essenziale: chi siamo in una riga, come contattarci, social, e
+// in fondo i dati minimi (anno, codice fiscale, privacy). Stesso fondo
+// azzurrato dell'header.
+$accent: #3b6fd4;
+$ink: #26303d;
+$muted: #5f6a7a;
+$line: rgba(20, 35, 60, 0.09);
+
 footer {
-  border-top: 1px solid #e0e0e0;
-  padding: 2rem;
   margin-top: 3rem;
-  font-size: 0.875rem;
-  color: #444;
+  background: #f4f6fa;
+  border-top: 1px solid $line;
+  color: $ink;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
 
-  .footer-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem 2.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem 1.4rem;
+}
 
-    a {
-      color: #222;
-      text-decoration: underline;
-      font-style: italic;
+.brand {
+  .brand-name {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .brand-tagline {
+    margin: 0;
+    color: $muted;
+    font-size: 0.85rem;
+  }
+}
+
+.contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: $ink;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+
+    &:hover {
+      color: $accent;
     }
   }
 
-  .footer-copyright {
-    color: #888;
-    font-size: 0.8rem;
+  i {
+    color: $accent;
+    font-size: 0.85rem;
   }
+
+  .phone-number {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .phone-name {
+    color: $muted;
+  }
+}
+
+.social {
+  display: flex;
+  gap: 0.45rem;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    border: 1px solid $line;
+    background: #fff;
+    color: $ink;
+    text-decoration: none;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      background: $accent;
+      border-color: $accent;
+      color: #fff;
+    }
+  }
+}
+
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.85rem 1.5rem 1.1rem;
+  border-top: 1px solid $line;
+  font-size: 0.78rem;
+  color: $muted;
+
+  p {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  a {
+    color: $muted;
+
+    &:hover {
+      color: $accent;
+    }
+  }
+}
+
+footer a:focus-visible {
+  outline: 3px solid rgba(59, 111, 212, 0.4);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 @media (max-width: 600px) {
   footer {
-    // Due rem per lato su un telefono si mangiano un sesto della larghezza:
-    // il testo di contatti e sede finisce a spezzarsi parola per parola.
-    padding: 1.5rem 1rem;
     margin-top: 2rem;
-    font-size: 0.82rem;
+  }
 
-    .footer-info {
-      margin-bottom: 1.25rem;
-      line-height: 1.5;
-    }
+  .footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.5rem 1rem 1.25rem;
+  }
 
-    // I recapiti restano toccabili: un numero o un'email a fine riga non
-    // devono finire appiccicati al bordo.
-    a {
-      word-break: break-word;
-    }
+  .contacts {
+    flex-direction: column;
+  }
+
+  .footer-bottom {
+    padding: 0.85rem 1rem 1.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social a {
+    transition: none;
   }
 }

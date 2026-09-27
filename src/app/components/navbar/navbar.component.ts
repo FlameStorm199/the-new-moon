@@ -5,6 +5,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserProfile, UserProfileService } from '../../core/users/user-profile.service';
+import { SOCIAL_LINKS } from '../../core/site/social-links';
 
 interface NavItem {
   path: string;
@@ -12,6 +13,14 @@ interface NavItem {
   /** Solo per "Home": senza, resterebbe evidenziata su ogni sottopagina. */
   exact?: boolean;
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  customer: 'Assistito',
+  future_customer: 'Nuovo assistito',
+  assistant: 'Assistente',
+  trainer: 'Educatore',
+  admin: 'Amministratore',
+};
 
 const PUBLIC_LINKS: NavItem[] = [
   { path: '/', label: 'Home page', exact: true },
@@ -34,13 +43,20 @@ export class NavbarComponent {
   private readonly auth = inject(AuthService);
   private readonly profileService = inject(UserProfileService);
 
-  facebookPonzanoUrl = 'https://www.facebook.com/profile.php?id=100093541022280';
-  facebookGeneralUrl = 'https://www.facebook.com/share/1P2AEUbsr8/?mibextid=wwXIfr';
-  instagramUrl = 'https://www.instagram.com/asdcinofila_lalunanuovaponzano?igsh=aDFnY3dobXVvZXA5&utm_source=ig_contact_invite';
+  facebookPonzanoUrl = SOCIAL_LINKS.facebookPonzano;
+  facebookGeneralUrl = SOCIAL_LINKS.facebookGeneral;
+  instagramUrl = SOCIAL_LINKS.instagram;
   fbDropdownOpen = false;
 
   /** Pannello dei link su schermo stretto. Sopra la soglia il CSS lo ignora. */
   menuOpen = false;
+
+  /** Menu dell'account (nome, ruolo, Esci), solo nell'area prenotazioni. */
+  accountOpen = false;
+  loggingOut = false;
+
+  /** Ombra sotto l'header solo dopo aver scrollato: a inizio pagina resta pulito. */
+  scrolled = false;
 
   private readonly currentUrl = signal(this.router.url);
   private readonly profile = signal<UserProfile | null>(null);
@@ -59,6 +75,7 @@ export class NavbarComponent {
         // gestito dal listener sul documento, ma un ritorno col tasto
         // indietro del browser no.
         this.menuOpen = false;
+        this.accountOpen = false;
         void this.syncProfile();
       });
 
@@ -82,6 +99,28 @@ export class NavbarComponent {
   readonly inBookingArea = computed(
     () => this.currentUrl().startsWith('/prenotazioni') && this.profile() !== null
   );
+
+  /**
+   * Il riquadro "sei collegato come…": solo dentro l'area prenotazioni.
+   * Sul sito pubblico non compare mai, nemmeno da loggati — il sito non
+   * deve rimandare in nessun modo all'area riservata.
+   */
+  readonly account = computed(() => {
+    const p = this.profile();
+    if (!this.inBookingArea() || !p) {
+      return null;
+    }
+    const fullName = `${p.name} ${p.surname}`.trim();
+    const initials = `${p.name.charAt(0)}${p.surname.charAt(0)}`.toUpperCase() || '?';
+    return {
+      firstName: p.name,
+      fullName,
+      initials,
+      email: p.email,
+      roleLabel: ROLE_LABELS[p.typeCode] ?? '',
+      roleCode: p.typeCode,
+    };
+  });
 
   readonly links = computed<NavItem[]>(() => {
     if (!this.inBookingArea()) {
@@ -151,8 +190,27 @@ export class NavbarComponent {
   toggleMenu(event: Event) {
     event.stopPropagation();
     this.menuOpen = !this.menuOpen;
-    // I due pannelli non convivono: aprirne uno chiude l'altro.
+    // I pannelli non convivono: aprirne uno chiude gli altri.
     this.fbDropdownOpen = false;
+    this.accountOpen = false;
+  }
+
+  toggleAccount(event: Event) {
+    event.stopPropagation();
+    this.accountOpen = !this.accountOpen;
+    this.menuOpen = false;
+    this.fbDropdownOpen = false;
+  }
+
+  async logout(): Promise<void> {
+    this.loggingOut = true;
+    try {
+      await this.auth.signOut();
+      this.accountOpen = false;
+      await this.router.navigateByUrl('/prenotazioni/login');
+    } finally {
+      this.loggingOut = false;
+    }
   }
 
   toggleFbDropdown(event: Event) {
@@ -173,11 +231,21 @@ export class NavbarComponent {
   onDocumentClick() {
     this.fbDropdownOpen = false;
     this.menuOpen = false;
+    this.accountOpen = false;
+  }
+
+  @HostListener('window:scroll')
+  onScroll() {
+    const next = window.scrollY > 8;
+    if (next !== this.scrolled) {
+      this.scrolled = next;
+    }
   }
 
   @HostListener('document:keydown.escape')
   onEscape() {
     this.fbDropdownOpen = false;
     this.menuOpen = false;
+    this.accountOpen = false;
   }
 }
