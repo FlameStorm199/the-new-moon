@@ -1,1 +1,313 @@
 @use '../dialog-shared' as *;
+
+// =========================================================
+// Ricerca cliente (combobox)
+// =========================================================
+// L'elenco sta nel flusso del pannello, non sovrapposto: il pannello ha
+// overflow:auto e taglierebbe una tendina posizionata in assoluto.
+
+.combo {
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+  }
+}
+
+.combo-input {
+  position: relative;
+
+  input {
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 2.4rem;
+
+    // Scelta fatta: il campo lo dice anche a colpo d'occhio.
+    &.chosen {
+      font-weight: 600;
+      border-color: var(--pn-accent, #3b6fd4);
+      background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+    }
+
+    &[aria-invalid='true'] {
+      border-color: var(--pn-danger, #b00020);
+    }
+  }
+}
+
+:host .combo-clear {
+  position: absolute;
+  top: 50%;
+  right: 0.35rem;
+  transform: translateY(-50%);
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #888;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #eef0f4;
+    color: #333;
+  }
+}
+
+.combo-list {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0.3rem;
+  max-height: 14rem;
+  overflow-y: auto;
+  border: 1px solid var(--pn-border, #e0e0e0);
+  border-radius: 0.5rem;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(20, 35, 60, 0.08);
+
+  li[role='option'] {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 0.4rem;
+    font-weight: 400;
+    color: #222;
+    cursor: pointer;
+    box-shadow: none;
+
+    &.active {
+      background: var(--pn-accent-soft, rgba(59, 111, 212, 0.1));
+    }
+  }
+
+  .opt-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+  }
+
+  .opt-meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    color: #777;
+  }
+
+  .opt-tag {
+    padding: 0 0.4rem;
+    border-radius: 0.25rem;
+    background: #e0f4f1;
+    color: #0b6b63;
+    font-weight: 600;
+  }
+
+  .combo-empty,
+  .combo-more {
+    padding: 0.55rem 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: #777;
+    box-shadow: none;
+  }
+
+  .combo-more {
+    border-top: 1px solid #eef0f3;
+    margin-top: 0.2rem;
+  }
+}
+
+.combo-error {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--pn-danger, #b00020);
+}
+
+// =========================================================
+// Scelta slot: fila di giorni, poi orari del giorno
+// =========================================================
+
+.slot-picker {
+  gap: 0.45rem;
+
+  .picker-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+  }
+
+  .picker-empty {
+    margin: 0;
+    font-weight: 400;
+    color: #777;
+  }
+}
+
+// Giorni in orizzontale, scorrevoli: con due settimane di slot non stanno
+// tutti, e andare a capo su più righe rendeva difficile leggerne l'ordine.
+.day-strip {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0.15rem 0.1rem 0.45rem;
+  margin-bottom: 0.4rem;
+  scroll-snap-type: x proximity;
+}
+
+:host .day-chip {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 4.1rem;
+  padding: 0.4rem 0 0.45rem;
+  border: 1px solid var(--pn-border, #e0e0e0);
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #333;
+  font: inherit;
+  line-height: 1.15;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  .chip-weekday,
+  .chip-month {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #777;
+  }
+
+  .chip-day {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chip-count {
+    margin-top: 0.2rem;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #888;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--pn-accent, #3b6fd4);
+  }
+
+  &.active {
+    border-color: var(--pn-accent, #3b6fd4);
+    background: var(--pn-accent, #3b6fd4);
+    color: #fff;
+
+    .chip-weekday,
+    .chip-month,
+    .chip-count {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+
+  // Il giorno dell'orario già scelto resta riconoscibile anche guardando
+  // un altro giorno: un puntino in alto a destra.
+  &.has-choice::after {
+    content: '';
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: #1b7a3d;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+.time-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.time-part .part-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.8rem, 1fr));
+  gap: 0.4rem;
+}
+
+:host .time-chip {
+  padding: 0.55rem 0.4rem;
+  border: 1px solid var(--pn-border, #e0e0e0);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #222;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  .time-to {
+    font-weight: 400;
+    color: #777;
+    font-size: 0.82rem;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: var(--pn-accent, #3b6fd4);
+    background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+  }
+
+  &.selected {
+    border-color: var(--pn-accent, #3b6fd4);
+    background: var(--pn-accent, #3b6fd4);
+    color: #fff;
+
+    .time-to {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.45);
+    outline-offset: 2px;
+  }
+}
+
+.slot-summary {
+  margin: 0.35rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.5rem;
+  background: #eaf7ef;
+  color: #1b7a3d;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host .day-chip,
+  :host .time-chip {
+    transition: none;
+  }
+}

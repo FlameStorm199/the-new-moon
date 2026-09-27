@@ -21,33 +21,142 @@
       <h2 id="new-lesson-dialog-title">Prenota per un cliente</h2>
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <label class="field">
-          Cliente
-          <select #firstField formControlName="customerId">
-            <option value="">— scegli —</option>
-            @for (customer of customers; track customer.id) {
-              <option [value]="customer.id">
-                {{ customer.surname }} {{ customer.name }}
-                @if (customer.dog_name) {
-                  ({{ customer.dog_name }})
-                }
-                @if (customer.type_id === 3) {
-                  · assistente
-                }
-              </option>
+        <div class="field combo">
+          <label for="customer-search">Cliente</label>
+          <div class="combo-input">
+            <input
+              #firstField
+              #customerInput
+              id="customer-search"
+              type="text"
+              role="combobox"
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls="customer-listbox"
+              [attr.aria-expanded]="listOpen"
+              [attr.aria-activedescendant]="listOpen && visibleCustomers.length ? 'customer-opt-' + activeIndex : null"
+              [attr.aria-invalid]="customerError ? true : null"
+              [class.chosen]="selectedCustomer"
+              placeholder="Cerca per cognome, nome o cane"
+              [value]="customerQuery"
+              [disabled]="busy"
+              (input)="onCustomerQuery($any($event.target).value)"
+              (focus)="openList()"
+              (click)="openList()"
+              (keydown)="onCustomerKeydown($event)"
+              (blur)="onCustomerBlur()"
+            />
+            @if (customerQuery) {
+              <button
+                type="button"
+                class="combo-clear"
+                aria-label="Cancella la ricerca"
+                [disabled]="busy"
+                (mousedown)="$event.preventDefault()"
+                (click)="clearCustomer(customerInput)"
+              >
+                ✕
+              </button>
             }
-          </select>
-        </label>
+          </div>
 
-        <label class="field">
-          Slot libero
-          <select formControlName="slotId">
-            <option value="">— scegli —</option>
-            @for (slot of freeSlots; track slot.id) {
-              <option [value]="slot.id">{{ slotLabel(slot) }}</option>
+          @if (listOpen) {
+            <ul class="combo-list" id="customer-listbox" role="listbox" aria-label="Clienti">
+              @for (customer of visibleCustomers; track customer.id; let i = $index) {
+                <!-- mousedown e non click: il click arriverebbe dopo il blur,
+                     che ha già chiuso l'elenco. -->
+                <li
+                  role="option"
+                  [id]="'customer-opt-' + i"
+                  [attr.aria-selected]="i === activeIndex"
+                  [class.active]="i === activeIndex"
+                  (mousedown)="$event.preventDefault(); chooseCustomer(customer)"
+                  (mouseenter)="activeIndex = i"
+                >
+                  <span class="opt-name">{{ customer.surname }} {{ customer.name }}</span>
+                  <span class="opt-meta">
+                    @if (customer.dog_name) {
+                      <span>🐾 {{ customer.dog_name }}</span>
+                    }
+                    @if (customer.type_id === 3) {
+                      <span class="opt-tag">assistente</span>
+                    }
+                  </span>
+                </li>
+              } @empty {
+                <li class="combo-empty" role="presentation">Nessun cliente trovato per "{{ customerQuery }}".</li>
+              }
+              @if (hiddenCount > 0) {
+                <li class="combo-more" role="presentation">
+                  Altri {{ hiddenCount }}: scrivi qualche lettera in più per trovarli.
+                </li>
+              }
+            </ul>
+          }
+
+          @if (customerError) {
+            <span class="combo-error">{{ customerError }}</span>
+          }
+        </div>
+
+        <div class="field slot-picker">
+          <span class="picker-label" id="slot-day-label">Giorno</span>
+          @if (slotDays.length === 0) {
+            <p class="picker-empty">Nessuno slot libero nei prossimi giorni.</p>
+          } @else {
+            <div class="day-strip" role="radiogroup" aria-labelledby="slot-day-label">
+              @for (day of slotDays; track day.date) {
+                <button
+                  type="button"
+                  class="day-chip"
+                  role="radio"
+                  [attr.aria-checked]="day.date === activeDate"
+                  [class.active]="day.date === activeDate"
+                  [class.has-choice]="selectedSlot?.date === day.date"
+                  [disabled]="busy"
+                  (click)="pickDay(day.date)"
+                >
+                  <span class="chip-weekday">{{ day.weekday }}</span>
+                  <span class="chip-day">{{ day.day }}</span>
+                  <span class="chip-month">{{ day.month }}</span>
+                  <span class="chip-count">{{ day.count }} {{ day.count === 1 ? 'libero' : 'liberi' }}</span>
+                </button>
+              }
+            </div>
+
+            <span class="picker-label" id="slot-time-label">Orario</span>
+            <div class="time-parts" role="radiogroup" aria-labelledby="slot-time-label">
+              @for (part of activeDayParts; track part.label) {
+                <div class="time-part">
+                  <span class="part-label">{{ part.label }}</span>
+                  <div class="time-grid">
+                    @for (slot of part.slots; track slot.id) {
+                      <button
+                        type="button"
+                        class="time-chip"
+                        role="radio"
+                        [attr.aria-checked]="selectedSlot?.id === slot.id"
+                        [class.selected]="selectedSlot?.id === slot.id"
+                        [disabled]="busy"
+                        (click)="chooseSlot(slot)"
+                      >
+                        {{ slot.time_from.slice(0, 5) }}
+                        <span class="time-to">– {{ slot.time_to.slice(0, 5) }}</span>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (selectedSlotLabel) {
+              <p class="slot-summary"><span aria-hidden="true">✓</span> {{ selectedSlotLabel }}</p>
             }
-          </select>
-        </label>
+          }
+          @if (slotError) {
+            <span class="combo-error">{{ slotError }}</span>
+          }
+        </div>
 
         <label class="field">
           Note (facoltative)
