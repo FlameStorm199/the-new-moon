@@ -59,10 +59,14 @@ export class IncontroConoscitivoComponent {
       // un secondo invio del form proverebbe a ricreare lo stesso account.
       this.router.navigateByUrl('/prenotazioni/prenota-incontro-conoscitivo', { replaceUrl: true });
     } catch (err) {
+      // I casi "email già usata" arrivano dalla Edge Function con un
+      // messaggio già scritto per chi legge (email di un cliente, oppure
+      // incontro già richiesto): si mostra così com'è. Resta la traduzione
+      // del vecchio testo inglese di GoTrue, per sicurezza.
       const message = (err as Error | null)?.message;
       this.errorMessage.set(
-        message?.includes('already been registered') || message?.includes('già registrat')
-          ? 'Esiste già una richiesta con questa email. Contatta il centro se pensi si tratti di un errore.'
+        message?.includes('already been registered')
+          ? 'Questa email è già registrata. Non puoi prenotare incontri conoscitivi.'
           : message || 'Richiesta non riuscita. Riprova.'
       );
       this.loading.set(false);

@@ -70,6 +70,22 @@ import { jsonResponse } from "../_shared/auth-helpers.ts";
 // Nessuna scelta di ruolo esposta al chiamante (a differenza di
 // admin-create-user): qui il type_id è sempre e solo future_customer,
 // deciso da questa funzione, mai dal body della richiesta.
+//
+// EMAIL GIÀ PRESENTE: capitava che un future_customer compilasse il form
+// ma poi non scegliesse l'orario — l'account restava creato, senza
+// incontro, e ricompilando il form la stessa email veniva rifiutata: la
+// persona era bloccata. Ora, se l'email appartiene a un future_customer
+// SENZA lezioni (nemmeno cancellate/rifiutate, quelle soft-deleted non
+// contano), l'account viene riusato: dati aggiornati con quelli appena
+// scritti e stesso login automatico. In ogni altro caso (cliente vero,
+// staff, future_customer che ha già una lezione) l'email resta rifiutata.
+//
+// Riusare un account solo in base all'email è accettabile per lo stesso
+// motivo del login automatico sopra: un future_customer senza lezioni non
+// contiene altro che i dati del form, e vengono sovrascritti PRIMA di
+// consegnare la sessione — chi usasse l'email di un altro non vedrebbe i
+// suoi dati, e l'eventuale prenotazione richiederebbe comunque la conferma
+// dal link inviato a quella casella.
 
 interface IncontroConoscitivoRequest {
   name: string;
@@ -114,6 +130,52 @@ export default {
       return jsonResponse({ error: "Configurazione ruoli non valida." }, 500);
     }
 
+    const { data: existing, error: existingError } = await ctx.supabaseAdmin
+      .from("users")
+      .select("id, auth_user_id, type_id, deleted_at")
+      // ilike per ignorare maiuscole/minuscole, con % _ e \ escapati: un
+      // "_" nell'indirizzo (frequente) farebbe altrimenti da jolly e
+      // potrebbe agganciare l'account di un'altra persona.
+      .ilike("email", escapeLikePattern(email))
+      .maybeSingle();
+    if (existingError) {
+      console.error(`request-incontro-conoscitivo: lookup email fallito per ${email}: ${existingError.message}`);
+      return jsonResponse({ error: "Richiesta non riuscita, riprova." }, 500);
+    }
+
+    if (existing) {
+      if (existing.deleted_at !== null || existing.type_id !== typeRow.id || !existing.auth_user_id) {
+        return jsonResponse({ error: EMAIL_ALREADY_REGISTERED }, 409);
+      }
+
+      const { count: lessonCount, error: lessonsError } = await ctx.supabaseAdmin
+        .from("lessons")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", existing.id)
+        .is("deleted_at", null);
+      if (lessonsError) {
+        console.error(`request-incontro-conoscitivo: conteggio lezioni fallito per ${email}: ${lessonsError.message}`);
+        return jsonResponse({ error: "Richiesta non riuscita, riprova." }, 500);
+      }
+      if ((lessonCount ?? 0) > 0) {
+        return jsonResponse({ error: INCONTRO_ALREADY_REQUESTED }, 409);
+      }
+
+      // Riuso: prima i dati nuovi, poi la sessione (vedi commento in testa).
+      // L'UPDATE arriva senza auth.uid(), quindi enforce_users_update_rules
+      // lo lascia passare (bypass ripristinato nel 37).
+      const { error: refreshError } = await ctx.supabaseAdmin
+        .from("users")
+        .update({ name, surname, phone, dog_name: dogName })
+        .eq("id", existing.id);
+      if (refreshError) {
+        console.error(`request-incontro-conoscitivo: aggiornamento dati fallito per ${email}: ${refreshError.message}`);
+        return jsonResponse({ error: "Richiesta non riuscita, riprova." }, 500);
+      }
+
+      return await silentLogin(ctx, email, existing.auth_user_id);
+    }
+
     // Annuncio per handle_new_auth_user() (14_pending_admin_user_creations.sql):
     // va scritto PRIMA di creare l'utente Auth, altrimenti il trigger non lo
     // trova e inserisce la riga come customer.
@@ -141,6 +203,11 @@ export default {
       // Ripulisce l'annuncio: non deve restare agganciabile da un
       // self-signup successivo con la stessa email.
       await ctx.supabaseAdmin.from("pending_admin_user_creations").delete().eq("email", email);
+      // Utente Auth esistente senza riga in public.users (caso anomalo, il
+      // controllo sopra copre tutti quelli normali): stesso messaggio.
+      if (createError?.message?.toLowerCase().includes("already")) {
+        return jsonResponse({ error: EMAIL_ALREADY_REGISTERED }, 409);
+      }
       return jsonResponse(
         { error: createError?.message ?? "Richiesta non riuscita, riprova." },
         400,
@@ -185,57 +252,75 @@ export default {
       }
     }
 
-    const { data: linkData, error: linkError } = await ctx.supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email,
-    });
-    const emailOtp = linkData?.properties?.email_otp as string | undefined;
-    if (linkError || !emailOtp) {
-      console.error(
-        `request-incontro-conoscitivo: generateLink fallito per ${email}: ${linkError?.message ?? "email_otp assente nella risposta"}`,
-      );
-      // L'utente esiste già a questo punto: non annulliamo la creazione per
-      // un fallimento del solo login automatico (raro: significherebbe
-      // buttare via una richiesta valida per un problema temporaneo di
-      // GoTrue) — segnaliamo il warning, il frontend saprà che deve
-      // spiegare all'utente di riprovare o contattare il centro.
-      return jsonResponse(
-        {
-          warning: "Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.",
-          user_id: created.user.id,
-        },
-        207,
-      );
-    }
-
-    // verifyOtp è un'operazione di autenticazione "normale" (pubblica), non
-    // amministrativa: va fatta su un client anonimo a sé, non su
-    // ctx.supabaseAdmin (scoped alle operazioni admin/service_role — stesso
-    // motivo per cui handleSelfChange in manage-user-password/index.ts usa
-    // un client separato per signInWithPassword, non ctx.supabaseAdmin).
-    const anonClient = createContextClient();
-    const { data: verified, error: verifyOtpError } = await anonClient.auth.verifyOtp({
-      email,
-      token: emailOtp,
-      type: "recovery",
-    });
-    if (verifyOtpError || !verified?.session) {
-      console.error(
-        `request-incontro-conoscitivo: verifyOtp fallito per ${email}: ${verifyOtpError?.message ?? "nessuna sessione nella risposta"}`,
-      );
-      return jsonResponse(
-        {
-          warning: "Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.",
-          user_id: created.user.id,
-        },
-        207,
-      );
-    }
-
-    return jsonResponse({
-      user_id: created.user.id,
-      access_token: verified.session.access_token,
-      refresh_token: verified.session.refresh_token,
-    });
+    return await silentLogin(ctx, email, created.user.id);
   }),
 };
+
+const EMAIL_ALREADY_REGISTERED =
+  "Questa email è già registrata. Non puoi prenotare incontri conoscitivi.";
+const INCONTRO_ALREADY_REQUESTED =
+  "Con questa email è già stato richiesto un Incontro Conoscitivo: controlla la tua casella per il link di conferma, oppure contatta il centro.";
+
+/**
+ * Login automatico e silenzioso (vedi commento in testa): usato sia per
+ * l'account appena creato sia per un future_customer riusato.
+ */
+// deno-lint-ignore no-explicit-any
+async function silentLogin(ctx: any, email: string, authUserId: string): Promise<Response> {
+  const { data: linkData, error: linkError } = await ctx.supabaseAdmin.auth.admin.generateLink({
+    type: "recovery",
+    email,
+  });
+  const emailOtp = linkData?.properties?.email_otp as string | undefined;
+  if (linkError || !emailOtp) {
+    console.error(
+      `request-incontro-conoscitivo: generateLink fallito per ${email}: ${linkError?.message ?? "email_otp assente nella risposta"}`,
+    );
+    // L'utente esiste già a questo punto: non annulliamo la creazione per
+    // un fallimento del solo login automatico (raro: significherebbe
+    // buttare via una richiesta valida per un problema temporaneo di
+    // GoTrue) — segnaliamo il warning, il frontend saprà che deve
+    // spiegare all'utente di riprovare o contattare il centro.
+    return jsonResponse(
+      {
+        warning: "Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.",
+        user_id: authUserId,
+      },
+      207,
+    );
+  }
+
+  // verifyOtp è un'operazione di autenticazione "normale" (pubblica), non
+  // amministrativa: va fatta su un client anonimo a sé, non su
+  // ctx.supabaseAdmin (scoped alle operazioni admin/service_role — stesso
+  // motivo per cui handleSelfChange in manage-user-password/index.ts usa
+  // un client separato per signInWithPassword, non ctx.supabaseAdmin).
+  const anonClient = createContextClient();
+  const { data: verified, error: verifyOtpError } = await anonClient.auth.verifyOtp({
+    email,
+    token: emailOtp,
+    type: "recovery",
+  });
+  if (verifyOtpError || !verified?.session) {
+    console.error(
+      `request-incontro-conoscitivo: verifyOtp fallito per ${email}: ${verifyOtpError?.message ?? "nessuna sessione nella risposta"}`,
+    );
+    return jsonResponse(
+      {
+        warning: "Richiesta registrata, ma l'accesso automatico non è riuscito. Riprova tra poco.",
+        user_id: authUserId,
+      },
+      207,
+    );
+  }
+
+  return jsonResponse({
+    user_id: authUserId,
+    access_token: verified.session.access_token,
+    refresh_token: verified.session.refresh_token,
+  });
+}
+
+function escapeLikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
