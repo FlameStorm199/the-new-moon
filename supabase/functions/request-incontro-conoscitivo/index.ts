@@ -75,16 +75,20 @@ import { jsonResponse } from "../_shared/auth-helpers.ts";
 // ma poi non scegliesse l'orario — l'account restava creato, senza
 // incontro, e ricompilando il form la stessa email veniva rifiutata: la
 // persona era bloccata. Ora, se l'email appartiene a un future_customer
-// SENZA lezioni (nemmeno cancellate/rifiutate, quelle soft-deleted non
-// contano), l'account viene riusato: dati aggiornati con quelli appena
-// scritti e stesso login automatico. In ogni altro caso (cliente vero,
-// staff, future_customer che ha già una lezione) l'email resta rifiutata.
+// senza incontri ATTIVI (in attesa o confermati: uno cancellato o
+// rifiutato non conta, così chi si è visto rifiutare la data può
+// richiederne un'altra da solo), l'account viene riusato: dati aggiornati
+// con quelli appena scritti e stesso login automatico. In ogni altro caso
+// (cliente vero, staff, future_customer con un incontro attivo) l'email
+// resta rifiutata. Coerente con book_lesson (28_...sql), che blocca solo
+// un secondo incontro ATTIVO (lessons_one_active_incontro_conoscitivo_unique).
 //
 // Riusare un account solo in base all'email è accettabile per lo stesso
-// motivo del login automatico sopra: un future_customer senza lezioni non
-// contiene altro che i dati del form, e vengono sovrascritti PRIMA di
-// consegnare la sessione — chi usasse l'email di un altro non vedrebbe i
-// suoi dati, e l'eventuale prenotazione richiederebbe comunque la conferma
+// motivo del login automatico sopra: un future_customer senza incontri
+// attivi contiene i dati del form, sovrascritti PRIMA di consegnare la
+// sessione, e al più lo storico di incontri cancellati o rifiutati (data,
+// orario, eventuale motivo) — chi usasse l'email di un altro vedrebbe solo
+// quello, e l'eventuale prenotazione richiederebbe comunque la conferma
 // dal link inviato a quella casella.
 
 interface IncontroConoscitivoRequest {
@@ -152,6 +156,7 @@ export default {
         .from("lessons")
         .select("id", { count: "exact", head: true })
         .eq("customer_id", existing.id)
+        .in("status", ["pending", "confirmed"])
         .is("deleted_at", null);
       if (lessonsError) {
         console.error(`request-incontro-conoscitivo: conteggio lezioni fallito per ${email}: ${lessonsError.message}`);
