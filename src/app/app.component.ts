@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { CookieBannerComponent } from './components/cookie-banner/cookie-banner.component';
+import { PwaService } from './core/pwa/pwa.service';
 
 @Component({
   selector: 'app-root',
@@ -13,4 +14,8 @@ import { CookieBannerComponent } from './components/cookie-banner/cookie-banner.
 })
 export class AppComponent {
   title = 'asd-cinofila';
+
+  // Istanziato qui e non al primo uso: deve gestire il manifest e catturare
+  // il prompt di installazione fin dall'avvio, vedi PwaService.
+  private readonly pwa = inject(PwaService);
 }

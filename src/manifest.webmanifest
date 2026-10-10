@@ -1,0 +1,33 @@
+{
+  "id": "/prenotazioni/",
+  "name": "La Luna Nuova – Prenotazioni",
+  "short_name": "Luna Nuova",
+  "description": "Prenota lezioni ed eventi dell'Associazione Cinofila La Luna Nuova.",
+  "lang": "it",
+  "scope": "/prenotazioni/",
+  "start_url": "/prenotazioni/area-personale",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,6 +1,10 @@
 <header [class.scrolled]="scrolled">
   <div class="nav-wrapper">
-    <a routerLink="/" class="logo-link" aria-label="La Luna Nuova, torna alla home">
+    <a
+      [routerLink]="standalone() ? '/prenotazioni/area-personale' : '/'"
+      class="logo-link"
+      [attr.aria-label]="standalone() ? 'La Luna Nuova, area personale' : 'La Luna Nuova, torna alla home'"
+    >
       <!-- PNG da 15 KB al posto del BMP da 500 KB: stesso disegno, formato web. -->
       <img
         src="assets/images/logo-header.png"
@@ -11,20 +15,23 @@
       />
     </a>
 
-    <!-- Visibile solo sotto la soglia mobile: apre i link in un pannello -->
-    <button
-      type="button"
-      class="menu-toggle"
-      [class.open]="menuOpen"
-      [attr.aria-expanded]="menuOpen"
-      aria-controls="nav-menu"
-      aria-label="Menu"
-      (click)="toggleMenu($event)"
-    >
-      <span class="bar"></span>
-      <span class="bar"></span>
-      <span class="bar"></span>
-    </button>
+    <!-- Visibile solo sotto la soglia mobile: apre i link in un pannello.
+         Da app (PWA) senza sessione non ci sono link: niente hamburger vuoto. -->
+    @if (links().length > 0) {
+      <button
+        type="button"
+        class="menu-toggle"
+        [class.open]="menuOpen"
+        [attr.aria-expanded]="menuOpen"
+        aria-controls="nav-menu"
+        aria-label="Menu"
+        (click)="toggleMenu($event)"
+      >
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </button>
+    }
 
     <div class="nav-right" id="nav-menu" [class.open]="menuOpen">
       <nav>
@@ -40,7 +47,7 @@
             </a>
           }
 
-          @if (inBookingArea()) {
+          @if (inBookingArea() && !standalone()) {
             <a routerLink="/" class="exit-link">← Torna al sito</a>
           }
         </div>
@@ -96,7 +103,7 @@
           </div>
         }
       </div>
-    } @else {
+    } @else if (!standalone()) {
       <div class="social-buttons">
         <div class="fb-wrapper">
           <button

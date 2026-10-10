@@ -6,6 +6,7 @@ import { filter } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserProfile, UserProfileService } from '../../core/users/user-profile.service';
 import { SOCIAL_LINKS } from '../../core/site/social-links';
+import { PwaService } from '../../core/pwa/pwa.service';
 
 interface NavItem {
   path: string;
@@ -42,6 +43,14 @@ export class NavbarComponent {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly profileService = inject(UserProfileService);
+
+  /**
+   * Aperta dall'icona in Home (PWA): l'app è solo l'area prenotazioni.
+   * Niente link al sito pubblico né social, il logo porta all'area
+   * personale — uscire dallo scope dell'app aprirebbe il browser dentro
+   * l'app, con un effetto da "sito" e non da app.
+   */
+  readonly standalone = inject(PwaService).standalone;
 
   facebookPonzanoUrl = SOCIAL_LINKS.facebookPonzano;
   facebookGeneralUrl = SOCIAL_LINKS.facebookGeneral;
@@ -124,7 +133,7 @@ export class NavbarComponent {
 
   readonly links = computed<NavItem[]>(() => {
     if (!this.inBookingArea()) {
-      return PUBLIC_LINKS;
+      return this.standalone() ? [] : PUBLIC_LINKS;
     }
 
     const profile = this.profile()!;

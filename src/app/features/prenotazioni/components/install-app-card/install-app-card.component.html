@@ -1,0 +1,47 @@
+@if (visible()) {
+  <aside class="install-card" aria-labelledby="install-card-title">
+    <img class="install-icon" src="assets/icons/icon-192.png" alt="" width="48" height="48" />
+
+    <div class="install-body">
+      <p class="install-title" id="install-card-title">Usa le prenotazioni come un'app</p>
+
+      @if (pwa.canPromptInstall()) {
+        <p class="install-text">
+          Aggiungile alla schermata Home: le apri con un tocco, a schermo intero.
+        </p>
+      } @else if (pwa.platform === 'ios') {
+        <ol class="install-steps">
+          <li>
+            Tocca <strong>Condividi</strong>
+            <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+            nella barra del browser.
+          </li>
+          <li>Scegli <strong>Aggiungi alla schermata Home</strong> (se non la vedi, scorri in basso).</li>
+          <li>Conferma con <strong>Aggiungi</strong>.</li>
+        </ol>
+        <p class="install-note">
+          Se la voce non c'è, apri questa pagina con Safari. La prima volta che apri l'app ti
+          verrà chiesto di accedere di nuovo.
+        </p>
+      } @else {
+        <ol class="install-steps">
+          <li>
+            Apri il menu del browser
+            <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+            in alto a destra.
+          </li>
+          <li>Scegli <strong>Installa app</strong> oppure <strong>Aggiungi a schermata Home</strong>.</li>
+        </ol>
+      }
+
+      <div class="install-actions">
+        @if (pwa.canPromptInstall()) {
+          <button type="button" class="install-btn" [disabled]="installing()" (click)="install()">
+            Installa
+          </button>
+        }
+        <button type="button" class="dismiss-btn" (click)="dismiss()">Non ora</button>
+      </div>
+    </div>
+  </aside>
+}
