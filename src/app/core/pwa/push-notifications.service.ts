@@ -21,6 +21,13 @@ const FORGET_TIMEOUT_MS = 3000;
  * risponde lascia l'interruttore su "Attivazione…" per sempre.
  */
 const STEP_TIMEOUT_MS = 20000;
+/**
+ * Quando l'autoriparazione non basta: l'unica via è cancellare i dati del
+ * sito, che è ciò che ha sbloccato Safari nei test sulla preview.
+ */
+const STUCK_MESSAGE =
+  'Il browser non riesce ad attivare le notifiche. Cancella i dati di questo sito dalle impostazioni del browser ' +
+  '(Safari: Impostazioni → Privacy → Gestisci dati siti web), poi accedi di nuovo e riprova.';
 
 /**
  * Notifiche push su QUESTO dispositivo: attivazione (permesso del browser +
@@ -233,11 +240,54 @@ export class PushNotificationsService {
    * serviceWorker.ready resta in attesa fino ad allora. Registrare lo
    * stesso script con lo stesso scope è idempotente: se c'è già, il
    * browser restituisce la registrazione esistente.
+   *
+   * Autoriparazione: visto su Safari, una registrazione può restare
+   * "vuota" (nessun worker installato, in installazione o attivo) e da lì
+   * register() e ready non rispondono più. Se succede si cancella la
+   * registrazione vuota e si riprova una volta. Se anche questo non basta
+   * (Safari mette in coda anche la cancellazione dietro quella bloccata),
+   * il messaggio dice all'utente come sbloccarla a mano.
    */
   private async readyRegistration(): Promise<ServiceWorkerRegistration> {
+    try {
+      return await this.registerAndWait();
+    } catch (err) {
+      if (!(err instanceof PushSetupError) || !err.code.endsWith('-timeout')) {
+        throw err;
+      }
+      if (!(await this.removeEmptyRegistrations())) {
+        throw new PushSetupError(STUCK_MESSAGE, err.code);
+      }
+      console.warn('[push] registrazione vuota rimossa, nuovo tentativo');
+      try {
+        return await this.registerAndWait();
+      } catch (retryErr) {
+        throw retryErr instanceof PushSetupError
+          ? new PushSetupError(STUCK_MESSAGE, `${retryErr.code}-retry`)
+          : retryErr;
+      }
+    }
+  }
+
+  private async registerAndWait(): Promise<ServiceWorkerRegistration> {
     const message = 'Le notifiche non sono ancora pronte su questo dispositivo. Ricarica la pagina e riprova.';
     await withTimeout(navigator.serviceWorker.register(SW_SCRIPT), 'sw-register', message);
     return withTimeout(navigator.serviceWorker.ready, 'sw-ready', message);
+  }
+
+  /** true se almeno una registrazione vuota è stata davvero cancellata. */
+  private async removeEmptyRegistrations(): Promise<boolean> {
+    const registrations = await withTimeout(
+      navigator.serviceWorker.getRegistrations(),
+      'sw-cleanup',
+      STUCK_MESSAGE
+    ).catch(() => [] as readonly ServiceWorkerRegistration[]);
+
+    const empty = registrations.filter((r) => !r.installing && !r.waiting && !r.active);
+    const results = await Promise.all(
+      empty.map((r) => withTimeout(r.unregister(), 'sw-unregister', STUCK_MESSAGE).catch(() => false))
+    );
+    return results.some(Boolean);
   }
 
   private async removeSubscription(): Promise<void> {
