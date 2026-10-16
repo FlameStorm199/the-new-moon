@@ -4,11 +4,12 @@ import { NavbarComponent } from './components/navbar/navbar.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { CookieBannerComponent } from './components/cookie-banner/cookie-banner.component';
 import { PwaService } from './core/pwa/pwa.service';
+import { PushPromptComponent } from './components/push-prompt/push-prompt.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NavbarComponent, FooterComponent, CookieBannerComponent],
+  imports: [RouterOutlet, NavbarComponent, FooterComponent, CookieBannerComponent, PushPromptComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

@@ -1,0 +1,110 @@
+// Stessa famiglia del riquadro di installazione (install-app-card): fondo
+// azzurro tenue, bordo sottile, radius 12px. Sta nel flusso della pagina,
+// non fluttuante, così non si sovrappone al banner dei cookie.
+.push-prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  max-width: 760px;
+  margin: 0 auto 1.25rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid rgba(59, 111, 212, 0.2);
+  border-radius: var(--pn-radius-lg, 12px);
+  background: var(--pn-accent-soft, rgba(59, 111, 212, 0.08));
+}
+
+.icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--pn-accent, #3b6fd4);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 700;
+  color: var(--pn-text, #222);
+}
+
+.body {
+  margin-top: 0.15rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--pn-text-muted, #555);
+}
+
+.error {
+  margin-top: 0.4rem;
+  font-size: 0.86rem;
+  color: var(--pn-danger, #b00020);
+}
+
+.actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.4rem;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  border-radius: var(--pn-radius-md, 8px);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(59, 111, 212, 0.4);
+    outline-offset: 2px;
+  }
+}
+
+.enable {
+  border: 1px solid var(--pn-accent, #3b6fd4);
+  background: var(--pn-accent, #3b6fd4);
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: var(--pn-accent-dark, #2d5ab0);
+  }
+}
+
+.later {
+  border: 1px solid transparent;
+  background: none;
+  color: var(--pn-text-muted, #555);
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.6);
+  }
+}
+
+// Su telefono i pulsanti vanno sotto il testo, a tutta larghezza utile.
+@media (max-width: 600px) {
+  .push-prompt {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .text {
+    flex-basis: calc(100% - 40px - 0.9rem);
+  }
+
+  .actions {
+    width: 100%;
+    padding-left: calc(40px + 0.9rem);
+  }
+}

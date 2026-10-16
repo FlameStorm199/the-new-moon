@@ -1,5 +1,7 @@
 <app-navbar />
 <main>
+  <!-- Solo nell'area prenotazioni e solo se il permesso non è mai stato chiesto. -->
+  <app-push-prompt />
   <router-outlet />
 </main>
 <app-footer />

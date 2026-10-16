@@ -218,9 +218,8 @@
       </nav>
     }
 
-    <!-- In fondo: sono impostazioni e inviti, non devono spingere giù
-         prossima lezione o calendario. -->
-    <app-push-notifications-card [audience]="pushAudience" />
+    <!-- In fondo: è un invito, non deve spingere giù prossima lezione o
+         calendario. Le notifiche push si gestiscono dal menu account. -->
     <app-install-app-card />
   } @else if (loadingProfile()) {
     <div class="skeleton-page" aria-busy="true" aria-label="Caricamento">

@@ -26,8 +26,10 @@ export class PushMenuItemComponent {
     const turningOn = this.push.state() === 'off';
     try {
       await (turningOn ? this.push.enable() : this.push.disable());
-    } catch {
-      this.errorMessage.set(turningOn ? 'Attivazione non riuscita, riprova.' : 'Disattivazione non riuscita, riprova.');
+    } catch (err) {
+      // enable() lancia già messaggi pensati per l'utente (vedi withTimeout).
+      const fallback = turningOn ? 'Attivazione non riuscita, riprova.' : 'Disattivazione non riuscita, riprova.';
+      this.errorMessage.set(turningOn && err instanceof Error ? err.message : fallback);
     }
   }
 }

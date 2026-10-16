@@ -1,0 +1,23 @@
+@if (visible()) {
+  <aside class="push-prompt" aria-labelledby="push-prompt-title">
+    <span class="icon" aria-hidden="true"><i class="fa-solid fa-bell"></i></span>
+
+    <div class="text">
+      <p class="title" id="push-prompt-title">Attiva le notifiche</p>
+      <p class="body">
+        Ti avvisiamo subito di conferme, spostamenti e cancellazioni. Puoi spegnerle quando vuoi
+        dal menu del tuo account.
+      </p>
+      @if (errorMessage(); as error) {
+        <p class="error" role="alert">{{ error }}</p>
+      }
+    </div>
+
+    <div class="actions">
+      <button type="button" class="enable" [disabled]="push.busy()" (click)="enable()">
+        {{ push.busy() ? 'Attivazione…' : 'Attiva' }}
+      </button>
+      <button type="button" class="later" [disabled]="push.busy()" (click)="dismiss()">Non ora</button>
+    </div>
+  </aside>
+}
