@@ -49,8 +49,9 @@ export class PushPromptComponent {
     this.errorMessage.set(null);
     try {
       await this.push.enable();
-    } catch (err) {
-      this.errorMessage.set(err instanceof Error ? err.message : 'Attivazione non riuscita, riprova.');
+    } catch {
+      // Messaggio e codice del passaggio fallito li prepara il servizio.
+      this.errorMessage.set(this.push.lastError() ?? 'Attivazione non riuscita, riprova.');
     }
   }
 

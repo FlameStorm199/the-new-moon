@@ -61,6 +61,12 @@ export class PushNotificationsService {
 
   readonly state = signal<PushState>('unsupported');
   readonly busy = signal(false);
+  /**
+   * Ultimo errore di attivazione, già pronto da mostrare: messaggio per
+   * l'utente + codice breve del passaggio fallito (es. "sw-ready-timeout"),
+   * così da capire il problema anche senza console. null dopo un successo.
+   */
+  readonly lastError = signal<string | null>(null);
 
   private readonly signedIn = signal(false);
   private readonly permission = signal<NotificationPermission>(
@@ -80,6 +86,11 @@ export class PushNotificationsService {
       return;
     }
     void this.refreshState();
+    // Subito, senza aspettare provideServiceWorker (che registra solo ad app
+    // "stabile" o dopo 30 secondi): quando l'utente tocca "Attiva" il
+    // service worker deve essere già pronto. Stesso script e scope di
+    // Angular, quindi è la stessa registrazione.
+    navigator.serviceWorker.register(SW_SCRIPT).catch((err) => console.warn('[push] registrazione service worker:', err));
 
     this.supabase.auth.onAuthStateChange((event, session) => {
       this.signedIn.set(!!session);
@@ -116,6 +127,10 @@ export class PushNotificationsService {
       }
       await this.subscribeAndSave();
       this.state.set('on');
+      this.lastError.set(null);
+    } catch (err) {
+      this.lastError.set(describe(err));
+      throw err;
     } finally {
       this.busy.set(false);
     }
@@ -167,19 +182,26 @@ export class PushNotificationsService {
    * permesso: senza un tocco iOS/Safari la rifiutano e Chrome la penalizza.
    */
   private async autoEnable(): Promise<void> {
-    if (Notification.permission !== 'granted' || this.busy()) {
+    // Silenziosa: niente busy, quindi niente "Attivazione…" a ogni
+    // ricarica. L'interfaccia cambia solo se riesce (o mostra il motivo se
+    // fallisce, in lastError).
+    if (Notification.permission !== 'granted' || this.busy() || this.autoRunning) {
       return;
     }
-    this.busy.set(true);
+    this.autoRunning = true;
     try {
       await this.subscribeAndSave();
       this.state.set('on');
+      this.lastError.set(null);
     } catch (err) {
       console.warn('[push] attivazione automatica non riuscita:', err);
+      this.lastError.set(describe(err));
     } finally {
-      this.busy.set(false);
+      this.autoRunning = false;
     }
   }
+
+  private autoRunning = false;
 
   private async subscribeAndSave(): Promise<void> {
     const registration = await this.readyRegistration();
@@ -191,12 +213,12 @@ export class PushNotificationsService {
           userVisibleOnly: true,
           applicationServerKey: base64UrlToUint8Array(environment.vapidPublicKey),
         }),
-        'iscrizione al servizio push',
+        'subscribe',
         'Il servizio delle notifiche del browser non risponde. Riprova tra poco.'
       ));
 
     try {
-      await withTimeout(this.save(subscription), 'salvataggio', 'Non riusciamo a salvare la scelta. Controlla la connessione e riprova.');
+      await withTimeout(this.save(subscription), 'save', 'Non riusciamo a salvare la scelta. Controlla la connessione e riprova.');
     } catch (err) {
       // Senza la riga sul server il browser crederebbe di essere iscritto
       // ma non arriverebbe mai nulla: meglio tornare a "spente".
@@ -214,8 +236,8 @@ export class PushNotificationsService {
    */
   private async readyRegistration(): Promise<ServiceWorkerRegistration> {
     const message = 'Le notifiche non sono ancora pronte su questo dispositivo. Ricarica la pagina e riprova.';
-    await withTimeout(navigator.serviceWorker.register(SW_SCRIPT), 'registrazione service worker', message);
-    return withTimeout(navigator.serviceWorker.ready, 'service worker pronto', message);
+    await withTimeout(navigator.serviceWorker.register(SW_SCRIPT), 'sw-register', message);
+    return withTimeout(navigator.serviceWorker.ready, 'sw-ready', message);
   }
 
   private async removeSubscription(): Promise<void> {
@@ -250,15 +272,29 @@ export class PushNotificationsService {
   }
 }
 
+/** Errore di attivazione: messaggio per l'utente + codice del passaggio. */
+class PushSetupError extends Error {
+  constructor(message: string, readonly code: string) {
+    super(message);
+  }
+}
+
+function describe(err: unknown): string {
+  if (err instanceof PushSetupError) {
+    return `${err.message} (codice: ${err.code})`;
+  }
+  return 'Attivazione non riuscita, riprova.';
+}
+
 /**
- * Rifiuta dopo STEP_TIMEOUT_MS con `message` (per l'utente); `step` va
- * solo nel log, per capire dalla console quale passaggio si è fermato.
+ * Rifiuta dopo STEP_TIMEOUT_MS, o se il passaggio fallisce, con `message`
+ * per l'utente e un codice "<step>-timeout" / "<step>-<NomeErrore>".
  */
 function withTimeout<T>(promise: Promise<T>, step: string, message: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
       console.warn(`[push] timeout: ${step}`);
-      reject(new Error(message));
+      reject(new PushSetupError(message, `${step}-timeout`));
     }, STEP_TIMEOUT_MS);
     promise.then(
       (value) => {
@@ -268,7 +304,8 @@ function withTimeout<T>(promise: Promise<T>, step: string, message: string): Pro
       (err) => {
         clearTimeout(timer);
         console.warn(`[push] errore: ${step}`, err);
-        reject(new Error(message));
+        const name = (err as { name?: string; code?: string })?.name || (err as { code?: string })?.code || 'error';
+        reject(new PushSetupError(message, `${step}-${name}`));
       }
     );
   });

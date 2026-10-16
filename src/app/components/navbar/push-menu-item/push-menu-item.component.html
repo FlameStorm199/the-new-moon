@@ -26,8 +26,8 @@
       ></i>
       <span class="label">
         Notifiche
-        <span class="status" [class.error]="errorMessage()">
-          @if (errorMessage(); as error) {
+        <span class="status" [class.error]="shownError()">
+          @if (shownError(); as error) {
             {{ error }}
           } @else if (push.busy()) {
             {{ push.state() === 'on' ? 'Disattivazione…' : 'Attivazione…' }}

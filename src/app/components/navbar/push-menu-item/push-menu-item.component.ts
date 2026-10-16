@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { PushNotificationsService } from '../../../core/pwa/push-notifications.service';
 
 /**
@@ -20,16 +20,26 @@ export class PushMenuItemComponent {
   readonly push = inject(PushNotificationsService);
   readonly errorMessage = signal<string | null>(null);
 
+  /** Errore da mostrare sotto "Notifiche": il proprio, o l'ultima attivazione fallita (anche automatica). */
+  readonly shownError = computed(
+    () =>
+      this.errorMessage() ??
+      (this.push.state() === 'off' && !this.push.busy() ? this.push.lastError() : null)
+  );
+
   /** Il click è il gesto che iOS richiede per mostrare la richiesta di permesso. */
   async toggle(): Promise<void> {
     this.errorMessage.set(null);
     const turningOn = this.push.state() === 'off';
     try {
       await (turningOn ? this.push.enable() : this.push.disable());
-    } catch (err) {
-      // enable() lancia già messaggi pensati per l'utente (vedi withTimeout).
-      const fallback = turningOn ? 'Attivazione non riuscita, riprova.' : 'Disattivazione non riuscita, riprova.';
-      this.errorMessage.set(turningOn && err instanceof Error ? err.message : fallback);
+    } catch {
+      // L'errore di attivazione (con il codice del passaggio fallito) lo
+      // espone già il servizio in lastError, anche per l'attivazione
+      // automatica al caricamento: qui resta solo quello di disattivazione.
+      if (!turningOn) {
+        this.errorMessage.set('Disattivazione non riuscita, riprova.');
+      }
     }
   }
 }
