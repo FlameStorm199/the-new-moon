@@ -5,5 +5,5 @@ export const environment = {
   // Chiave pubblica VAPID per le notifiche push (PWA): pubblica per
   // definizione, la privata sta solo nei secret delle Edge Function — vedi
   // database/38_push_subscriptions.sql. Vuota = notifiche push nascoste.
-  vapidPublicKey: '',
+  vapidPublicKey: 'BFMzpk12qun0Fc78xN32gG9eSrmyWT-C49YnmpVpyqErY0ma2LVFnttN7Gl1e0cSF_Hz-VU8EwFGnSZMHgMNoJE',
 };
