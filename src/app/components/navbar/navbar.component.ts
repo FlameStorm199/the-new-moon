@@ -7,6 +7,8 @@ import { AuthService } from '../../core/auth/auth.service';
 import { UserProfile, UserProfileService } from '../../core/users/user-profile.service';
 import { SOCIAL_LINKS } from '../../core/site/social-links';
 import { PwaService } from '../../core/pwa/pwa.service';
+import { PushNotificationsService } from '../../core/pwa/push-notifications.service';
+import { PushMenuItemComponent } from './push-menu-item/push-menu-item.component';
 
 interface NavItem {
   path: string;
@@ -35,7 +37,7 @@ const PUBLIC_LINKS: NavItem[] = [
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule],
+  imports: [RouterLink, RouterLinkActive, CommonModule, PushMenuItemComponent],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
@@ -51,6 +53,13 @@ export class NavbarComponent {
    * l'app, con un effetto da "sito" e non da app.
    */
   readonly standalone = inject(PwaService).standalone;
+
+  /**
+   * Stato delle push su questo dispositivo, per il badge sull'avatar
+   * (visibile anche a menu chiuso). L'interruttore nel menu è
+   * PushMenuItemComponent. 'unsupported' = niente badge.
+   */
+  readonly push = inject(PushNotificationsService);
 
   facebookPonzanoUrl = SOCIAL_LINKS.facebookPonzano;
   facebookGeneralUrl = SOCIAL_LINKS.facebookGeneral;

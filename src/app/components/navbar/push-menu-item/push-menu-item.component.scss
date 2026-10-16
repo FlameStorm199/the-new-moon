@@ -1,0 +1,104 @@
+// Stessi valori di .account-item in navbar.component.scss: deve sembrare
+// una voce come le altre del menu.
+$ink: #26303d;
+$success: #1b7a3d;
+
+:host {
+  display: block;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: $ink;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+
+  i {
+    width: 1rem;
+    color: #7a8494;
+    text-align: center;
+  }
+}
+
+button.item {
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: #f3f6fc;
+    outline: none;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  &[aria-checked='true'] i {
+    color: $success;
+  }
+}
+
+.label {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.status {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: #6b7585;
+
+  &.error {
+    color: #b00020;
+  }
+}
+
+.switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 18px;
+  border-radius: 9px;
+  background: #cfd5de;
+  transition: background 0.2s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(20, 35, 60, 0.25);
+    transition: transform 0.2s ease;
+  }
+
+  &.on {
+    background: $success;
+
+    &::after {
+      transform: translateX(12px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch::after {
+    transition: none;
+  }
+}

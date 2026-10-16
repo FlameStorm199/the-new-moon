@@ -1,0 +1,42 @@
+@switch (push.state()) {
+  @case ('unsupported') {}
+  @case ('denied') {
+    <div class="item">
+      <i class="fa-solid fa-bell-slash" aria-hidden="true"></i>
+      <span class="label">
+        Notifiche
+        <span class="status">Bloccate: consentile dalle impostazioni del browser o del telefono</span>
+      </span>
+    </div>
+  }
+  @default {
+    <button
+      type="button"
+      class="item"
+      role="switch"
+      [attr.aria-checked]="push.state() === 'on'"
+      [disabled]="push.busy()"
+      (click)="toggle()"
+    >
+      <i
+        class="fa-solid"
+        [class.fa-bell]="push.state() === 'on'"
+        [class.fa-bell-slash]="push.state() !== 'on'"
+        aria-hidden="true"
+      ></i>
+      <span class="label">
+        Notifiche
+        <span class="status" [class.error]="errorMessage()">
+          @if (errorMessage(); as error) {
+            {{ error }}
+          } @else if (push.busy()) {
+            {{ push.state() === 'on' ? 'Disattivazione…' : 'Attivazione…' }}
+          } @else {
+            {{ push.state() === 'on' ? 'Attive su questo dispositivo' : 'Spente' }}
+          }
+        </span>
+      </span>
+      <span class="switch" [class.on]="push.state() === 'on'" aria-hidden="true"></span>
+    </button>
+  }
+}

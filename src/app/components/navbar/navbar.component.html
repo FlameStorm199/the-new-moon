@@ -62,10 +62,19 @@
           aria-haspopup="true"
           [attr.aria-expanded]="accountOpen"
           aria-controls="account-menu"
-          [attr.aria-label]="'Account di ' + acc.fullName"
+          [attr.aria-label]="'Account di ' + acc.fullName + (push.state() === 'on' ? ', notifiche attive' : push.state() === 'unsupported' ? '' : ', notifiche spente')"
           (click)="toggleAccount($event)"
         >
-          <span class="avatar" [attr.data-role]="acc.roleCode" aria-hidden="true">{{ acc.initials }}</span>
+          <span class="avatar-wrap" aria-hidden="true">
+            <span class="avatar" [attr.data-role]="acc.roleCode">{{ acc.initials }}</span>
+            <!-- Stato delle notifiche leggibile anche a menu chiuso (e su
+                 telefono, dove del bottone resta solo l'avatar). -->
+            @if (push.state() !== 'unsupported') {
+              <span class="push-badge" [class.on]="push.state() === 'on'">
+                <i class="fa-solid" [class.fa-bell]="push.state() === 'on'" [class.fa-bell-slash]="push.state() !== 'on'"></i>
+              </span>
+            }
+          </span>
           <span class="account-text">
             <span class="account-name">{{ acc.firstName }}</span>
             <span class="account-role">{{ acc.roleLabel }}</span>
@@ -96,6 +105,9 @@
               <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
               Privacy e assistenza
             </a>
+            <!-- Interruttore delle notifiche push: componente a parte, vedi
+                 push-menu-item.component.ts. -->
+            <app-push-menu-item />
             <button type="button" class="account-item logout" [disabled]="loggingOut" (click)="logout()">
               <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
               {{ loggingOut ? 'Uscita…' : 'Esci' }}

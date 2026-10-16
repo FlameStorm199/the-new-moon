@@ -5,6 +5,8 @@ $mobile-max: 900px;
 $accent: #3b6fd4;
 $ink: #26303d;
 $line: rgba(20, 35, 60, 0.08);
+// Lo stesso verde di --pn-success: "attivo/confermato" in tutta l'area prenotazioni.
+$success: #1b7a3d;
 
 header {
   position: sticky;
@@ -279,6 +281,34 @@ header {
       width: 2.75rem;
       height: 2.75rem;
       font-size: 0.95rem;
+    }
+  }
+
+  // Badge delle notifiche sull'angolo dell'avatar, come un indicatore di
+  // presenza: verde = attive su questo dispositivo, grigio barrato = spente.
+  .avatar-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .push-badge {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    color: #6b7585;
+    font-size: 8px;
+    box-shadow: 0 0 0 2px #fff, inset 0 0 0 1px #d5dae2;
+
+    &.on {
+      background: $success;
+      color: #fff;
+      box-shadow: 0 0 0 2px #fff;
     }
   }
 
