@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Session } from '@supabase/supabase-js';
 import { SupabaseService } from '../supabase/supabase.service';
+import { PushNotificationsService } from '../pwa/push-notifications.service';
 
 export interface CustomerSignupData {
   name: string;
@@ -14,6 +15,7 @@ export interface CustomerSignupData {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly supabase = inject(SupabaseService).client;
+  private readonly push = inject(PushNotificationsService);
 
   /** Sessione corrente, aggiornata automaticamente da Supabase Auth. */
   readonly session = signal<Session | null>(null);
@@ -59,7 +61,10 @@ export class AuthService {
     }
   }
 
-  signOut() {
+  async signOut() {
+    // Prima del signOut: serve ancora la sessione per togliere questo
+    // dispositivo dalle notifiche push dell'account che sta uscendo.
+    await this.push.forgetThisDevice();
     return this.supabase.auth.signOut();
   }
 

@@ -6,6 +6,7 @@ import { sendEmail } from "../_shared/email.ts";
 import { escapeHtml } from "../_shared/email-layout.ts";
 import { actionEmail } from "../_shared/password-flows.ts";
 import { siteUrl } from "../_shared/site-url.ts";
+import { sendPushToUsers } from "../_shared/push.ts";
 
 // Chiamata SOLO dal database (trigger trg_users_notify_validation, vedi
 // database/24_validation_notifications.sql) quando validated passa da false
@@ -45,8 +46,20 @@ export default {
     if (error) {
       return jsonResponse({ error: error.message }, 400);
     }
-    if (!customer?.email) {
-      return jsonResponse({ skipped: "utente non trovato o senza email" });
+    if (!customer) {
+      return jsonResponse({ skipped: "utente non trovato" });
+    }
+
+    // Il caso d'uso migliore per la push: chi si è appena registrato e ha
+    // attivato le notifiche mentre aspettava, lo scopre subito.
+    const push = await sendPushToUsers(ctx, [body.user_id], {
+      title: "Il tuo account è attivo",
+      body: "Lo staff ha validato il tuo account: da ora puoi prenotare le lezioni.",
+      url: "/prenotazioni/area-personale",
+    });
+
+    if (!customer.email) {
+      return jsonResponse({ skipped: "utente senza email", push });
     }
 
     const html = actionEmail({
@@ -65,6 +78,6 @@ export default {
 
     const result = await sendEmail({ to: customer.email, subject: SUBJECT, html });
 
-    return jsonResponse({ result });
+    return jsonResponse({ result, push });
   }),
 };

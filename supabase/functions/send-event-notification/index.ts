@@ -4,6 +4,8 @@ import { withSupabase } from "@supabase/server";
 import { jsonResponse } from "../_shared/auth-helpers.ts";
 import { sendEmail } from "../_shared/email.ts";
 import { customerEmailForEventRegistration, EventRegistrationDetail } from "../_shared/event-email-templates.ts";
+import { sendPushToUsers } from "../_shared/push.ts";
+import { customerPushForEventRegistration } from "../_shared/push-templates.ts";
 
 // Chiamata SOLO dal database (trigger trg_event_registrations_notify, vedi
 // database/31_fase2_events_registrations.sql), mai dal browser — stesso
@@ -40,7 +42,7 @@ export default {
     const { data: registration, error: regError } = await ctx.supabaseAdmin
       .from("v_event_registrations_detail")
       .select(
-        "id, event_title, event_location, event_date, event_time_from, event_time_to, cancellation_note, customer_email"
+        "id, customer_id, event_title, event_location, event_date, event_time_from, event_time_to, cancellation_note, customer_email"
       )
       .eq("id", body.registration_id)
       .maybeSingle();
@@ -53,8 +55,20 @@ export default {
       // un errore da far notare al chiamante (il trigger l'ha già sparata).
       return jsonResponse({ skipped: "iscrizione non trovata" });
     }
+
+    // Push prima del controllo sull'email: è un canale indipendente, un
+    // cliente senza email può comunque averla attivata. null = evento che
+    // non merita una push, vedi customerPushForEventRegistration.
+    const pushContent = customerPushForEventRegistration(
+      body.event,
+      registration as EventRegistrationDetail
+    );
+    const push = pushContent
+      ? await sendPushToUsers(ctx, [registration.customer_id], pushContent)
+      : null;
+
     if (!registration.customer_email) {
-      return jsonResponse({ skipped: "cliente senza email" });
+      return jsonResponse({ skipped: "cliente senza email", push });
     }
 
     const content = customerEmailForEventRegistration(
@@ -63,6 +77,6 @@ export default {
     );
     const result = await sendEmail({ to: registration.customer_email, ...content });
 
-    return jsonResponse({ result: { to: registration.customer_email, ...result } });
+    return jsonResponse({ result: { to: registration.customer_email, ...result }, push });
   }),
 };

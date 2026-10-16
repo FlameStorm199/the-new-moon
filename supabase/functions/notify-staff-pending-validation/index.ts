@@ -6,6 +6,7 @@ import { sendEmail } from "../_shared/email.ts";
 import { escapeHtml } from "../_shared/email-layout.ts";
 import { actionEmail } from "../_shared/password-flows.ts";
 import { siteUrl } from "../_shared/site-url.ts";
+import { sendPushToUsers } from "../_shared/push.ts";
 
 // Chiamata SOLO dal database (trigger trg_users_notify_validation, vedi
 // database/24_validation_notifications.sql) quando nasce un nuovo
@@ -66,11 +67,10 @@ export default {
     const { data: staff, error: staffError } = staffTypeIds.length
       ? await ctx.supabaseAdmin
           .from("users")
-          .select("email")
+          .select("id, email")
           .in("type_id", staffTypeIds)
           .is("deleted_at", null)
-          .not("email", "is", null)
-      : { data: [] as { email: string | null }[], error: null };
+      : { data: [] as { id: number; email: string | null }[], error: null };
     if (staffError) {
       return jsonResponse({ error: staffError.message }, 400);
     }
@@ -95,6 +95,13 @@ export default {
       results.push({ to: member.email, ...result });
     }
 
-    return jsonResponse({ results });
+    const push = await sendPushToUsers(ctx, (staff ?? []).map((m) => m.id), {
+      title: SUBJECT,
+      body: `${pending.name} ${pending.surname}${pending.dog_name ? ` con ${pending.dog_name}` : ""} attende la validazione.`,
+      url: "/prenotazioni/gestione-utenti",
+      tag: `pending-user-${body.user_id}`,
+    });
+
+    return jsonResponse({ results, push });
   }),
 };

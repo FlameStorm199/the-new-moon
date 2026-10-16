@@ -7,6 +7,7 @@ import { LessonRow, LessonsService } from '../../../../core/lessons/lessons.serv
 import { EventRow, EventsService } from '../../../../core/events/events.service';
 import { StaffCalendarComponent } from '../../components/staff-calendar/staff-calendar.component';
 import { InstallAppCardComponent } from '../../components/install-app-card/install-app-card.component';
+import { PushNotificationsCardComponent } from '../../components/push-notifications-card/push-notifications-card.component';
 import { formatLongDate, formatShortDate, formatTimeRange, todayIso } from '../../components/date-format';
 
 const STAFF_ROLE_LABELS: Record<string, string> = {
@@ -36,6 +37,7 @@ const HORIZON_DAYS = 30;
     RouterLink,
     StaffCalendarComponent,
     InstallAppCardComponent,
+    PushNotificationsCardComponent,
     LessonDetailDialogComponent,
     MoveLessonDialogComponent,
     CancelLessonDialogComponent,
@@ -97,6 +99,11 @@ export class AreaPersonaleComponent implements OnInit {
     const limitIso = `${limit.getFullYear()}-${String(limit.getMonth() + 1).padStart(2, '0')}-${String(limit.getDate()).padStart(2, '0')}`;
     return this.events().filter((e) => e.date >= today && e.date <= limitIso).length;
   });
+
+  get pushAudience(): 'customer' | 'trainer' | 'admin' {
+    const code = this.profile()?.typeCode;
+    return code === 'trainer' || code === 'admin' ? code : 'customer';
+  }
 
   get staffRoleLabel(): string {
     return STAFF_ROLE_LABELS[this.profile()?.typeCode ?? ''] ?? '';

@@ -9,6 +9,8 @@ import {
   PreviousSlot,
   trainerEmailFor,
 } from "../_shared/lesson-email-templates.ts";
+import { sendPushToUsers } from "../_shared/push.ts";
+import { customerPushFor, trainerPushFor } from "../_shared/push-templates.ts";
 
 // Chiamata SOLO dal database (trigger trg_lessons_notify e il cron
 // send_lesson_reminders, vedi database/15_lesson_notifications.sql), mai dal
@@ -51,7 +53,7 @@ export default {
     const { data: lesson, error: lessonError } = await ctx.supabaseAdmin
       .from("v_lessons_detail")
       .select(
-        "id, customer_name, customer_surname, customer_dog_name, customer_email, date, time_from, time_to, cancellation_reason, description, status, lesson_type"
+        "id, customer_id, customer_name, customer_surname, customer_dog_name, customer_email, date, time_from, time_to, cancellation_reason, description, status, lesson_type"
       )
       .eq("id", body.lesson_id)
       .maybeSingle();
@@ -68,6 +70,8 @@ export default {
     }
 
     const results: Array<{ to: string; ok: boolean; error: string | null }> = [];
+    // Push: stessi destinatari delle email, spedite dopo (vedi _shared/push.ts).
+    const push: Record<string, unknown> = {};
 
     if (lesson.customer_email) {
       const content = customerEmailFor(
@@ -79,6 +83,12 @@ export default {
       results.push({ to: lesson.customer_email, ...result });
     }
 
+    push.customer = await sendPushToUsers(
+      ctx,
+      [lesson.customer_id],
+      customerPushFor(body.event, lesson as LessonDetail, body.previous ?? null)
+    );
+
     if (body.event !== "reminder_24h") {
       const { data: trainerTypeRow } = await ctx.supabaseAdmin
         .from("user_types")
@@ -89,11 +99,10 @@ export default {
       const { data: trainers } = trainerTypeRow
         ? await ctx.supabaseAdmin
             .from("users")
-            .select("email")
+            .select("id, email")
             .eq("type_id", trainerTypeRow.id)
             .is("deleted_at", null)
-            .not("email", "is", null)
-        : { data: [] as { email: string | null }[] };
+        : { data: [] as { id: number; email: string | null }[] };
 
       const content = trainerEmailFor(body.event, lesson as LessonDetail, body.previous ?? null);
       for (const trainer of trainers ?? []) {
@@ -101,8 +110,14 @@ export default {
         const result = await sendEmail({ to: trainer.email, ...content });
         results.push({ to: trainer.email, ...result });
       }
+
+      push.trainers = await sendPushToUsers(
+        ctx,
+        (trainers ?? []).map((t) => t.id),
+        trainerPushFor(body.event, lesson as LessonDetail, body.previous ?? null)
+      );
     }
 
-    return jsonResponse({ results });
+    return jsonResponse({ results, push });
   }),
 };
