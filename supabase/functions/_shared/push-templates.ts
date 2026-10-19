@@ -5,7 +5,7 @@
 // Testo semplice, niente HTML: le notifiche non lo interpretano.
 
 import { formatLongDateIt } from "./email-layout.ts";
-import type { EventRegistrationDetail } from "./event-email-templates.ts";
+import type { EventRegistrationDetail, NewEventDetail } from "./event-email-templates.ts";
 import type { LessonDetail, PreviousSlot } from "./lesson-email-templates.ts";
 import type { PushContent } from "./push.ts";
 
@@ -150,4 +150,14 @@ export function customerPushForEventRegistration(
         body: withReason(`"${detail.event_title}" del ${at} non si terrà.`, detail.cancellation_note, "Nota"),
       };
   }
+}
+
+/** Nuovo evento pubblicato: a tutti i clienti e assistenti con le push attive. */
+export function newEventPush(event: NewEventDetail): PushContent {
+  return {
+    title: "Nuovo evento",
+    body: `"${event.title}" · ${when(event.date, event.time_from)} · ${event.location}`,
+    url: EVENTS,
+    tag: `new-event-${event.id}`,
+  };
 }

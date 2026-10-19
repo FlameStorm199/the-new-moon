@@ -15,6 +15,11 @@ export type PwaPlatform = 'ios' | 'android' | 'other';
 /** Stesso confine dello scope in manifest.webmanifest. */
 const APP_PREFIX = '/prenotazioni';
 const MANIFEST_HREF = 'manifest.webmanifest';
+/**
+ * Finestra dopo l'apertura (o il ritorno in primo piano) in cui una
+ * versione nuova si applica subito, se l'utente non ha ancora fatto nulla.
+ */
+const FRESH_WINDOW_MS = 30_000;
 
 /**
  * Tutto ciò che riguarda l'area prenotazioni installata come app (PWA):
@@ -27,9 +32,10 @@ const MANIFEST_HREF = 'manifest.webmanifest';
  * - tiene da parte il prompt di installazione di Android/Chrome, che il
  *   browser lancia una volta sola e spesso prima che l'area personale (dove
  *   c'è il bottone) sia caricata;
- * - applica gli aggiornamenti del service worker alla navigazione
- *   successiva: un'app lasciata aperta per giorni altrimenti resterebbe
- *   sulla versione vecchia.
+ * - applica gli aggiornamenti del service worker: subito se l'app è
+ *   appena stata aperta e l'utente non ha ancora fatto nulla, altrimenti
+ *   alla navigazione successiva (mai a metà di un form). Un'app lasciata
+ *   aperta per giorni altrimenti resterebbe sulla versione vecchia.
  *
  * Va istanziato all'avvio (lo inietta AppComponent).
  */
@@ -49,6 +55,10 @@ export class PwaService {
   readonly canPromptInstall = computed(() => this.installPrompt() !== null);
 
   private updateReady = false;
+  /** Apertura o ultimo ritorno in primo piano. */
+  private freshSince = Date.now();
+  /** Ultimo tocco/tasto dell'utente: 0 = nessuno ancora. */
+  private lastInteractionAt = 0;
 
   constructor() {
     this.document.documentElement.classList.toggle('pwa-standalone', this.standalone());
@@ -105,9 +115,26 @@ export class PwaService {
       return;
     }
 
+    // Versione nuova pronta. Se l'app è appena stata aperta (o riportata in
+    // primo piano) e l'utente non ha ancora toccato nulla, si ricarica
+    // subito: non c'è niente da perdere e così vede la versione nuova già
+    // da questa apertura. Altrimenti si aspetta il prossimo cambio di
+    // pagina, vedi sotto.
     swUpdate.versionUpdates
       .pipe(filter((e) => e.type === 'VERSION_READY'))
-      .subscribe(() => (this.updateReady = true));
+      .subscribe(() => {
+        const fresh = Date.now() - this.freshSince < FRESH_WINDOW_MS;
+        const untouched = this.lastInteractionAt < this.freshSince;
+        if (fresh && untouched) {
+          this.document.location.reload();
+        } else {
+          this.updateReady = true;
+        }
+      });
+
+    const markInteraction = () => (this.lastInteractionAt = Date.now());
+    this.document.addEventListener('pointerdown', markInteraction, { capture: true, passive: true });
+    this.document.addEventListener('keydown', markInteraction, { capture: true, passive: true });
 
     // Cache rotta (es. file cancellati dal browser per spazio): l'unica
     // via d'uscita è ricaricare dalla rete.
@@ -127,6 +154,7 @@ export class PwaService {
     // piano. È il momento giusto per controllare se c'è una versione nuova.
     this.document.addEventListener('visibilitychange', () => {
       if (this.document.visibilityState === 'visible') {
+        this.freshSince = Date.now();
         swUpdate.checkForUpdate().catch(() => undefined);
       }
     });

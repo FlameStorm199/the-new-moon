@@ -482,3 +482,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/send-incontro-confirmation-email/deno.json"
 entrypoint = "./functions/send-incontro-confirmation-email/index.ts"
+
+[functions.send-new-event-notification]
+enabled = true
+verify_jwt = false
+import_map = "./functions/send-new-event-notification/deno.json"
+entrypoint = "./functions/send-new-event-notification/index.ts"

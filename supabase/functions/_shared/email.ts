@@ -84,3 +84,68 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
 
   return { ok: true, error: null };
 }
+
+// =========================================================
+// Invio a molti destinatari (es. annuncio di un nuovo evento)
+// =========================================================
+// Una chiamata per email sbatterebbe presto contro il limite di Resend
+// (2 richieste al secondo di default): l'API batch ne accetta fino a 100
+// per chiamata. Ogni destinatario riceve comunque la SUA email, con solo
+// il proprio indirizzo in "to" — mai una lista di destinatari visibile.
+
+const RESEND_BATCH_URL = "https://api.resend.com/emails/batch";
+const BATCH_SIZE = 100;
+/** Pausa tra un blocco e l'altro, per restare sotto il limite di Resend. */
+const BATCH_PAUSE_MS = 600;
+
+export interface SendEmailBatchResult {
+  sent: number;
+  failed: number;
+  errors: string[];
+}
+
+export async function sendEmailBatch(messages: SendEmailParams[]): Promise<SendEmailBatchResult> {
+  const result: SendEmailBatchResult = { sent: 0, failed: 0, errors: [] };
+  if (messages.length === 0) return result;
+
+  if (!emailsEnabled()) {
+    console.log(
+      `[EMAIL_ENABLED=false] invio bloccato — ${messages.length} destinatari, oggetto: "${messages[0].subject}"`,
+    );
+    return { ...result, sent: messages.length };
+  }
+
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    return {
+      ...result,
+      failed: messages.length,
+      errors: ["RESEND_API_KEY non configurata: impostarla tra i secret della Edge Function prima di poter inviare email."],
+    };
+  }
+
+  const from = Deno.env.get("EMAIL_FROM") ?? DEFAULT_FROM;
+
+  for (let i = 0; i < messages.length; i += BATCH_SIZE) {
+    if (i > 0) await new Promise((resolve) => setTimeout(resolve, BATCH_PAUSE_MS));
+    const chunk = messages.slice(i, i + BATCH_SIZE);
+
+    const res = await fetch(RESEND_BATCH_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(chunk.map((m) => ({ from, to: m.to, subject: m.subject, html: m.html }))),
+    });
+
+    if (res.ok) {
+      result.sent += chunk.length;
+    } else {
+      result.failed += chunk.length;
+      result.errors.push(`Resend ha rifiutato il blocco ${i / BATCH_SIZE + 1} (${res.status}): ${await res.text()}`);
+    }
+  }
+
+  return result;
+}

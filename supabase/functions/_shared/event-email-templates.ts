@@ -110,3 +110,46 @@ export function customerEmailForEventRegistration(
       };
   }
 }
+
+// =========================================================
+// Nuovo evento pubblicato (a tutti i clienti e assistenti)
+// =========================================================
+// Stesso contratto delle email di iscrizione: Titolo, Luogo, Data, Orario
+// e la descrizione dello staff — mai Contributo né Numero di cani.
+// NewEventDetail non ha quei campi apposta, come EventRegistrationDetail.
+
+export interface NewEventDetail {
+  id: number;
+  title: string;
+  location: string;
+  date: string;
+  time_from: string;
+  time_to: string;
+  description: string | null;
+}
+
+export function newEventEmail(event: NewEventDetail): EmailContent {
+  const when = `${formatLongDateIt(event.date)}, ore ${event.time_from.slice(0, 5)}`;
+  return {
+    subject: `Nuovo evento: ${event.title}`,
+    html: renderEmail({
+      preheader: `"${event.title}" · ${when} · ${event.location}`,
+      badge: { text: "Nuovo evento", tone: "event" },
+      title: "C'è un nuovo evento",
+      paragraphs: ["Lo staff ha appena pubblicato un nuovo evento. Se ti interessa, iscriviti dalla pagina Eventi."],
+      details: [
+        {
+          tone: "event",
+          rows: [
+            { label: "Evento", value: event.title },
+            { label: "Data", value: formatLongDateIt(event.date) },
+            { label: "Orario", value: formatTimeRangeIt(event.time_from, event.time_to) },
+            { label: "Luogo", value: event.location },
+          ],
+        },
+      ],
+      note: event.description ? { label: "Descrizione", text: event.description } : undefined,
+      cta: eventsCta("Vai agli eventi"),
+    }),
+  };
+}
