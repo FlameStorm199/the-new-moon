@@ -19,6 +19,25 @@ export interface LessonRow {
   customer_dog_name: string | null;
   customer_email: string | null;
   customer_phone: string | null;
+  /** Posti dello slot: >1 = la lezione fa parte di una lezione collettiva. */
+  slot_capacity: number;
+  slot_group_label: string | null;
+}
+
+/** La lezione è l'iscrizione di un cliente a una lezione collettiva. */
+export function isGroupLesson(lesson: Pick<LessonRow, 'slot_capacity'>): boolean {
+  return lesson.slot_capacity > 1;
+}
+
+/** "Incontro conoscitivo", il nome della collettiva ("Classe cuccioli" / "Lezione collettiva") o "Lezione". */
+export function lessonKindLabel(lesson: Pick<LessonRow, 'lesson_type' | 'slot_capacity' | 'slot_group_label'>): string {
+  if (lesson.lesson_type === 'incontro_conoscitivo') {
+    return 'Incontro conoscitivo';
+  }
+  if (isGroupLesson(lesson)) {
+    return lesson.slot_group_label?.trim() || 'Lezione collettiva';
+  }
+  return 'Lezione';
 }
 
 export const LESSON_STATUS_LABELS: Record<LessonStatus, string> = {
@@ -36,7 +55,7 @@ export interface BookingSettings {
 // Su una riga sola e non concatenata: supabase-js deriva i tipi del risultato
 // dal literal della select, e una concatenazione lo degrada a "string".
 const LESSON_COLUMNS =
-  'id, customer_id, slot_id, lesson_type, status, description, date, time_from, time_to, bypass_weekly_limit, customer_name, customer_surname, customer_dog_name, customer_email, customer_phone';
+  'id, customer_id, slot_id, lesson_type, status, description, date, time_from, time_to, bypass_weekly_limit, customer_name, customer_surname, customer_dog_name, customer_email, customer_phone, slot_capacity, slot_group_label';
 
 /**
  * Lettura e gestione delle lezioni già create. La creazione sta in
@@ -151,6 +170,34 @@ export class LessonsService {
     if (error) {
       throw error;
     }
+  }
+
+  /**
+   * Sposta tutta la lezione collettiva su un orario libero e individuale,
+   * che diventa la collettiva (stessi posti e nome); ogni iscritto riceve la
+   * notifica di spostamento. Solo staff, controllato dalla RPC.
+   */
+  async moveGroupLesson(fromSlotId: number, toSlotId: number): Promise<void> {
+    const { error } = await this.supabase.rpc('move_group_lesson', {
+      p_from_slot_id: fromSlotId,
+      p_to_slot_id: toSlotId,
+    });
+    if (error) {
+      throw error;
+    }
+  }
+
+  /** Cancella la lezione collettiva per tutti gli iscritti; restituisce quanti erano. */
+  async cancelGroupLesson(slotId: number, reason?: string): Promise<number> {
+    const trimmed = reason?.trim();
+    const { data, error } = await this.supabase.rpc('cancel_group_lesson', {
+      p_slot_id: slotId,
+      p_reason: trimmed ? trimmed : null,
+    });
+    if (error) {
+      throw error;
+    }
+    return (data as number | null) ?? 0;
   }
 
   async updateDescription(lessonId: number, description: string): Promise<void> {

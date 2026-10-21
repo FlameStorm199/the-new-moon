@@ -18,14 +18,19 @@
     </button>
 
     @if (state === 'confirm') {
-      <h2 id="booking-dialog-title">Confermi la prenotazione?</h2>
+      <h2 id="booking-dialog-title">{{ isGroup ? 'Ti iscrivi alla lezione collettiva?' : 'Confermi la prenotazione?' }}</h2>
 
       <div class="detail">
         <span class="date">{{ dateLabel }}</span>
         <span class="time">{{ timeLabel }}</span>
+        @if (isGroup) {
+          <span class="group-line"><i class="fa-solid fa-users" aria-hidden="true"></i> {{ groupLine }}</span>
+        }
       </div>
 
-      <p class="note">Puoi prenotare una lezione a settimana.</p>
+      <p class="note">
+        {{ isGroup ? 'Conta come la tua lezione della settimana: puoi prenotarne una a settimana.' : 'Puoi prenotare una lezione a settimana.' }}
+      </p>
 
       <label class="field">
         Note per l'educatore (facoltative)
@@ -50,7 +55,7 @@
     } @else {
       <div class="tick" aria-hidden="true">✓</div>
 
-      <h2 id="booking-dialog-title">Lezione prenotata</h2>
+      <h2 id="booking-dialog-title">{{ isGroup ? 'Sei iscritto/a' : 'Lezione prenotata' }}</h2>
 
       <div class="detail">
         <span class="date">{{ dateLabel }}</span>

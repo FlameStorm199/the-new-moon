@@ -60,9 +60,24 @@
             (slotToggle)="onSlotToggle($event)"
             (lessonOpen)="onLessonOpen($event)"
             (eventOpen)="onEventOpen()"
+            (groupOpen)="onGroupOpen($event)"
+            (groupCreate)="onGroupOpen($event)"
           />
         }
       </div>
+    }
+
+    @if (groupSlot(); as slot) {
+      <app-group-lesson-dialog
+        [slot]="slot"
+        [lessons]="lessons()"
+        [slots]="slots()"
+        [canAct]="isStaff"
+        (changed)="loadCalendar()"
+        (slotMoved)="groupSlotId.set($event)"
+        (lessonOpen)="onGroupParticipantOpen($event)"
+        (closed)="closeGroupDialog()"
+      />
     }
 
     @if (selectedLesson(); as lesson) {
@@ -134,7 +149,13 @@
         @if (nextLesson(); as lesson) {
           <a routerLink="/prenotazioni/le-mie-lezioni" class="next-card">
             <span class="next-label">
-              {{ lesson.lesson_type === 'incontro_conoscitivo' ? 'Il tuo Incontro Conoscitivo' : 'La tua prossima lezione' }}
+              {{
+                lesson.lesson_type === 'incontro_conoscitivo'
+                  ? 'Il tuo Incontro Conoscitivo'
+                  : isGroupLesson(lesson)
+                    ? 'La tua prossima lezione · ' + lessonKindLabel(lesson)
+                    : 'La tua prossima lezione'
+              }}
             </span>
             <span class="next-date">{{ formatLongDate(lesson.date) }}</span>
             <span class="next-time">{{ formatTimeRange(lesson.time_from, lesson.time_to) }}</span>

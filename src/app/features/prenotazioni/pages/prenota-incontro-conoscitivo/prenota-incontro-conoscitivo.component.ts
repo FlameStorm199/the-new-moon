@@ -93,7 +93,7 @@ export class PrenotaIncontroConoscitivoComponent implements OnInit {
     this.errorMessage.set(null);
     try {
       const [slots, settings] = await Promise.all([
-        this.slotsService.listAvailable(),
+        this.slotsService.listAvailable(undefined, { includeGroups: false }),
         this.lessonsService.getBookingSettings(),
       ]);
       this.bookingMinHours.set(settings.bookingMinHoursBefore);

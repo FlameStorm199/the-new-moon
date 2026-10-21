@@ -12,12 +12,14 @@ import { siteUrl } from "./site-url.ts";
 // dell'app: blu per le lezioni, viola per gli eventi, verde acqua per
 // l'Incontro Conoscitivo.
 
-export type Tone = "lesson" | "event" | "incontro" | "success" | "danger" | "neutral";
+export type Tone = "lesson" | "event" | "incontro" | "group" | "success" | "danger" | "neutral";
 
 const TONES: Record<Tone, { fg: string; bg: string }> = {
   lesson: { fg: "#3b6fd4", bg: "#eef3fc" },
   event: { fg: "#7c4dff", bg: "#f3efff" },
   incontro: { fg: "#0b6b63", bg: "#e6f5f3" },
+  // Lezione collettiva: stesso colore dell'app (--pn-group in styles.scss).
+  group: { fg: "#b4235f", bg: "#fbe9f1" },
   success: { fg: "#1b7a3d", bg: "#eaf7ef" },
   danger: { fg: "#b00020", bg: "#fdecea" },
   neutral: { fg: "#555555", bg: "#f4f5f7" },

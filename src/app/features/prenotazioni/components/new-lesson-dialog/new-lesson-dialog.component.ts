@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SlotRow } from '../../../../core/slots/slots.service';
+import { SlotRow, groupLabel, isGroupSlot, seatsLeft } from '../../../../core/slots/slots.service';
 import { CustomerOption } from '../../../../core/users/user-profile.service';
 import { dateBlockParts, formatLongDate, formatTimeRange } from '../date-format';
 
@@ -224,8 +224,15 @@ export class NewLessonDialogComponent implements AfterViewInit {
     const slot = this.selectedSlot;
     if (!slot) return null;
     const date = formatLongDate(slot.date);
-    return `${date.charAt(0).toUpperCase()}${date.slice(1)} · ${formatTimeRange(slot.time_from, slot.time_to)}`;
+    const label = `${date.charAt(0).toUpperCase()}${date.slice(1)} · ${formatTimeRange(slot.time_from, slot.time_to)}`;
+    return isGroupSlot(slot) ? `${label} · ${groupLabel(slot)}` : label;
   }
+
+  // Lezioni collettive: lo slot resta prenotabile finché ha posti, e lo si
+  // riconosce dall'etichetta coi posti rimasti.
+  readonly isGroup = isGroupSlot;
+  readonly seatsLeft = seatsLeft;
+  readonly groupLabel = groupLabel;
 
   pickDay(date: string): void {
     this.pickedDate = date;

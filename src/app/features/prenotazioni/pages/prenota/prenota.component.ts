@@ -4,8 +4,8 @@ import { RouterLink } from '@angular/router';
 import { EventRow, EventsService } from '../../../../core/events/events.service';
 import { EventRegistrationsService } from '../../../../core/events/event-registrations.service';
 import { BookingService } from '../../../../core/lessons/booking.service';
-import { LESSON_STATUS_LABELS, LessonRow, LessonsService } from '../../../../core/lessons/lessons.service';
-import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
+import { LESSON_STATUS_LABELS, LessonRow, LessonsService, isGroupLesson } from '../../../../core/lessons/lessons.service';
+import { SlotRow, SlotsService, groupLabel, isGroupSlot } from '../../../../core/slots/slots.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
 import {
   BookingDialogComponent,
@@ -73,6 +73,16 @@ export class PrenotaComponent implements OnInit {
    * Slot che il calendario deve contrassegnare: solo per lo staff, quelli
    * dentro la finestra in cui un cliente non potrebbe prenotare.
    */
+  /**
+   * Slot del calendario: tutti quelli prenotabili, tranne le collettive a cui
+   * si è già iscritti — compaiono già in "Già in programma", e un secondo
+   * clic finirebbe solo in un errore.
+   */
+  readonly calendarSlots = computed(() => {
+    const joined = new Set(this.myUpcoming().map((l) => l.slot_id));
+    return this.slots().filter((s) => !(isGroupSlot(s) && joined.has(s.id)));
+  });
+
   readonly flaggedSlotIds = computed(() =>
     this.slots()
       .filter((slot) => this.isOutsideCustomerWindow(slot))
@@ -100,7 +110,8 @@ export class PrenotaComponent implements OnInit {
       date: l.date,
       timeFrom: l.time_from,
       timeTo: l.time_to,
-      title: null as string | null,
+      // Per una collettiva il nome ("Classe cuccioli"), altrimenti null.
+      title: isGroupLesson(l) ? groupLabel({ group_label: l.slot_group_label }) : (null as string | null),
       status: l.status,
     }));
     const events = this.events()

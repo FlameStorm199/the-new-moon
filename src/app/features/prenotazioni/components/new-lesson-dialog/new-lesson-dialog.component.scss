@@ -311,3 +311,20 @@
     transition: none;
   }
 }
+
+// Slot di una lezione collettiva: bordo e etichetta posti nel colore delle
+// collettive (--pn-group, styles.scss).
+:host .time-chip.group {
+  border-color: var(--pn-group);
+
+  .group-tag {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--pn-group);
+  }
+
+  &.selected .group-tag {
+    color: inherit;
+  }
+}

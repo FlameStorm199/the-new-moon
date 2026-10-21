@@ -137,11 +137,19 @@
                         role="radio"
                         [attr.aria-checked]="selectedSlot?.id === slot.id"
                         [class.selected]="selectedSlot?.id === slot.id"
+                        [class.group]="isGroup(slot)"
+                        [attr.title]="isGroup(slot) ? groupLabel(slot) : null"
                         [disabled]="busy"
                         (click)="chooseSlot(slot)"
                       >
                         {{ slot.time_from.slice(0, 5) }}
                         <span class="time-to">– {{ slot.time_to.slice(0, 5) }}</span>
+                        @if (isGroup(slot)) {
+                          <span class="group-tag">
+                            <i class="fa-solid fa-users" aria-hidden="true"></i>
+                            {{ seatsLeft(slot) }} {{ seatsLeft(slot) === 1 ? 'posto' : 'posti' }}
+                          </span>
+                        }
                       </button>
                     }
                   </div>

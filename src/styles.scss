@@ -75,6 +75,12 @@ img {
   --pn-danger-bg: #fdecea;
   --pn-warning: #b06a00;
   --pn-warning-bg: #fff4e0;
+  // Lezioni collettive (slot con più posti): un colore loro, distinto da
+  // lezioni (blu), eventi (viola), Incontro Conoscitivo (verde acqua) e
+  // stati in attesa (arancio). Sempre insieme all'icona fa-users.
+  --pn-group: #b4235f;
+  --pn-group-dark: #8f1b4b;
+  --pn-group-soft: #fbe9f1;
 }
 
 html body {

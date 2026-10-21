@@ -79,6 +79,48 @@ $gutter-width-compact: 2.6rem;
     &.incontro {
       background: var(--incontro);
     }
+
+    &.group {
+      background: var(--pn-group);
+    }
+  }
+}
+
+// "Nuova lezione collettiva": un pulsante, e in modalità scelta un
+// suggerimento al suo posto (Esc o Annulla per uscire).
+.group-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin: -0.4rem 0 0.8rem;
+  font-size: 0.85rem;
+
+  &.picking {
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: var(--pn-group-soft);
+    color: var(--pn-group-dark);
+    font-weight: 600;
+  }
+}
+
+:host .group-bar .group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--pn-group);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--pn-group);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--pn-group-soft);
   }
 }
 
@@ -263,6 +305,16 @@ $gutter-width-compact: 2.6rem;
     background: var(--incontro);
   }
 
+  // Lezione collettiva, con o senza iscritti: sempre il suo colore.
+  &.group {
+    background: var(--pn-group);
+  }
+
+  // Modalità "Nuova lezione collettiva": gli slot sceglibili si accendono.
+  &.pickable {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--pn-group);
+  }
+
   // Slot esistente ma disattivato dallo staff (dal calendario della home): grigio molto
   // chiaro, distinto sia dal libero (blu) sia dal chiuso (arancio, che è
   // l'assenza di slot su tutta la fascia, non un singolo slot spento). Testo
@@ -276,7 +328,7 @@ $gutter-width-compact: 2.6rem;
   // Solo sul blu di riposo: un clic qui attiva/disattiva, quindi merita
   // un feedback proprio, più chiaro dell'originale invece che più scuro
   // (più scuro, su un blocco già pieno, leggeva come "disabilitato").
-  &:not(.occupied):not(.inactive):hover:not(:disabled) {
+  &:not(.occupied):not(.inactive):not(.group):hover:not(:disabled) {
     background: var(--free-hover);
   }
 

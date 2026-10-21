@@ -64,6 +64,10 @@ $gutter-width-compact: 2.6rem;
     &.event-swatch {
       background: var(--event);
     }
+
+    &.group-swatch {
+      background: var(--pn-group);
+    }
   }
 }
 
@@ -298,6 +302,21 @@ $gutter-width-compact: 2.6rem;
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
+  }
+
+  // Lezione collettiva: colore delle collettive (styles.scss) e posti liberi
+  // con l'icona del gruppo sotto l'orario.
+  &.group {
+    background: var(--pn-group);
+
+    &:hover:not(:disabled) {
+      background: var(--pn-group-dark);
+    }
+  }
+
+  .slot-seats {
+    font-size: 0.68rem;
+    white-space: nowrap;
   }
 
   &.flagged {

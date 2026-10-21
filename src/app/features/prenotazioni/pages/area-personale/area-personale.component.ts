@@ -2,11 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
-import { ClosedDay, SlotRow, SlotsService } from '../../../../core/slots/slots.service';
-import { LessonRow, LessonsService } from '../../../../core/lessons/lessons.service';
+import { ClosedDay, SlotRow, SlotsService, hasRoom } from '../../../../core/slots/slots.service';
+import { LessonRow, LessonsService, isGroupLesson, lessonKindLabel } from '../../../../core/lessons/lessons.service';
 import { EventRow, EventsService } from '../../../../core/events/events.service';
 import { StaffCalendarComponent } from '../../components/staff-calendar/staff-calendar.component';
 import { InstallAppCardComponent } from '../../components/install-app-card/install-app-card.component';
+import { GroupLessonDialogComponent } from '../../components/group-lesson-dialog/group-lesson-dialog.component';
 import { formatLongDate, formatShortDate, formatTimeRange, todayIso } from '../../components/date-format';
 
 const STAFF_ROLE_LABELS: Record<string, string> = {
@@ -36,6 +37,7 @@ const HORIZON_DAYS = 30;
     RouterLink,
     StaffCalendarComponent,
     InstallAppCardComponent,
+    GroupLessonDialogComponent,
     LessonDetailDialogComponent,
     MoveLessonDialogComponent,
     CancelLessonDialogComponent,
@@ -60,6 +62,8 @@ export class AreaPersonaleComponent implements OnInit {
   readonly nextLessonFailed = signal(false);
   readonly formatLongDate = formatLongDate;
   readonly formatTimeRange = formatTimeRange;
+  readonly isGroupLesson = isGroupLesson;
+  readonly lessonKindLabel = lessonKindLabel;
 
   // --- Calendario staff: la vista principale di questa pagina per chi è
   // staff, vedi StaffCalendarComponent. Caricato solo per isStaffViewer, un
@@ -102,8 +106,17 @@ export class AreaPersonaleComponent implements OnInit {
     return STAFF_ROLE_LABELS[this.profile()?.typeCode ?? ''] ?? '';
   }
 
-  /** Slot su cui aprire "Sposta lezione": liberi, attivi, non quello occupato dalla lezione stessa. */
-  readonly freeSlotsForMove = computed(() => this.slots().filter((s) => s.active && !s.occupied));
+  /**
+   * Slot su cui aprire "Sposta lezione": attivi e con un posto libero
+   * (individuali liberi o collettive non al completo). Lo slot di partenza e
+   * le collettive per un Incontro Conoscitivo li toglie il dialog stesso.
+   */
+  readonly freeSlotsForMove = computed(() => this.slots().filter(hasRoom));
+
+  // --- Lezione collettiva (scheda dal calendario) ---
+  /** Id e non riga: dopo ogni modifica lo slot arriva aggiornato dal ricaricamento. */
+  readonly groupSlotId = signal<number | null>(null);
+  readonly groupSlot = computed(() => this.slots().find((s) => s.id === this.groupSlotId()) ?? null);
 
   // --- Dettaglio lezione (clic su uno slot occupato) ---
   readonly selectedLesson = signal<LessonRow | null>(null);
@@ -264,6 +277,21 @@ export class AreaPersonaleComponent implements OnInit {
   }
 
   onLessonOpen(lesson: LessonRow): void {
+    this.selectedLesson.set(lesson);
+  }
+
+  /** Clic su una collettiva, o slot scelto con "Nuova lezione collettiva": stessa scheda. */
+  onGroupOpen(slot: SlotRow): void {
+    this.groupSlotId.set(slot.id);
+  }
+
+  closeGroupDialog(): void {
+    this.groupSlotId.set(null);
+  }
+
+  /** Iscritto cliccato nella scheda: il suo dettaglio, con sposta/cancella solo lui. */
+  onGroupParticipantOpen(lesson: LessonRow): void {
+    this.groupSlotId.set(null);
     this.selectedLesson.set(lesson);
   }
 

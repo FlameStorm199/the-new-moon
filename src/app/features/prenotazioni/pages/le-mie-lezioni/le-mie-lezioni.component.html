@@ -69,7 +69,14 @@
                 <span class="lesson-time">{{ formatTimeRange(lesson.time_from, lesson.time_to) }}</span>
               </p>
               <div class="lesson-tags">
-                <span class="tag" [class.tag-incontro]="lesson.lesson_type === 'incontro_conoscitivo'">
+                <span
+                  class="tag"
+                  [class.tag-incontro]="lesson.lesson_type === 'incontro_conoscitivo'"
+                  [class.tag-group]="isGroupLesson(lesson)"
+                >
+                  @if (isGroupLesson(lesson)) {
+                    <i class="fa-solid fa-users" aria-hidden="true"></i>
+                  }
                   {{ lessonTypeLabel(lesson) }}
                 </span>
                 <span class="status-badge" [class]="'status-badge status-' + lesson.status">
@@ -120,6 +127,8 @@
             </span>
             @if (lesson.lesson_type === 'incontro_conoscitivo') {
               <span class="tag tag-incontro">Incontro conoscitivo</span>
+            } @else if (isGroupLesson(lesson)) {
+              <span class="tag tag-group">{{ lessonTypeLabel(lesson) }}</span>
             }
             <span class="history-status" [class]="'history-status h-' + lesson.status">
               {{ historyLabel(lesson) }}
