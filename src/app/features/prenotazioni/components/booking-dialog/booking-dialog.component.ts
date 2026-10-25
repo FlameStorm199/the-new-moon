@@ -10,7 +10,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SlotRow } from '../../../../core/slots/slots.service';
+import { SlotRow, groupLabel, isGroupSlot, seatsLeft } from '../../../../core/slots/slots.service';
 import { formatLongDate, formatTimeRange } from '../date-format';
 
 export type BookingDialogState = 'confirm' | 'success';
@@ -71,6 +71,16 @@ export class BookingDialogComponent implements AfterViewInit {
 
   get dateLabel(): string {
     return formatLongDate(this.slot.date);
+  }
+
+  get isGroup(): boolean {
+    return isGroupSlot(this.slot);
+  }
+
+  /** "Classe cuccioli · 3 posti liberi su 6" */
+  get groupLine(): string {
+    const left = seatsLeft(this.slot);
+    return `${groupLabel(this.slot)} · ${left} ${left === 1 ? 'posto libero' : 'posti liberi'} su ${this.slot.capacity}`;
   }
 
   get timeLabel(): string {

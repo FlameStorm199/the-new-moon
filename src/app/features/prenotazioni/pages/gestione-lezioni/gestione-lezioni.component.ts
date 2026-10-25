@@ -5,6 +5,8 @@ import {
   LESSON_STATUS_LABELS,
   LessonRow,
   LessonsService,
+  isGroupLesson,
+  lessonKindLabel,
 } from '../../../../core/lessons/lessons.service';
 import { SlotRow, SlotsService } from '../../../../core/slots/slots.service';
 import { CustomerOption, UserProfileService } from '../../../../core/users/user-profile.service';
@@ -210,6 +212,9 @@ export class GestioneLezioniComponent implements OnInit {
   isPendingIncontro(lesson: LessonRow): boolean {
     return lesson.lesson_type === 'incontro_conoscitivo' && lesson.status === 'pending';
   }
+
+  readonly isGroupLesson = isGroupLesson;
+  readonly lessonKindLabel = lessonKindLabel;
 
   /** Lo stato come classe CSS, per colorare il badge (verde/ambra/rosso). */
   statusClass(lesson: LessonRow): string {

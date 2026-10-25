@@ -5,6 +5,8 @@ import {
   LESSON_STATUS_LABELS,
   LessonRow,
   LessonsService,
+  isGroupLesson,
+  lessonKindLabel,
 } from '../../../../core/lessons/lessons.service';
 import { UserProfile, UserProfileService } from '../../../../core/users/user-profile.service';
 import {
@@ -95,8 +97,10 @@ export class LeMieLezioniComponent implements OnInit {
   }
 
   lessonTypeLabel(lesson: LessonRow): string {
-    return lesson.lesson_type === 'incontro_conoscitivo' ? 'Incontro conoscitivo' : 'Lezione';
+    return lessonKindLabel(lesson);
   }
+
+  readonly isGroupLesson = isGroupLesson;
 
   /**
    * Un assistente può prenotare per sé (vedi prenota.component.ts), quindi ha

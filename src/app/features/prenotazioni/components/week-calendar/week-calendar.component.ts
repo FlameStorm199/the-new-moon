@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { EventRow } from '../../../../core/events/events.service';
-import { SlotRow } from '../../../../core/slots/slots.service';
+import { SlotRow, groupLabel, isGroupSlot, seatsLeft } from '../../../../core/slots/slots.service';
 
 /**
  * Posizione orizzontale dentro la colonna del giorno, quando due blocchi si
@@ -29,6 +29,9 @@ interface PositionedSlot extends LanePosition {
   /** Separati e non "09:00–09:55": affiancati non stanno in una colonna. */
   timeFrom: string;
   timeTo: string;
+  /** Lezione collettiva: posti ancora liberi (null = slot individuale). */
+  seatsLeft: number | null;
+  ariaLabel: string;
 }
 
 interface PositionedEvent extends LanePosition {
@@ -177,6 +180,7 @@ export class WeekCalendarComponent implements OnDestroy {
 
   /** Per mostrare la legenda solo quando nel calendario c'è più di un tipo di blocco. */
   readonly hasEvents = computed(() => this.allEvents().length > 0);
+  readonly hasGroups = computed(() => this.allSlots().some(isGroupSlot));
 
   /** Tenuta corta: nel blocco convive con l'orario, in pochi pixel. */
   @Input() flaggedLabel = '< finestra';
@@ -302,6 +306,8 @@ export class WeekCalendarComponent implements OnDestroy {
           flagged: flagged.has(slot.id),
           timeFrom: slot.time_from.slice(0, 5),
           timeTo: slot.time_to.slice(0, 5),
+          seatsLeft: isGroupSlot(slot) ? seatsLeft(slot) : null,
+          ariaLabel: slotAriaLabel(slot),
           ...lanes.get(slot)!,
         })),
         events: dayEvents.map((event) => ({
@@ -515,4 +521,14 @@ function toIsoDate(date: Date): string {
 function parseIsoDate(iso: string): Date {
   const [year, month, day] = iso.split('-').map(Number);
   return new Date(year, month - 1, day);
+}
+
+/** Nel blocco c'è spazio solo per orario e numero di posti: il resto lo dice l'etichetta accessibile. */
+function slotAriaLabel(slot: SlotRow): string {
+  const when = `ore ${slot.time_from.slice(0, 5)}`;
+  if (!isGroupSlot(slot)) {
+    return `Lezione, ${when}`;
+  }
+  const left = seatsLeft(slot);
+  return `${groupLabel(slot)}, ${when}, ${left} ${left === 1 ? 'posto libero' : 'posti liberi'}`;
 }

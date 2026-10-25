@@ -143,6 +143,10 @@
               <span class="col-status">
                 @if (lesson.lesson_type === 'incontro_conoscitivo') {
                   <span class="badge incontro">Incontro conoscitivo</span>
+                } @else if (isGroupLesson(lesson)) {
+                  <span class="badge group">
+                    <i class="fa-solid fa-users" aria-hidden="true"></i> {{ lessonKindLabel(lesson) }}
+                  </span>
                 }
                 <span class="badge" [ngClass]="statusClass(lesson)">
                   {{ statusLabels[lesson.status] }}

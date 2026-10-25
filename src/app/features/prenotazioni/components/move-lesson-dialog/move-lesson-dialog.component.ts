@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, Output, ViewChild } from '@angular/core';
 import { LessonRow } from '../../../../core/lessons/lessons.service';
-import { SlotRow } from '../../../../core/slots/slots.service';
+import { SlotRow, groupLabel, isGroupSlot, seatsLeft } from '../../../../core/slots/slots.service';
 import { formatLongDate, formatShortDate, formatTimeRange } from '../date-format';
 
 export type MoveLessonDialogState = 'form' | 'success';
@@ -79,8 +79,26 @@ export class MoveLessonDialogComponent implements AfterViewInit {
     return formatTimeRange(this.lesson.time_from, this.lesson.time_to);
   }
 
+  /**
+   * Destinazioni possibili: gli slot con posto libero, tranne quello in cui
+   * la lezione è già (una collettiva con posti lo è ancora) e, per un
+   * Incontro Conoscitivo, tranne le collettive — la RPC le rifiuterebbe.
+   */
+  get destinations(): SlotRow[] {
+    return this.freeSlots.filter(
+      (slot) =>
+        slot.id !== this.lesson.slot_id &&
+        !(isGroupSlot(slot) && this.lesson.lesson_type === 'incontro_conoscitivo')
+    );
+  }
+
   slotLabel(slot: SlotRow): string {
-    return `${formatShortDate(slot.date)} ${slot.time_from.slice(0, 5)}–${slot.time_to.slice(0, 5)}`;
+    const when = `${formatShortDate(slot.date)} ${slot.time_from.slice(0, 5)}–${slot.time_to.slice(0, 5)}`;
+    if (!isGroupSlot(slot)) {
+      return when;
+    }
+    const left = seatsLeft(slot);
+    return `${when} · ${groupLabel(slot)} (${left} ${left === 1 ? 'posto' : 'posti'})`;
   }
 
   submit(): void {

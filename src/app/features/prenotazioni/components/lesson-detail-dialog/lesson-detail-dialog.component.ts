@@ -9,7 +9,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core';
-import { LessonRow } from '../../../../core/lessons/lessons.service';
+import { LessonRow, isGroupLesson, lessonKindLabel } from '../../../../core/lessons/lessons.service';
 import { formatLongDate, formatTimeRange } from '../date-format';
 
 /**
@@ -53,6 +53,13 @@ export class LessonDetailDialogComponent implements AfterViewInit {
 
   onBackdropClick(): void {
     this.closed.emit();
+  }
+
+  /** Titolo: "Incontro conoscitivo", il nome della collettiva, o "Dettaglio lezione". */
+  get title(): string {
+    return isGroupLesson(this.lesson) || this.lesson.lesson_type === 'incontro_conoscitivo'
+      ? lessonKindLabel(this.lesson)
+      : 'Dettaglio lezione';
   }
 
   get customerLabel(): string {

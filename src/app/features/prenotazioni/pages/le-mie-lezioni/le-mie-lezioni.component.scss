@@ -196,6 +196,11 @@
       background: var(--incontro-soft);
       color: var(--incontro);
     }
+
+    &.tag-group {
+      background: var(--pn-group-soft);
+      color: var(--pn-group);
+    }
   }
 
   // Stessi colori degli stati in gestione lezioni.

@@ -1,8 +1,13 @@
 <div class="week-calendar" [class.days-3]="daysToShow() === 3">
-  @if (hasEvents()) {
+  @if (hasEvents() || hasGroups()) {
     <div class="legend">
       <span class="legend-item"><span class="swatch slot-swatch"></span>Lezione disponibile</span>
-      <span class="legend-item"><span class="swatch event-swatch"></span>Evento</span>
+      @if (hasGroups()) {
+        <span class="legend-item"><span class="swatch group-swatch"></span>Lezione collettiva</span>
+      }
+      @if (hasEvents()) {
+        <span class="legend-item"><span class="swatch event-swatch"></span>Evento</span>
+      }
     </div>
   }
 
@@ -75,16 +80,23 @@
           <button
             type="button"
             class="slot"
+            [class.group]="item.seatsLeft !== null"
             [class.flagged]="item.flagged"
             [style.grid-row-start]="item.rowStart"
             [style.grid-row-end]="item.rowEnd"
             [style.width]="item.width"
             [style.margin-left]="item.offset"
             [disabled]="busySlotId === item.slot.id"
+            [attr.aria-label]="item.ariaLabel"
             (click)="select(item.slot)"
           >
             <span class="slot-from">{{ item.timeFrom }}</span>
             <span class="slot-to">{{ item.timeTo }}</span>
+            @if (item.seatsLeft !== null) {
+              <span class="slot-seats" aria-hidden="true">
+                <i class="fa-solid fa-users"></i> {{ item.seatsLeft }}
+              </span>
+            }
             @if (item.flagged) {
               <span class="slot-flag">{{ flaggedLabel }}</span>
             }

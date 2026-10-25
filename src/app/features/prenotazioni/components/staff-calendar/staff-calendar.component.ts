@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnDestroy, Output, computed, signal } from '@angular/core';
-import { ClosedDay, PartOfDay, SlotRow } from '../../../../core/slots/slots.service';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, Output, computed, signal } from '@angular/core';
+import { ClosedDay, PartOfDay, SlotRow, groupLabel, isGroupSlot } from '../../../../core/slots/slots.service';
 import { LessonRow } from '../../../../core/lessons/lessons.service';
 import { EventRow } from '../../../../core/events/events.service';
 
@@ -13,6 +13,10 @@ interface PositionedSlot {
   lesson: LessonRow | null;
   /** Occupato da un Incontro Conoscitivo invece che da una lezione: colore a parte. */
   incontro: boolean;
+  /** Lezione collettiva (più posti): colore a parte, il clic apre la sua scheda. */
+  group: boolean;
+  /** Per una collettiva: nome, per il tooltip. */
+  title: string | null;
   timeFrom: string;
   /** Orario di fine se libero, "Disattivo" se disattivato, breve info sul cliente se prenotato. */
   secondLine: string;
@@ -167,6 +171,26 @@ export class StaffCalendarComponent implements OnDestroy {
   @Output() readonly lessonOpen = new EventEmitter<LessonRow>();
   /** Evento cliccato: chi usa il componente decide cosa farne (es. andare a Gestione eventi). */
   @Output() readonly eventOpen = new EventEmitter<EventRow>();
+  /** Lezione collettiva cliccata (anche senza iscritti): chi usa il componente ne apre la scheda. */
+  @Output() readonly groupOpen = new EventEmitter<SlotRow>();
+  /** Slot libero scelto in modalità "Nuova lezione collettiva": da rendere collettivo. */
+  @Output() readonly groupCreate = new EventEmitter<SlotRow>();
+
+  /**
+   * Modalità "scegli lo slot da rendere collettivo": il clic su uno slot
+   * libero, che normalmente lo disattiva, qui lo propone come collettiva.
+   * Così il gesto abituale della cliente (clic = attiva/disattiva) non cambia.
+   */
+  readonly pickingGroupSlot = signal(false);
+
+  toggleGroupPicking(): void {
+    this.pickingGroupSlot.update((v) => !v);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.pickingGroupSlot.set(false);
+  }
 
   /**
    * Slot da disegnare. Esclusi quelli disattivati (e liberi) che cadono
@@ -291,7 +315,8 @@ export class StaffCalendarComponent implements OnDestroy {
         isToday: iso === todayIso,
         closedBands,
         slots: daySlots.map((slot) => {
-          const lesson = slot.occupied ? lessonBySlot.get(slot.id) ?? null : null;
+          const group = isGroupSlot(slot);
+          const lesson = slot.occupied && !group ? lessonBySlot.get(slot.id) ?? null : null;
           return {
             slot,
             rowStart: startRow(toMinutes(slot.time_from), rowByHour),
@@ -299,12 +324,16 @@ export class StaffCalendarComponent implements OnDestroy {
             occupied: slot.occupied,
             lesson,
             incontro: lesson?.lesson_type === 'incontro_conoscitivo',
+            group,
+            title: group ? groupLabel(slot) : null,
             timeFrom: slot.time_from.slice(0, 5),
-            secondLine: slot.occupied
-              ? bookingLabel(lesson) ?? 'Prenotato'
-              : slot.active
-                ? slot.time_to.slice(0, 5)
-                : 'Disattivo',
+            secondLine: group
+              ? `${slot.booked_count}/${slot.capacity}`
+              : slot.occupied
+                ? bookingLabel(lesson) ?? 'Prenotato'
+                : slot.active
+                  ? slot.time_to.slice(0, 5)
+                  : 'Disattivo',
           };
         }),
         events: (eventsByDate.get(iso) ?? []).map((event) => ({
@@ -348,6 +377,19 @@ export class StaffCalendarComponent implements OnDestroy {
    * l'unica cosa che un clic può fare è invertirne l'attivazione.
    */
   onSlotClick(item: PositionedSlot): void {
+    if (this.pickingGroupSlot()) {
+      // Solo uno slot attivo e libero può diventare collettivo; gli altri
+      // clic in questa modalità non fanno nulla (il suggerimento lo dice).
+      if (!item.group && !item.occupied && item.slot.active) {
+        this.pickingGroupSlot.set(false);
+        this.groupCreate.emit(item.slot);
+      }
+      return;
+    }
+    if (item.group) {
+      this.groupOpen.emit(item.slot);
+      return;
+    }
     if (item.occupied) {
       if (item.lesson) {
         this.lessonOpen.emit(item.lesson);

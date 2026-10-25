@@ -1,0 +1,202 @@
+<div class="backdrop" (click)="onBackdropClick()">
+  <!-- stopPropagation: un clic dentro il pannello non deve chiuderlo -->
+  <div
+    class="panel wide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="group-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="close-x" [disabled]="busy()" (click)="closed.emit()" aria-label="Chiudi">✕</button>
+
+    <h2 id="group-dialog-title">
+      <i class="fa-solid fa-users group-icon" aria-hidden="true"></i>
+      {{ title() }}
+    </h2>
+
+    <div class="detail group-detail">
+      <span class="date">{{ dateLabel() }}</span>
+      <span class="time">{{ timeLabel() }}</span>
+      @if (isGroup()) {
+        <span class="seats" [class.full]="isFull()">
+          {{ seatsLabel() }} posti occupati{{ isFull() ? ' · al completo' : '' }}
+        </span>
+      }
+    </div>
+
+    @switch (view()) {
+      @case ('overview') {
+        <section class="participants" aria-label="Iscritti">
+          @if (participants().length === 0) {
+            <p class="empty">Ancora nessun iscritto. I clienti la vedono già nel calendario di prenotazione.</p>
+          } @else {
+            <ul>
+              @for (p of participants(); track p.id) {
+                <li>
+                  <button type="button" class="participant" (click)="openParticipant(p)">
+                    <span class="name">{{ participantLabel(p) }}</span>
+                    @if (p.description) {
+                      <span class="note-flag" title="Ha lasciato una nota">nota</span>
+                    }
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        @if (canAct) {
+          <div class="group-actions">
+            <button type="button" class="action" [disabled]="busy() || isFull()" (click)="show('add')">
+              <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Aggiungi partecipante
+            </button>
+            <button type="button" class="action" [disabled]="busy()" (click)="show('edit')">
+              <i class="fa-solid fa-pen" aria-hidden="true"></i> Posti e nome
+            </button>
+            @if (participants().length > 0) {
+              <button type="button" class="action" [disabled]="busy()" (click)="show('move')">
+                <i class="fa-solid fa-arrows-up-down-left-right" aria-hidden="true"></i> Sposta tutti
+              </button>
+              <button type="button" class="action danger" [disabled]="busy()" (click)="show('cancel')">
+                <i class="fa-solid fa-ban" aria-hidden="true"></i> Cancella per tutti
+              </button>
+            }
+            @if (participants().length <= 1) {
+              <button type="button" class="action subtle" [disabled]="busy()" (click)="makeIndividual()">
+                Torna a lezione individuale
+              </button>
+            }
+          </div>
+        }
+      }
+
+      @case ('edit') {
+        @if (!isGroup()) {
+          <p class="intro">
+            I clienti potranno iscriversi finché ci sono posti. Ogni iscrizione conta come la loro lezione della
+            settimana.
+          </p>
+        }
+        <label class="field">
+          Posti
+          <input
+            type="number"
+            min="2"
+            [max]="maxCapacity"
+            [value]="capacityValue"
+            (input)="capacityValue = $any($event.target).valueAsNumber"
+            [disabled]="busy()"
+          />
+        </label>
+        <label class="field">
+          Nome (facoltativo)
+          <input
+            type="text"
+            maxlength="60"
+            placeholder="Es. Classe cuccioli"
+            [value]="labelValue"
+            (input)="labelValue = $any($event.target).value"
+            [disabled]="busy()"
+          />
+          <span class="field-hint">Lo vedono i clienti nel calendario e nelle email.</span>
+        </label>
+        <div class="actions">
+          <button type="button" class="secondary" [disabled]="busy()" (click)="back()">Annulla</button>
+          <button type="button" class="primary" [disabled]="busy()" (click)="saveCapacity()">
+            {{ busy() ? 'Salvataggio…' : isGroup() ? 'Salva' : 'Crea lezione collettiva' }}
+          </button>
+        </div>
+      }
+
+      @case ('add') {
+        <label class="field">
+          Cerca cliente
+          <input
+            type="search"
+            placeholder="Nome, cognome o cane"
+            [value]="customerQuery()"
+            (input)="customerQuery.set($any($event.target).value)"
+            [disabled]="busy()"
+          />
+        </label>
+        @if (customersLoading()) {
+          <p class="empty">Caricamento clienti…</p>
+        } @else {
+          <ul class="matches">
+            @for (c of customerMatches(); track c.id) {
+              <li>
+                <button type="button" class="participant" [disabled]="busy()" (click)="addParticipant(c)">
+                  <span class="name">{{ customerLabel(c) }}</span>
+                  <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                </button>
+              </li>
+            } @empty {
+              <li class="empty">Nessun cliente trovato.</li>
+            }
+          </ul>
+        }
+        <label class="field checkbox">
+          <input
+            type="checkbox"
+            [checked]="bypassWeeklyLimit"
+            (change)="bypassWeeklyLimit = $any($event.target).checked"
+            [disabled]="busy()"
+          />
+          Scavalca il limite di una lezione a settimana
+        </label>
+        <div class="actions">
+          <button type="button" class="secondary" [disabled]="busy()" (click)="back()">Indietro</button>
+        </div>
+      }
+
+      @case ('move') {
+        <p class="intro">
+          Tutti gli iscritti passano al nuovo orario e ricevono la notifica dello spostamento. Si può scegliere solo
+          un orario libero.
+        </p>
+        <label class="field">
+          Nuovo orario
+          <select (change)="moveTargetId = +$any($event.target).value || null" [disabled]="busy()">
+            <option value="">— scegli —</option>
+            @for (s of moveTargets(); track s.id) {
+              <option [value]="s.id">{{ slotOptionLabel(s) }}</option>
+            }
+          </select>
+        </label>
+        <div class="actions">
+          <button type="button" class="secondary" [disabled]="busy()" (click)="back()">Annulla</button>
+          <button type="button" class="primary" [disabled]="busy()" (click)="moveAll()">
+            {{ busy() ? 'Spostamento…' : 'Sposta tutti' }}
+          </button>
+        </div>
+      }
+
+      @case ('cancel') {
+        <p class="intro">
+          La lezione viene cancellata per tutti i {{ participants().length }} iscritti, che ricevono la notifica.
+          L'orario resta una lezione collettiva, senza iscritti.
+        </p>
+        <label class="field">
+          Motivo (facoltativo, arriva agli iscritti)
+          <textarea
+            rows="2"
+            [value]="cancelReason"
+            (input)="cancelReason = $any($event.target).value"
+            [disabled]="busy()"
+          ></textarea>
+        </label>
+        <div class="actions">
+          <button type="button" class="secondary" [disabled]="busy()" (click)="back()">Annulla</button>
+          <button type="button" class="destructive" [disabled]="busy()" (click)="cancelAll()">
+            {{ busy() ? 'Cancellazione…' : 'Cancella per tutti' }}
+          </button>
+        </div>
+      }
+    }
+
+    @if (errorMessage(); as error) {
+      <p class="error" role="alert">{{ error }}</p>
+    }
+  </div>
+</div>

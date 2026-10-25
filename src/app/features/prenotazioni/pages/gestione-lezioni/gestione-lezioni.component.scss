@@ -372,6 +372,12 @@
       color: #0b6b63;
       font-weight: 700;
     }
+
+    &.group {
+      background: var(--pn-group-soft);
+      color: var(--pn-group);
+      font-weight: 700;
+    }
   }
 }
 

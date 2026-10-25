@@ -61,7 +61,11 @@
               </span>
               @if (item.status) {
                 <span class="status-badge" [class]="'status-badge status-' + item.status">
-                  Lezione {{ statusLabels[item.status] }}
+                  @if (item.title) {
+                    <i class="fa-solid fa-users" aria-hidden="true"></i> {{ item.title }} · {{ statusLabels[item.status] }}
+                  } @else {
+                    Lezione {{ statusLabels[item.status] }}
+                  }
                 </span>
               } @else {
                 <span class="status-badge status-event">Evento · {{ item.title }}</span>
@@ -87,7 +91,7 @@
       </div>
     } @else if (slots().length > 0 || events().length > 0) {
       <app-week-calendar
-        [slots]="slots()"
+        [slots]="calendarSlots()"
         [events]="events()"
         (eventSelected)="openEvent($event)"
         [flaggedSlotIds]="flaggedSlotIds()"

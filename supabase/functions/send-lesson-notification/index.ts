@@ -53,7 +53,7 @@ export default {
     const { data: lesson, error: lessonError } = await ctx.supabaseAdmin
       .from("v_lessons_detail")
       .select(
-        "id, customer_id, customer_name, customer_surname, customer_dog_name, customer_email, date, time_from, time_to, cancellation_reason, description, status, lesson_type"
+        "id, customer_id, slot_id, customer_name, customer_surname, customer_dog_name, customer_email, date, time_from, time_to, cancellation_reason, description, status, lesson_type, slot_capacity, slot_group_label"
       )
       .eq("id", body.lesson_id)
       .maybeSingle();
@@ -67,6 +67,18 @@ export default {
       // notare al chiamante (il trigger l'ha già sparata, fire-and-forget),
       // semplicemente non c'è più nulla da notificare.
       return jsonResponse({ skipped: "lezione non trovata" });
+    }
+
+    // Lezione collettiva: allo staff serve anche quanti sono gli iscritti
+    // ("Iscritti: 4 su 6"), contati qui una volta per tutte le email.
+    if ((lesson.slot_capacity ?? 1) > 1 && lesson.slot_id) {
+      const { count } = await ctx.supabaseAdmin
+        .from("lessons")
+        .select("id", { count: "exact", head: true })
+        .eq("slot_id", lesson.slot_id)
+        .in("status", ["pending", "confirmed"])
+        .is("deleted_at", null);
+      (lesson as LessonDetail).group_booked = count ?? null;
     }
 
     const results: Array<{ to: string; ok: boolean; error: string | null }> = [];

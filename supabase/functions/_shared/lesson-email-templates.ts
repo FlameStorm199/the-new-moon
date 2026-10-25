@@ -28,6 +28,11 @@ export interface LessonDetail {
   description: string | null;
   status: string;
   lesson_type: string;
+  /** Posti dello slot (da v_lessons_detail): >1 = lezione collettiva. */
+  slot_capacity?: number | null;
+  slot_group_label?: string | null;
+  /** Iscritti attivi alla collettiva, per le email allo staff. */
+  group_booked?: number | null;
 }
 
 export interface PreviousSlot {
@@ -45,17 +50,22 @@ function isIncontro(lesson: LessonDetail): boolean {
   return lesson.lesson_type === "incontro_conoscitivo";
 }
 
+/** Iscrizione a una lezione collettiva (slot con più posti, database/40_lezioni_collettive.sql). */
+function isGroup(lesson: LessonDetail): boolean {
+  return (lesson.slot_capacity ?? 1) > 1;
+}
+
 function kindLabel(lesson: LessonDetail): string {
-  return isIncontro(lesson) ? "Incontro Conoscitivo" : "Lezione";
+  return isIncontro(lesson) ? "Incontro Conoscitivo" : isGroup(lesson) ? "Lezione collettiva" : "Lezione";
 }
 
 /** Accordo di genere: "lezione cancellata" ma "incontro cancellato". */
 function kindWithParticiple(lesson: LessonDetail, feminine: string, masculine: string): string {
-  return isIncontro(lesson) ? `Incontro Conoscitivo ${masculine}` : `Lezione ${feminine}`;
+  return isIncontro(lesson) ? `Incontro Conoscitivo ${masculine}` : `${kindLabel(lesson)} ${feminine}`;
 }
 
 function kindTone(lesson: LessonDetail): Tone {
-  return isIncontro(lesson) ? "incontro" : "lesson";
+  return isIncontro(lesson) ? "incontro" : isGroup(lesson) ? "group" : "lesson";
 }
 
 /** Riquadro data/orario (+ cane, + cliente per lo staff). */
@@ -64,6 +74,9 @@ function whenBlock(
   opts: { withCustomer?: boolean; tone?: Tone; heading?: string } = {},
 ): DetailBlock {
   const rows: DetailRow[] = [];
+  if (isGroup(lesson) && lesson.slot_group_label) {
+    rows.push({ label: "Lezione", value: lesson.slot_group_label });
+  }
   if (opts.withCustomer) {
     rows.push({ label: "Cliente", value: `${lesson.customer_name} ${lesson.customer_surname}` });
   }
@@ -74,6 +87,9 @@ function whenBlock(
     { label: "Data", value: formatLongDateIt(lesson.date) },
     { label: "Orario", value: formatTimeRangeIt(lesson.time_from, lesson.time_to) },
   );
+  if (opts.withCustomer && isGroup(lesson) && lesson.group_booked != null) {
+    rows.push({ label: "Iscritti", value: `${lesson.group_booked} su ${lesson.slot_capacity}` });
+  }
   return { rows, tone: opts.tone ?? kindTone(lesson), heading: opts.heading };
 }
 
@@ -143,11 +159,19 @@ export function customerEmailFor(
         };
       }
       return {
-        subject: isIncontro(lesson) ? "Incontro Conoscitivo confermato" : "Lezione confermata",
+        subject: isIncontro(lesson)
+          ? "Incontro Conoscitivo confermato"
+          : isGroup(lesson)
+            ? "Iscrizione alla lezione collettiva confermata"
+            : "Lezione confermata",
         html: renderEmail({
           preheader: `${kindWithParticiple(lesson, "confermata", "confermato")}: ${shortWhen(lesson)}.`,
           badge,
-          title: isIncontro(lesson) ? "Il tuo Incontro Conoscitivo è confermato" : "La tua lezione è confermata",
+          title: isIncontro(lesson)
+            ? "Il tuo Incontro Conoscitivo è confermato"
+            : isGroup(lesson)
+              ? "Sei iscritto/a alla lezione collettiva"
+              : "La tua lezione è confermata",
           paragraphs: [greeting(lesson), "ecco il riepilogo. Ti aspettiamo al campo."],
           details: [whenBlock(lesson)],
           note: noteOf(lesson.description),
@@ -184,7 +208,7 @@ export function customerEmailFor(
 
     case "rescheduled":
       return {
-        subject: "Lezione spostata",
+        subject: kindWithParticiple(lesson, "spostata", "spostato"),
         html: renderEmail({
           preheader: `Nuovo orario: ${shortWhen(lesson)}.`,
           badge,
@@ -216,7 +240,7 @@ export function customerEmailFor(
 
     case "reminder_24h":
       return {
-        subject: "Promemoria: lezione domani",
+        subject: isGroup(lesson) ? "Promemoria: lezione collettiva domani" : "Promemoria: lezione domani",
         html: renderEmail({
           preheader: `Domani alle ${lesson.time_from.slice(0, 5)}: ti aspettiamo.`,
           badge,
@@ -256,12 +280,24 @@ export function trainerEmailFor(
         };
       }
       return {
-        subject: isIncontro(lesson) ? "Incontro Conoscitivo confermato" : "Nuova prenotazione",
+        subject: isIncontro(lesson)
+          ? "Incontro Conoscitivo confermato"
+          : isGroup(lesson)
+            ? "Nuova iscrizione a una lezione collettiva"
+            : "Nuova prenotazione",
         html: renderEmail({
           preheader: `${customer} · ${shortWhen(lesson)}.`,
           badge,
-          title: isIncontro(lesson) ? "Incontro Conoscitivo confermato" : "Nuova prenotazione",
-          paragraphs: [`${customerHtml} ha prenotato ${isIncontro(lesson) ? "un Incontro Conoscitivo" : "una lezione"}.`],
+          title: isIncontro(lesson)
+            ? "Incontro Conoscitivo confermato"
+            : isGroup(lesson)
+              ? "Nuova iscrizione"
+              : "Nuova prenotazione",
+          paragraphs: [
+            isGroup(lesson)
+              ? `${customerHtml} si è iscritto/a alla lezione collettiva.`
+              : `${customerHtml} ha prenotato ${isIncontro(lesson) ? "un Incontro Conoscitivo" : "una lezione"}.`,
+          ],
           details: [whenBlock(lesson, { withCustomer: true })],
           note: noteOf(lesson.description),
           cta: staffLessonsCta(),
@@ -295,12 +331,16 @@ export function trainerEmailFor(
 
     case "rescheduled":
       return {
-        subject: "Lezione spostata",
+        subject: kindWithParticiple(lesson, "spostata", "spostato"),
         html: renderEmail({
           preheader: `${customer} · nuovo orario ${shortWhen(lesson)}.`,
           badge,
-          title: "Lezione spostata",
-          paragraphs: [`La lezione di ${customerHtml} è stata spostata.`],
+          title: kindWithParticiple(lesson, "spostata", "spostato"),
+          paragraphs: [
+            isGroup(lesson)
+              ? `L'iscrizione di ${customerHtml} alla lezione collettiva è stata spostata.`
+              : `La lezione di ${customerHtml} è stata spostata.`,
+          ],
           details: [
             ...(previous ? [previousBlock(previous)] : []),
             whenBlock(lesson, { withCustomer: true, heading: previous ? "Ora" : undefined }),
@@ -319,7 +359,9 @@ export function trainerEmailFor(
           paragraphs: [
             isIncontro(lesson)
               ? `L'Incontro Conoscitivo di ${customerHtml} è stato cancellato.`
-              : `La lezione di ${customerHtml} è stata cancellata.`,
+              : isGroup(lesson)
+                ? `L'iscrizione di ${customerHtml} alla lezione collettiva è stata cancellata.`
+                : `La lezione di ${customerHtml} è stata cancellata.`,
           ],
           details: [whenBlock(lesson, { withCustomer: true, tone: "neutral" })],
           note: reasonOf(lesson.cancellation_reason),

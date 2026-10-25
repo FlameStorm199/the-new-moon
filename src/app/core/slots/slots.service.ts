@@ -13,6 +13,39 @@ export interface SlotRow {
   occupied: boolean;
   /** 'rule' = generato dalle fasce orarie, 'manual' = aggiunto a mano dallo staff. */
   source: SlotSource;
+  /** Posti prenotabili: 1 = individuale, >1 = lezione collettiva. */
+  capacity: number;
+  /** Nome della lezione collettiva, se lo staff gliel'ha dato. */
+  group_label: string | null;
+  /** Lezioni attive nello slot (per una collettiva: gli iscritti). */
+  booked_count: number;
+}
+
+/** Lezione collettiva: più posti, ognuno una lezione (database/40_lezioni_collettive.sql). */
+export function isGroupSlot(slot: Pick<SlotRow, 'capacity'>): boolean {
+  return slot.capacity > 1;
+}
+
+export function seatsLeft(slot: Pick<SlotRow, 'capacity' | 'booked_count'>): number {
+  return Math.max(0, slot.capacity - slot.booked_count);
+}
+
+/** Ancora prenotabile: attivo e con almeno un posto libero (individuale = non occupato). */
+export function hasRoom(slot: Pick<SlotRow, 'active' | 'capacity' | 'booked_count'>): boolean {
+  return slot.active && seatsLeft(slot) > 0;
+}
+
+/** "Classe cuccioli" o, senza nome, "Lezione collettiva". */
+export function groupLabel(slot: { group_label?: string | null }): string {
+  return slot.group_label?.trim() || 'Lezione collettiva';
+}
+
+export interface ListAvailableOptions {
+  /**
+   * false per chi può prenotare solo orari individuali (Incontro
+   * Conoscitivo): le collettive vengono escluse anche se hanno posti.
+   */
+  includeGroups?: boolean;
 }
 
 export type SlotSource = 'rule' | 'manual';
@@ -48,6 +81,9 @@ export interface ClosedDay {
   reason: string | null;
 }
 
+// Su una riga sola: supabase-js deriva i tipi del risultato dal literal.
+const SLOT_COLUMNS = 'id, date, part_of_day, time_from, time_to, active, occupied, source, capacity, group_label, booked_count';
+
 @Injectable({ providedIn: 'root' })
 export class SlotsService {
   private readonly supabase = inject(SupabaseService).client;
@@ -61,7 +97,7 @@ export class SlotsService {
 
     const { data, error } = await this.supabase
       .from('v_slots_status')
-      .select('id, date, part_of_day, time_from, time_to, active, occupied, source')
+      .select(SLOT_COLUMNS)
       .gte('date', from)
       .lte('date', to)
       .order('date', { ascending: true })
@@ -74,8 +110,11 @@ export class SlotsService {
   }
 
   /**
-   * Slot liberi (attivi, non occupati) dei prossimi `days` giorni, per la UI
-   * di prenotazione. Default abbondante e non "sincronizzato a mano" con
+   * Slot prenotabili (attivi, con almeno un posto libero) dei prossimi
+   * `days` giorni, per la UI di prenotazione. Le collettive con posti liberi
+   * sono "occupate" (hanno già iscritti) ma ancora prenotabili: il filtro sui
+   * posti si fa qui e non nella query, perché PostgREST non confronta due
+   * colonne (booked_count < capacity). Default abbondante e non "sincronizzato a mano" con
    * app_settings.slot_horizon_days: la query filtra per data su righe già
    * generate, quindi chiedere più giorni di quanti l'orizzonte ne produca
    * davvero non costa nulla — restituisce solo quello che esiste. Il
@@ -83,7 +122,8 @@ export class SlotsService {
    * mostrare gli slot generati appena qualcuno allarga l'orizzonte lato DB,
    * senza che nulla lo segnali.
    */
-  async listAvailable(days = 180): Promise<SlotRow[]> {
+  async listAvailable(days = 180, options: ListAvailableOptions = {}): Promise<SlotRow[]> {
+    const includeGroups = options.includeGroups ?? true;
     const from = toIsoDate(new Date());
     const toDate = new Date();
     toDate.setDate(toDate.getDate() + days - 1);
@@ -91,18 +131,33 @@ export class SlotsService {
 
     const { data, error } = await this.supabase
       .from('v_slots_status')
-      .select('id, date, part_of_day, time_from, time_to, active, occupied, source')
+      .select(SLOT_COLUMNS)
       .gte('date', from)
       .lte('date', to)
       .eq('active', true)
-      .eq('occupied', false)
       .order('date', { ascending: true })
       .order('time_from', { ascending: true });
 
     if (error) {
       throw error;
     }
-    return data ?? [];
+    return (data ?? []).filter((s) => hasRoom(s) && (includeGroups || !isGroupSlot(s)));
+  }
+
+  /**
+   * Rende collettivo lo slot (capacity > 1, con nome facoltativo) o lo
+   * riporta individuale (capacity = 1). Le regole (staff, posti non sotto
+   * gli iscritti, niente Incontro Conoscitivo) le controlla la RPC.
+   */
+  async setCapacity(slotId: number, capacity: number, label?: string | null): Promise<void> {
+    const { error } = await this.supabase.rpc('set_slot_capacity', {
+      p_slot_id: slotId,
+      p_capacity: capacity,
+      p_label: label?.trim() || null,
+    });
+    if (error) {
+      throw error;
+    }
   }
 
   async setActive(id: number, active: boolean): Promise<void> {

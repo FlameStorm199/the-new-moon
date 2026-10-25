@@ -30,7 +30,7 @@
         Nuovo slot
         <select #firstField #destSelect>
           <option value="">— scegli —</option>
-          @for (slot of freeSlots; track slot.id) {
+          @for (slot of destinations; track slot.id) {
             <option [value]="slot.id">{{ slotLabel(slot) }}</option>
           }
         </select>

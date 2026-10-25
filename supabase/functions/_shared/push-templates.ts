@@ -20,6 +20,15 @@ function isIncontro(lesson: LessonDetail): boolean {
   return lesson.lesson_type === "incontro_conoscitivo";
 }
 
+function isGroup(lesson: LessonDetail): boolean {
+  return (lesson.slot_capacity ?? 1) > 1;
+}
+
+/** Per una collettiva, il nome davanti all'orario: "Classe cuccioli · Martedì…". */
+function groupPrefix(lesson: LessonDetail): string {
+  return isGroup(lesson) ? `${lesson.slot_group_label?.trim() || "Lezione collettiva"} · ` : "";
+}
+
 /** "Martedì 21 ottobre 2026, ore 10:00" */
 function when(date: string, timeFrom: string): string {
   return `${formatLongDateIt(date)}, ore ${timeFrom.slice(0, 5)}`;
@@ -38,7 +47,7 @@ export function customerPushFor(
   lesson: LessonDetail,
   previous: PreviousSlot | null,
 ): PushContent {
-  const at = when(lesson.date, lesson.time_from);
+  const at = `${groupPrefix(lesson)}${when(lesson.date, lesson.time_from)}`;
   const base = { url: MY_LESSONS, tag: lessonTag(lesson) };
 
   switch (event) {
@@ -48,7 +57,11 @@ export function customerPushFor(
       }
       return {
         ...base,
-        title: isIncontro(lesson) ? "Incontro Conoscitivo confermato" : "Lezione confermata",
+        title: isIncontro(lesson)
+          ? "Incontro Conoscitivo confermato"
+          : isGroup(lesson)
+            ? "Iscrizione confermata"
+            : "Lezione confermata",
         body: `${at}. Ti aspettiamo al campo.`,
       };
     case "accepted":
@@ -62,20 +75,24 @@ export function customerPushFor(
     case "rescheduled":
       return {
         ...base,
-        title: "Lezione spostata",
+        title: isGroup(lesson) ? "Lezione collettiva spostata" : "Lezione spostata",
         body: previous ? `Da ${when(previous.date, previous.time_from)} a ${at}.` : `Nuovo orario: ${at}.`,
       };
     case "cancelled":
       return {
         ...base,
-        title: isIncontro(lesson) ? "Incontro Conoscitivo cancellato" : "Lezione cancellata",
+        title: isIncontro(lesson)
+          ? "Incontro Conoscitivo cancellato"
+          : isGroup(lesson)
+            ? "Lezione collettiva cancellata"
+            : "Lezione cancellata",
         body: withReason(`${at}.`, lesson.cancellation_reason),
       };
     case "reminder_24h":
       return {
         ...base,
         title: "Ci vediamo domani",
-        body: `${isIncontro(lesson) ? "Incontro Conoscitivo" : "Lezione"} alle ${lesson.time_from.slice(0, 5)}.`,
+        body: `${isIncontro(lesson) ? "Incontro Conoscitivo" : isGroup(lesson) ? groupPrefix(lesson).slice(0, -3) : "Lezione"} alle ${lesson.time_from.slice(0, 5)}.`,
       };
   }
 }
@@ -86,7 +103,9 @@ export function trainerPushFor(
   previous: PreviousSlot | null,
 ): PushContent {
   const customer = `${lesson.customer_name} ${lesson.customer_surname}`;
-  const at = when(lesson.date, lesson.time_from);
+  const seats =
+    isGroup(lesson) && lesson.group_booked != null ? ` (${lesson.group_booked}/${lesson.slot_capacity})` : "";
+  const at = `${groupPrefix(lesson)}${when(lesson.date, lesson.time_from)}`;
   const base = { url: STAFF_LESSONS, tag: lessonTag(lesson) };
 
   switch (event) {
@@ -96,8 +115,12 @@ export function trainerPushFor(
       }
       return {
         ...base,
-        title: isIncontro(lesson) ? "Incontro Conoscitivo confermato" : "Nuova prenotazione",
-        body: `${customer} · ${at}`,
+        title: isIncontro(lesson)
+          ? "Incontro Conoscitivo confermato"
+          : isGroup(lesson)
+            ? "Nuova iscrizione"
+            : "Nuova prenotazione",
+        body: `${customer} · ${at}${seats}`,
       };
     case "accepted":
       return { ...base, title: "Incontro Conoscitivo confermato", body: `${customer} · ${at}` };
@@ -106,7 +129,7 @@ export function trainerPushFor(
     case "rescheduled":
       return {
         ...base,
-        title: "Lezione spostata",
+        title: isGroup(lesson) ? "Iscrizione spostata" : "Lezione spostata",
         body: previous
           ? `${customer} · da ${when(previous.date, previous.time_from)} a ${at}`
           : `${customer} · nuovo orario ${at}`,
@@ -114,7 +137,11 @@ export function trainerPushFor(
     case "cancelled":
       return {
         ...base,
-        title: isIncontro(lesson) ? "Incontro Conoscitivo cancellato" : "Lezione cancellata",
+        title: isIncontro(lesson)
+          ? "Incontro Conoscitivo cancellato"
+          : isGroup(lesson)
+            ? "Iscrizione cancellata"
+            : "Lezione cancellata",
         body: withReason(`${customer} · ${at}.`, lesson.cancellation_reason),
       };
   }
