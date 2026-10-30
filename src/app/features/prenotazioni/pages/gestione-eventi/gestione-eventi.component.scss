@@ -123,7 +123,8 @@
     color: #666;
     line-height: 1.5;
     max-width: 60ch;
-    // Tre righe al massimo: la descrizione completa sta nel modale Modifica.
+    // Tre righe al massimo: la descrizione completa sta nel dettaglio
+    // (titolo o "Vedi dettagli").
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
@@ -410,3 +411,37 @@
     transition: none;
   }
 }
+
+// Titolo e "Vedi dettagli" aprono il dettaglio dell'evento. :host perché il
+// tema globale (html body .staff-page button[type='button']) li renderebbe
+// bottoni pieni.
+:host .title-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+:host .details-link {
+  margin-top: 0.3rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--pn-accent, #3b6fd4);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+

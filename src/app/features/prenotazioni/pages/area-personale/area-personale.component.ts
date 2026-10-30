@@ -255,9 +255,9 @@ export class AreaPersonaleComponent implements OnInit {
     }
   }
 
-  /** Clic su un evento nel calendario: apre Gestione eventi, unico posto dove gestirlo davvero. */
-  onEventOpen(): void {
-    this.router.navigateByUrl('/prenotazioni/gestione-eventi');
+  /** Clic su un evento nel calendario: apre Gestione eventi già sul suo dettaglio. */
+  onEventOpen(event: EventRow): void {
+    void this.router.navigate(['/prenotazioni/gestione-eventi'], { queryParams: { evento: event.id } });
   }
 
   /** Clic su uno slot libero o disattivato: ne inverte l'attivazione (SlotsService.setActive). */

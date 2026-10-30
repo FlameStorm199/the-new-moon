@@ -50,7 +50,9 @@
             </div>
 
             <div class="event-info">
-              <h2 class="event-title">{{ event.title }}</h2>
+              <h2 class="event-title">
+                <button type="button" class="title-link" (click)="openDetails(event)">{{ event.title }}</button>
+              </h2>
               <p class="event-when">
                 <span class="visually-hidden">{{ formatDate(event.date) }},</span>
                 {{ event.time_from.slice(0, 5) }}–{{ event.time_to.slice(0, 5) }}
@@ -59,6 +61,7 @@
               </p>
               @if (event.description) {
                 <p class="event-desc">{{ event.description }}</p>
+                <button type="button" class="details-link" (click)="openDetails(event)">Vedi dettagli</button>
               }
               <div class="event-tags">
                 @if (event.price !== null) {
@@ -196,6 +199,17 @@
       [errorMessage]="removeError()"
       (confirmed)="confirmRemove($event)"
       (closed)="closeRemove()"
+    />
+  }
+
+  @if (viewingEvent(); as event) {
+    <app-event-detail-dialog
+      [event]="event"
+      [staff]="true"
+      [canAct]="canAct()"
+      (editRequested)="editFromDetails(event)"
+      (deleteRequested)="deleteFromDetails(event)"
+      (closed)="closeDetails()"
     />
   }
 </section>

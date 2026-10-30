@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { EventInput, EventRow, EventsService, formatEventPrice } from '../../../../core/events/events.service';
 import {
   EventRegistrationRow,
@@ -8,6 +9,7 @@ import {
 import { UserProfileService } from '../../../../core/users/user-profile.service';
 import { BackLinkComponent } from '../../components/back-link/back-link.component';
 import { ConfirmDialogComponent } from '../../components/confirm-dialog/confirm-dialog.component';
+import { EventDetailDialogComponent } from '../../components/event-detail-dialog/event-detail-dialog.component';
 import {
   EventFormDialogComponent,
   EventFormDialogState,
@@ -18,7 +20,7 @@ import { dateBlockParts, formatLongDate } from '../../components/date-format';
 @Component({
   selector: 'app-gestione-eventi',
   standalone: true,
-  imports: [CommonModule, BackLinkComponent, EventFormDialogComponent, ConfirmDialogComponent],
+  imports: [CommonModule, BackLinkComponent, EventFormDialogComponent, ConfirmDialogComponent, EventDetailDialogComponent],
   templateUrl: './gestione-eventi.component.html',
   styleUrl: './gestione-eventi.component.scss',
 })
@@ -26,6 +28,7 @@ export class GestioneEventiComponent implements OnInit {
   private readonly eventsService = inject(EventsService);
   private readonly registrationsService = inject(EventRegistrationsService);
   private readonly profileService = inject(UserProfileService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly formatDate = formatLongDate;
   readonly dateBlock = dateBlockParts;
@@ -65,9 +68,46 @@ export class GestioneEventiComponent implements OnInit {
   readonly removeBusy = signal(false);
   readonly removeError = signal<string | null>(null);
 
+  // --- Dettaglio evento ---
+  // Nell'elenco la descrizione è tagliata a tre righe: qui si legge tutta.
+  // Id e non riga, così dopo un ricaricamento mostra i dati aggiornati.
+  readonly viewingEventId = signal<number | null>(null);
+  readonly viewingEvent = computed(() => this.events().find((e) => e.id === this.viewingEventId()) ?? null);
+
   ngOnInit(): void {
-    void this.load();
+    void this.load().then(() => this.openFromQuery());
     void this.loadRole();
+  }
+
+  /**
+   * ?evento=<id>: arrivando dal calendario della dashboard (clic su un
+   * evento) si apre subito il suo dettaglio, invece di dover ritrovare
+   * l'evento nell'elenco.
+   */
+  private openFromQuery(): void {
+    const id = Number(this.route.snapshot.queryParamMap.get('evento'));
+    if (id && this.events().some((e) => e.id === id)) {
+      this.viewingEventId.set(id);
+    }
+  }
+
+  openDetails(event: EventRow): void {
+    this.viewingEventId.set(event.id);
+  }
+
+  closeDetails(): void {
+    this.viewingEventId.set(null);
+  }
+
+  /** Dal dettaglio: un modale alla volta, quindi si chiude prima di aprire l'altro. */
+  editFromDetails(event: EventRow): void {
+    this.closeDetails();
+    this.openEdit(event);
+  }
+
+  deleteFromDetails(event: EventRow): void {
+    this.closeDetails();
+    this.openDelete(event);
   }
 
   private async loadRole(): Promise<void> {

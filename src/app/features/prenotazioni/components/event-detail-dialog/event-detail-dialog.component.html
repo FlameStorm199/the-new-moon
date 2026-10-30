@@ -28,7 +28,7 @@
 
       @if (priceLabel || seatsLabel || registered) {
         <div class="tags">
-          @if (registered) {
+          @if (registered && !staff) {
             <span class="tag tag-registered">✓ Sei iscritto/a</span>
           }
           @if (priceLabel) {
@@ -49,7 +49,14 @@
       }
 
       <div class="actions">
-        @if (registered) {
+        @if (staff) {
+          @if (canAct) {
+            <button type="button" class="destructive" (click)="deleteRequested.emit()">Cancella evento</button>
+            <button #primaryAction type="button" class="primary" (click)="editRequested.emit()">Modifica</button>
+          } @else {
+            <button #primaryAction type="button" class="secondary" (click)="closed.emit()">Chiudi</button>
+          }
+        } @else if (registered) {
           @if (askingCancel) {
             <p class="confirm-question">Vuoi davvero cancellare la tua iscrizione?</p>
             <button type="button" class="secondary" [disabled]="busy" (click)="askingCancel = false">

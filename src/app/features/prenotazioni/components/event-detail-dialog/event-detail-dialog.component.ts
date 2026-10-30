@@ -24,6 +24,11 @@ export type EventDetailDialogState = 'view' | 'registered' | 'cancelled';
  * Dettaglio di un evento aperto dal calendario di prenotazione, con
  * iscrizione e cancellazione. La cancellazione chiede una conferma dentro lo
  * stesso pannello invece di aprire un secondo modale sopra il primo.
+ *
+ * Con `staff` lo stesso dettaglio serve a Gestione eventi, dove nell'elenco
+ * la descrizione è tagliata a tre righe: niente iscrizione, al suo posto
+ * Modifica e Cancella evento (solo se `canAct`), e gli iscritti al posto dei
+ * posti liberi.
  */
 @Component({
   selector: 'app-event-detail-dialog',
@@ -37,8 +42,14 @@ export class EventDetailDialogComponent implements AfterViewInit {
   @Input() state: EventDetailDialogState = 'view';
   @Input() busy = false;
   @Input() errorMessage: string | null = null;
+  /** Vista staff (Gestione eventi): azioni di gestione invece dell'iscrizione. */
+  @Input() staff = false;
+  /** Solo con `staff`: educatore/admin, che possono modificare e cancellare. */
+  @Input() canAct = false;
 
   @Output() readonly registerRequested = new EventEmitter<void>();
+  @Output() readonly editRequested = new EventEmitter<void>();
+  @Output() readonly deleteRequested = new EventEmitter<void>();
   @Output() readonly cancelConfirmed = new EventEmitter<void>();
   @Output() readonly closed = new EventEmitter<void>();
 
@@ -88,6 +99,11 @@ export class EventDetailDialogComponent implements AfterViewInit {
   }
 
   get seatsLabel(): string | null {
+    if (this.staff) {
+      const n = this.event.active_registrations;
+      const regs = n === 1 ? '1 iscritto' : `${n} iscritti`;
+      return this.event.max_customers === null ? regs : `${regs} su ${this.event.max_customers} posti`;
+    }
     if (this.event.max_customers === null) return null;
     const left = Math.max(0, this.event.max_customers - this.event.active_registrations);
     if (left === 0) return 'Posti esauriti';
