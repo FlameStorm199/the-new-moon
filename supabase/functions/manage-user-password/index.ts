@@ -2,7 +2,7 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 import { createContextClient } from "@supabase/server/core";
-import { jsonResponse, requireAdminCaller } from "../_shared/auth-helpers.ts";
+import { jsonResponse, requireAdminCaller, requireCallerWithRole } from "../_shared/auth-helpers.ts";
 import { sendForcedResetEmail, sendInviteEmail, sendSelfResetEmail } from "../_shared/password-flows.ts";
 
 // Punto centrale UNICO per ogni email di tipo reset/imposta/invita password.
@@ -76,13 +76,23 @@ async function handleSelfResetRequest(ctx: any, body: ManagePasswordRequest): Pr
 
 // deno-lint-ignore no-explicit-any
 async function handleAdminInvite(ctx: any, body: ManagePasswordRequest): Promise<Response> {
-  const admin = await requireAdminCaller(ctx);
-  if (!admin) {
+  // Anche l'educatore, non solo l'admin: "Trasforma in assistito" (Gestione
+  // utenti) è permesso all'educatore (database/34_fase2_promote_future_
+  // customer.sql) e subito dopo manda questo invito. Con il solo admin, la
+  // promozione riusciva ma l'invito veniva rifiutato: l'utente diventava
+  // assistito senza ricevere l'email per impostare la password.
+  // L'educatore però può invitare solo assistiti, mai staff o admin.
+  const allowed = await requireCallerWithRole(ctx, ["admin", "trainer"]);
+  if (!allowed) {
     return jsonResponse({ error: "Non autorizzato." }, 403);
   }
+  const admin = allowed.caller;
   const target = await loadTargetUser(ctx, body.target_user_id);
   if (!target) {
     return jsonResponse({ error: "Utente destinatario non trovato." }, 404);
+  }
+  if (allowed.role === "trainer" && target.type_code !== "customer") {
+    return jsonResponse({ error: "Un educatore può invitare solo gli assistiti." }, 403);
   }
 
   // Fase 2: chi ha effettivamente inviato l'email di invito — per un
@@ -176,14 +186,14 @@ async function handleSelfChange(ctx: any, body: ManagePasswordRequest): Promise<
 async function loadTargetUser(
   ctx: any,
   targetUserId: number | undefined,
-): Promise<{ id: number; email: string } | null> {
+): Promise<{ id: number; email: string; type_code: string | null } | null> {
   if (!targetUserId) return null;
   const { data, error } = await ctx.supabaseAdmin
     .from("users")
-    .select("id, email")
+    .select("id, email, user_types(code)")
     .eq("id", targetUserId)
     .is("deleted_at", null)
     .single();
   if (error || !data) return null;
-  return data;
+  return { id: data.id, email: data.email, type_code: data.user_types?.code ?? null };
 }

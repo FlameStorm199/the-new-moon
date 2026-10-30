@@ -46,6 +46,29 @@ export async function requireAdminCaller(ctx: SupabaseContext<any>): Promise<Cal
   return caller;
 }
 
+/**
+ * Chiamante con uno dei ruoli indicati (codici di user_types), insieme al
+ * suo ruolo: per le azioni aperte a più ruoli ma con regole diverse per
+ * ciascuno (es. l'invito password, vedi manage-user-password).
+ */
+export async function requireCallerWithRole(
+  // deno-lint-ignore no-explicit-any
+  ctx: SupabaseContext<any>,
+  roles: string[],
+): Promise<{ caller: CallerAppUser; role: string } | null> {
+  const caller = await loadCallerAppUser(ctx);
+  if (!caller) return null;
+
+  const { data: typeRow, error } = await ctx.supabaseAdmin
+    .from("user_types")
+    .select("code")
+    .eq("id", caller.type_id)
+    .single();
+
+  if (error || !typeRow || !roles.includes(typeRow.code)) return null;
+  return { caller, role: typeRow.code };
+}
+
 export function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,

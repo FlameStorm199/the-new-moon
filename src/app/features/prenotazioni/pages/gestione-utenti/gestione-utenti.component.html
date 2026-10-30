@@ -229,23 +229,31 @@
               >
                 {{ actingOnId() === row.id ? 'Attendere…' : 'Trasforma in assistito' }}
               </button>
-            } @else if (isAdmin()) {
-              <button
-                type="button"
-                class="btn-quiet"
-                [disabled]="actingOnId() === row.id"
-                (click)="resendInvite(row)"
-              >
-                Invita
-              </button>
-              <button
-                type="button"
-                class="btn-quiet"
-                [disabled]="actingOnId() === row.id"
-                (click)="forceReset(row)"
-              >
-                Reset password
-              </button>
+            } @else {
+              <!-- Invita: anche l'educatore, ma solo sugli assistiti (stessa
+                   regola della Edge Function manage-user-password) — così può
+                   rimandare l'invito se quello di "Trasforma in assistito"
+                   non è arrivato. Reset password resta solo all'admin. -->
+              @if (isAdmin() || (canValidate() && row.typeCode === 'customer')) {
+                <button
+                  type="button"
+                  class="btn-quiet"
+                  [disabled]="actingOnId() === row.id"
+                  (click)="resendInvite(row)"
+                >
+                  Invita
+                </button>
+              }
+              @if (isAdmin()) {
+                <button
+                  type="button"
+                  class="btn-quiet"
+                  [disabled]="actingOnId() === row.id"
+                  (click)="forceReset(row)"
+                >
+                  Reset password
+                </button>
+              }
             }
             @if (isPendingValidation(row) && isAdmin()) {
               <button
